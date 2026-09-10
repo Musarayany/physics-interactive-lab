@@ -154,7 +154,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
       <div class="sub">فكرة وإعداد وتصميم وتنفيذ: م.د موسى محمد مهدي</div>
     </div>
     <div class="text-center mb-8">
-      <div class="badge text-gold border-gold/40 mb-3">75 تجربة تفاعلية مصنّفة في 16 فرعًا</div>
+      <div class="badge text-gold border-gold/40 mb-3">87 تجربة تفاعلية مصنّفة في 17 فرعًا</div>
       <h1 class="text-4xl md:text-5xl font-black mb-3 leading-tight">
         جرّب، <span class="text-gold">شاهد</span>، وافهم الفيزياء
       </h1>
@@ -353,7 +353,8 @@ const CATEGORIES = {
   'ميكانيكا':          { icon:'⚙️', color:'#fbbf24', desc:'الحركة والقوى والطاقة' },
   'موجات':             { icon:'〰️', color:'#22d3ee', desc:'الموجات والصوت والاهتزاز' },
   'كهرباء':            { icon:'⚡', color:'#a3e635', desc:'التيار والجهد والمقاومة' },
-  'بصريات':            { icon:'🔦', color:'#f472b6', desc:'الضوء والانكسار والتداخل' },
+  'بصريات':            { icon:'🔦', color:'#f472b6', desc:'العدسات والحيود والاستقطاب والألياف البصرية' },
+  'الليزر':             { icon:'🔴', color:'#ef4444', desc:'الكسب والتجويف وأنماط الليزر والحزم الغاوسية' },
   'ميكانيكا الكم':     { icon:'⚛️', color:'#a78bfa', desc:'الفوتونات والدوال الموجية' },
   'الفيزياء الذرية':   { icon:'🔬', color:'#fb923c', desc:'الذرات ومستويات الطاقة' },
   'الفيزياء الجزيئية': { icon:'🧬', color:'#34d399', desc:'الروابط والاهتزاز الجزيئي' },
@@ -2126,7 +2127,7 @@ lever: {
 },
 
 laser: {
-  title:'الليزر', icon:'🔴', category:'بصريات',
+  title:'الليزر', icon:'🔴', category:'الليزر',
   desc:'الانبعاث المحفز، انقلاب التعداد، وتضخيم الضوء.',
   welcome:{title:'🔴 الليزر',steps:['الليزر يحتاج انقلاب التعداد (N₂ > N₁).','الانبعاث المحفز يضاعف الفوتونات.','مرآتان تعيدان الفوتونات للتضخيم.','الشعاع أحادي اللون ومتوازي.']},
   controls:[
@@ -3065,7 +3066,201 @@ capacitor_network_lab: {
   hints(s){const c=this.calc(s),m=s.ctrl.mode;if(m===1)return [`✓ التوالي: Q₁=Q₂=Q₃=${c.Q1.toFixed(2)} µC.`,`✓ V₁+V₂+V₃=${(c.V1+c.V2+c.V3).toFixed(3)} V = V.`,`✓ 1/Ceq=1/C₁+1/C₂+1/C₃.`];if(m===2)return [`✓ التوازي: V₁=V₂=V₃=${s.ctrl.V.toFixed(2)} V.`,`✓ Q_total=Q₁+Q₂+Q₃=${(c.Q1+c.Q2+c.Q3).toFixed(2)} µC.`,`✓ Ceq=C₁+C₂+C₃=${c.Ceq.toFixed(2)} µF.`];return [`✓ المختلط: C₂ وC₃ متوازيان، ثم مكافئهما على التوالي مع C₁.`,`✓ Q₁ = Q₂+Q₃ = ${(c.Q2+c.Q3).toFixed(2)} µC.`,`✓ V = V₁+V_parallel = ${(c.V1+c.V2).toFixed(3)} V.`];},
   equations:['Q=CV','C_p=C_1+C_2+C_3','\\dfrac1{C_s}=\\dfrac1{C_1}+\\dfrac1{C_2}+\\dfrac1{C_3}','U=\\tfrac12CV^2'],theory:'تنعكس قواعد الجمع بين المقاومات والمكثفات: المكثفات المتوازية تجمع مباشرة، أما المتسلسلة فتجمع مقلوبات سعاتها. في التوالي تكون شحنة كل مكثف متساوية مقدارًا، وفي التوازي يكون فرق الجهد نفسه على جميع المكثفات.',
   draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),m=s.ctrl.mode;label(ctx,`Ceq=${c.Ceq.toFixed(2)} µF`,W-25,30,'#fbbf24','right',14,true);label(ctx,`Q=${c.Qt.toFixed(2)} µC`,W-25,55,'#22d3ee','right',13,true);const cap=(x,y,name,C)=>{ctx.strokeStyle='#22d3ee';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x-8,y-22);ctx.lineTo(x-8,y+22);ctx.moveTo(x+8,y-22);ctx.lineTo(x+8,y+22);ctx.stroke();label(ctx,`${name}=${C}µF`,x,y-35,'#cbd5e1','center',11,true);};const y=H*.52;ctx.strokeStyle='#94a3b8';ctx.lineWidth=3;if(m===1){ctx.beginPath();ctx.moveTo(70,y);ctx.lineTo(W-60,y);ctx.stroke();[W*.35,W*.55,W*.75].forEach((x,i)=>cap(x,y,`C${i+1}`,[s.ctrl.C1,s.ctrl.C2,s.ctrl.C3][i]));}else{const xl=W*.3,xr=W*.78,ys=[H*.32,H*.52,H*.72];ctx.beginPath();ctx.moveTo(xl,H*.25);ctx.lineTo(xl,H*.79);ctx.moveTo(xr,H*.25);ctx.lineTo(xr,H*.79);ctx.stroke();if(m===2){ys.forEach((yy,i)=>{ctx.beginPath();ctx.moveTo(xl,yy);ctx.lineTo(xr,yy);ctx.stroke();cap(W*.54,yy,`C${i+1}`,[s.ctrl.C1,s.ctrl.C2,s.ctrl.C3][i]);});}else{ctx.beginPath();ctx.moveTo(70,y);ctx.lineTo(xl,y);ctx.stroke();cap(W*.2,y,'C1',s.ctrl.C1);[H*.42,H*.64].forEach((yy,i)=>{ctx.beginPath();ctx.moveTo(xl,yy);ctx.lineTo(xr,yy);ctx.stroke();cap(W*.56,yy,`C${i+2}`,[s.ctrl.C2,s.ctrl.C3][i]);});}}}
+},
+
+thin_lens_focus: {
+  title:'مختبر العدسة الرقيقة والتركيز', icon:'🔍', category:'بصريات',
+  desc:'حرّك الشاشة حتى تتكوّن صورة حقيقية حادة وتحقق من معادلة العدسة والتكبير.',
+  welcome:{title:'🔍 العدسة الرقيقة',steps:['اختر البعد البؤري f وبعد الجسم dₒ.','حرّك الشاشة حتى يطابق موضعها dᵢ النظري.','تحقق من 1/f = 1/dₒ + 1/dᵢ.','قارن اتجاه وحجم الصورة بالتكبير m = −dᵢ/dₒ.']},
+  controls:[
+    {id:'f',label:'البعد البؤري f',min:5,max:40,step:1,value:15,unit:'cm'},
+    {id:'do',label:'بعد الجسم dₒ',min:8,max:100,step:1,value:45,unit:'cm'},
+    {id:'screen',label:'موضع الشاشة dₛ',min:5,max:120,step:1,value:23,unit:'cm'},
+    {id:'ho',label:'ارتفاع الجسم hₒ',min:1,max:10,step:.5,value:5,unit:'cm'}
+  ],
+  reset(s){s.t=0;}, update(s,dt){s.t+=dt;},
+  calc(s){
+    const f=s.ctrl.f, d0=s.ctrl.do, den=d0-f;
+    if(Math.abs(den)<1e-9)return {di:Infinity,m:Infinity,real:false,err:Infinity,focused:false};
+    const di=f*d0/den, m=-di/d0, real=di>0, err=real?Math.abs(s.ctrl.screen-di):Infinity;
+    return {di,m,real,err,focused:real&&err<=1};
+  },
+  readouts(s){const c=this.calc(s);return [
+    {l:'dᵢ النظري',v:Number.isFinite(c.di)?c.di.toFixed(2):'∞',u:'cm',c:'gold'},
+    {l:'التكبير m',v:Number.isFinite(c.m)?c.m.toFixed(3):'∞',u:'',c:'cyan'},
+    {l:'نوع الصورة',v:!Number.isFinite(c.di)?'عند اللانهاية':(c.real?'حقيقية مقلوبة':'افتراضية معتدلة'),u:''},
+    {l:'خطأ موضع الشاشة',v:c.real?c.err.toFixed(2):'—',u:'cm'},
+    {l:'التركيز',v:c.focused?'✅ حاد':'غير حاد',u:''}
+  ];},
+  hints(s){const c=this.calc(s);const h=[];
+    if(!Number.isFinite(c.di)){h.push('الجسم عند البؤرة تقريبًا، لذلك تخرج الأشعة متوازية وتكون الصورة عند اللانهاية.');return h;}
+    if(!c.real){h.push('لأن dₒ < f فالصورة افتراضية؛ لا يمكن استقبالها على شاشة خلف العدسة.');}
+    else if(c.focused)h.push('✅ الشاشة عند موضع الصورة تقريبًا؛ تحقق عمليًا من معادلة العدسة.');
+    else if(c.di>120)h.push(`موضع الصورة النظري ${c.di.toFixed(2)} cm خارج مدى الشاشة الحالي؛ أبعد الجسم عن البؤرة أو خفّض f.`);
+    else h.push(`حرّك الشاشة نحو <span class="hl">${c.di.toFixed(2)} cm</span> للحصول على صورة حادة.`);
+    h.push(`m = ${c.m.toFixed(3)}؛ الإشارة السالبة تعني صورة مقلوبة.`);return h;},
+  equations:['\\frac1f=\\frac1{d_o}+\\frac1{d_i}','m=\\frac{h_i}{h_o}=-\\frac{d_i}{d_o}'],
+  theory:'تستخدم المحاكاة تقريب العدسة الرقيقة واتفاق الإشارات القياسي: f>0 لعدسة مجمعة، وdᵢ>0 للصورة الحقيقية. عندما يكون الجسم داخل البعد البؤري تصبح الصورة افتراضية ولا تُلتقط على شاشة.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cy=H*.56,lx=W*.47;ctx.strokeStyle='#f472b6';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(lx,cy,13,H*.28,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([5,5]);ctx.strokeStyle='#475569';ctx.beginPath();ctx.moveTo(25,cy);ctx.lineTo(W-25,cy);ctx.stroke();ctx.setLineDash([]);
+    const scale=Math.min((lx-70)/Math.max(30,s.ctrl.do), (W-lx-70)/Math.max(35,Math.min(120,Math.abs(Number.isFinite(c.di)?c.di:s.ctrl.screen))));
+    const ox=lx-s.ctrl.do*scale,oh=Math.min(H*.28,s.ctrl.ho*scale*2.1);arrow(ctx,ox,cy,ox,cy-oh,'#22d3ee',4,10);label(ctx,'الجسم',ox,cy+24,'#22d3ee','center',12,true);
+    const sx=Math.min(W-35,lx+s.ctrl.screen*scale);ctx.strokeStyle='#64748b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(sx,cy-H*.30);ctx.lineTo(sx,cy+H*.30);ctx.stroke();label(ctx,'الشاشة',sx,cy+H*.34,'#94a3b8','center',11,true);
+    if(Number.isFinite(c.di)){const ix=lx+c.di*scale,dyImg=Math.max(-H*.29,Math.min(H*.29,-c.m*oh)),iy=cy+dyImg;ctx.strokeStyle='#fbbf24';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(ox,cy-oh);ctx.lineTo(lx,cy-oh);ctx.lineTo(ix,iy);ctx.stroke();ctx.beginPath();ctx.moveTo(ox,cy-oh);ctx.lineTo(lx,cy);ctx.lineTo(ix,iy);ctx.stroke();if(c.real&&ix<W-15)arrow(ctx,ix,cy,ix,iy,c.focused?'#a3e635':'#fbbf24',4,10);}
+  }
+},
+
+single_slit_diffraction: {
+  title:'حيود الشق المفرد', icon:'🌊', category:'بصريات',
+  desc:'غيّر عرض الشق والطول الموجي وقِس عرض الهدب المركزي من نمط الحيود.',
+  welcome:{title:'🌊 حيود الشق المفرد',steps:['صغّر عرض الشق a ولاحظ اتساع النمط.','مواضع العتمة تحقق a sinθ = mλ.','قِس عرض الهدب المركزي بين أول حدّين أدنيين.']},
+  controls:[{id:'lam',label:'الطول الموجي λ',min:400,max:700,step:5,value:632.8,unit:'nm'},{id:'a',label:'عرض الشق a',min:5,max:100,step:1,value:30,unit:'µm'},{id:'L',label:'بعد الشاشة L',min:.3,max:3,step:.1,value:1.5,unit:'m'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const lam=s.ctrl.lam*1e-9,a=s.ctrl.a*1e-6,x=lam/a,th=Math.asin(Math.min(1,x)),w=2*s.ctrl.L*Math.tan(th);return {th,w};},
+  readouts(s){const c=this.calc(s);return [{l:'زاوية أول حد أدنى',v:rad2deg(c.th).toFixed(3),u:'°',c:'gold'},{l:'عرض الهدب المركزي',v:(c.w*1000).toFixed(2),u:'mm',c:'cyan'},{l:'نسبة λ/a',v:(s.ctrl.lam*1e-3/s.ctrl.a).toFixed(4),u:''}];},
+  hints(s){const c=this.calc(s);return [`a sinθ₁ = λ ⇒ θ₁ = <span class="hl">${rad2deg(c.th).toFixed(3)}°</span>.`,`العرض المركزي بين الحدين الأولين ≈ ${(c.w*1000).toFixed(2)} mm.`,`تقليل a أو زيادة λ يوسّع نمط الحيود.`];},
+  equations:['a\\sin\\theta_m=m\\lambda','I(\\theta)=I_0\\left(\\frac{\\sin\\beta}{\\beta}\\right)^2','\\beta=\\frac{\\pi a\\sin\\theta}{\\lambda}'],
+  theory:'لنمط فراونهوفر لشق منتظم، تقع الحدود الدنيا عند a sinθ=mλ. الرسم يستخدم دالة sinc²، والعرض المركزي محسوب هندسيًا كـ 2L tanθ₁ دون افتراض الزاوية الصغيرة.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const sx=W*.26,screen=W*.84,cy=H/2,col=wl2rgb(s.ctrl.lam);ctx.fillStyle='#334155';ctx.fillRect(sx-5,30,10,H*.38);ctx.fillRect(sx-5,H*.62,10,H*.38-30);ctx.fillStyle=col;ctx.globalAlpha=.35;ctx.beginPath();ctx.moveTo(sx,cy);ctx.lineTo(screen,35);ctx.lineTo(screen,H-35);ctx.closePath();ctx.fill();ctx.globalAlpha=1;ctx.fillStyle='#0a0e1a';ctx.fillRect(screen,20,25,H-40);const lam=s.ctrl.lam*1e-9,a=s.ctrl.a*1e-6;for(let y=25;y<H-25;y++){const theta=Math.atan2(y-cy,screen-sx),beta=Math.PI*a*Math.sin(theta)/lam,I=Math.abs(beta)<1e-9?1:Math.pow(Math.sin(beta)/beta,2);ctx.fillStyle=col;ctx.globalAlpha=Math.min(1,I);ctx.fillRect(screen,y,25,1);}ctx.globalAlpha=1;label(ctx,'شق',sx,cy-25,'#fbbf24','center',12,true);label(ctx,'نمط الحيود',screen,H-15,'#cbd5e1','center',11,true);}
+},
+
+diffraction_grating_lab: {
+  title:'محزوز الحيود والتحليل الطيفي', icon:'🌈', category:'بصريات',
+  desc:'استنتج زوايا الرتب وقدرة الفصل من عدد الخطوط وعرض الجزء المضاء.',
+  welcome:{title:'🌈 محزوز الحيود',steps:['غيّر عدد الخطوط لكل مليمتر.','اختر رتبة الحيود m.','تحقق من d sinθ=mλ.','راقب زيادة قدرة الفصل R=mN عند إضاءة خطوط أكثر.']},
+  controls:[{id:'lines',label:'كثافة الخطوط',min:100,max:1800,step:50,value:600,unit:'خط/mm'},{id:'lam',label:'λ',min:400,max:700,step:5,value:589,unit:'nm'},{id:'m',label:'الرتبة m',min:1,max:6,step:1,value:1,unit:''},{id:'width',label:'العرض المضاء',min:1,max:20,step:1,value:10,unit:'mm'}],
+  reset(s){},update(s,dt){},
+  calc(s){const d=1/(s.ctrl.lines*1e3),lam=s.ctrl.lam*1e-9,ratio=s.ctrl.m*lam/d,valid=ratio<=1,maxm=Math.floor(d/lam),theta=valid?Math.asin(ratio):NaN,N=s.ctrl.lines*s.ctrl.width,R=valid?s.ctrl.m*N:NaN;return {d,ratio,valid,maxm,theta,N,R};},
+  readouts(s){const c=this.calc(s);return [{l:'المسافة d',v:(c.d*1e6).toFixed(3),u:'µm'},{l:'أقصى رتبة ممكنة',v:String(c.maxm),u:'',c:'gold'},{l:'زاوية الرتبة',v:c.valid?rad2deg(c.theta).toFixed(2):'غير ممكنة',u:c.valid?'°':''},{l:'عدد الخطوط المضيئة N',v:Math.round(c.N),u:''},{l:'قدرة الفصل mN',v:c.valid?Math.round(c.R):'—',u:'',c:'cyan'}];},
+  hints(s){const c=this.calc(s);if(!c.valid)return [`❌ الرتبة m=${s.ctrl.m} غير موجودة لأن mλ>d. أقصى رتبة هنا ${c.maxm}.`];return [`θ_m = <span class="hl">${rad2deg(c.theta).toFixed(2)}°</span>.`,`قدرة الفصل النظرية R=mN≈${Math.round(c.R)}.`,`زيادة عدد الخطوط المضيئة تجعل القمم أضيق وأكثر قدرة على فصل أطوال موجية متقاربة.`];},
+  equations:['d\\sin\\theta=m\\lambda','d=\\frac{1}{\\text{عدد الخطوط/الطول}}','\\mathcal R=\\frac{\\lambda}{\\Delta\\lambda}=mN'],
+  theory:'يظهر التداخل البنّاء للمحزوز عند d sinθ=mλ. في محزوز مثالي مضاء بانتظام تكون القدرة النظرية على الفصل R=mN، حيث N عدد الخطوط المضيئة.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),gx=W*.32,cy=H/2;ctx.strokeStyle='#94a3b8';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(gx,60);ctx.lineTo(gx,H-60);ctx.stroke();for(let i=0;i<18;i++){ctx.strokeStyle='rgba(244,114,182,.5)';ctx.beginPath();ctx.moveTo(gx-8,75+i*(H-150)/17);ctx.lineTo(gx+8,75+i*(H-150)/17);ctx.stroke();}ctx.strokeStyle=wl2rgb(s.ctrl.lam);ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(35,cy);ctx.lineTo(gx,cy);ctx.stroke();if(c.valid){for(const sign of [-1,1]){const len=Math.min(W*.52,360),ex=gx+len*Math.cos(c.theta),ey=cy+sign*len*Math.sin(c.theta);ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(ex,ey);ctx.stroke();}label(ctx,`±${rad2deg(c.theta).toFixed(1)}°`,W*.72,cy-18,'#fbbf24','center',13,true);}else label(ctx,'الرتبة المختارة غير مسموحة',W*.68,cy,'#ef4444','center',13,true);}
+},
+
+malus_polarization: {
+  title:'قانون مالوس والاستقطاب', icon:'🕶️', category:'بصريات',
+  desc:'دوّر المحلل وقِس شدة الضوء المستقطب للتحقق من I=I₀cos²θ.',
+  welcome:{title:'🕶️ قانون مالوس',steps:['اعتبر الضوء الداخل مستقطبًا خطيًا.','دوّر محور المحلل بزاوية θ.','قارن الشدة المقاسة مع cos²θ.','عند 90° تصبح الشدة المثالية صفرًا.']},
+  controls:[{id:'I0',label:'الشدة قبل المحلل I₀',min:1,max:100,step:1,value:50,unit:'mW/cm²'},{id:'theta',label:'زاوية المحلل θ',min:0,max:180,step:1,value:45,unit:'°'}],
+  reset(s){},update(s,dt){},
+  calc(s){const th=deg2rad(s.ctrl.theta),T=Math.cos(th)**2;return {T,I:s.ctrl.I0*T};},
+  readouts(s){const c=this.calc(s);return [{l:'cos²θ',v:c.T.toFixed(4),u:''},{l:'الشدة النافذة',v:c.I.toFixed(3),u:'mW/cm²',c:'gold'},{l:'النفاذية',v:(100*c.T).toFixed(1),u:'%',c:'cyan'}];},
+  hints(s){const c=this.calc(s);return [`I = I₀ cos²θ = <span class="hl">${c.I.toFixed(3)} mW/cm²</span>.`,Math.abs(Math.cos(deg2rad(s.ctrl.theta)))<.03?'✅ المحلل متعامد تقريبًا مع الاستقطاب: إخماد شبه كامل.':'جرّب 0° و45° و90° وقارن النسب 1 و1/2 و0.'];},
+  equations:['I=I_0\\cos^2\\theta'],theory:'قانون مالوس يصف مرور ضوء مستقطب خطيًا خلال محلل مثالي. إذا كان الضوء قبل أول مرشح غير مستقطب فإن المرشح الأول يخفض شدته إلى النصف في الحالة المثالية، ثم يطبق قانون مالوس على المحلل التالي.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cy=H/2,x1=W*.25,x2=W*.58,r=Math.min(75,H*.25);ctx.strokeStyle='#22d3ee';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(35,cy);ctx.lineTo(x1-r,cy);ctx.stroke();ctx.strokeStyle='#fbbf24';ctx.lineWidth=5;ctx.beginPath();ctx.arc(x1,cy,r,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(x1,cy-r*.8);ctx.lineTo(x1,cy+r*.8);ctx.stroke();ctx.strokeStyle='#f472b6';ctx.beginPath();ctx.arc(x2,cy,r,0,Math.PI*2);ctx.stroke();const th=deg2rad(s.ctrl.theta);ctx.beginPath();ctx.moveTo(x2-r*.8*Math.sin(th),cy-r*.8*Math.cos(th));ctx.lineTo(x2+r*.8*Math.sin(th),cy+r*.8*Math.cos(th));ctx.stroke();const c=this.calc(s),bar=W*.22*c.T;ctx.fillStyle='rgba(244,114,182,.2)';ctx.fillRect(x2+r+20,cy-25,W*.24,50);ctx.fillStyle='#f472b6';ctx.fillRect(x2+r+20,cy-25,bar,50);label(ctx,`${(c.T*100).toFixed(0)}%`,x2+r+25+W*.12,cy,'#fff','center',13,true);}
+},
+
+brewster_angle_lab: {
+  title:'زاوية بروستر واستقطاب الانعكاس', icon:'💠', category:'بصريات',
+  desc:'غيّر زاوية السقوط حتى تختفي مركبة p من الضوء المنعكس تقريبًا.',
+  welcome:{title:'💠 زاوية بروستر',steps:['اختر معاملي الانكسار n₁ وn₂.','حرّك زاوية السقوط نحو θB.','راقب انعكاسية الاستقطاب p.','عند θB يكون الشعاع المنعكس والمنكسر متعامدين.']},
+  controls:[{id:'n1',label:'n₁',min:1,max:1.8,step:.01,value:1,unit:''},{id:'n2',label:'n₂',min:1,max:2.2,step:.01,value:1.5,unit:''},{id:'theta',label:'زاوية السقوط',min:0,max:85,step:.5,value:56.5,unit:'°'}],
+  reset(s){},update(s,dt){},
+  calc(s){const n1=s.ctrl.n1,n2=s.ctrl.n2,ti=deg2rad(s.ctrl.theta),tb=Math.atan2(n2,n1),st=n1*Math.sin(ti)/n2;if(Math.abs(st)>1)return {tb,tir:true,Rp:1,tt:NaN};const tt=Math.asin(st),num=n2*Math.cos(ti)-n1*Math.cos(tt),den=n2*Math.cos(ti)+n1*Math.cos(tt),Rp=(num/den)**2;return {tb,tir:false,Rp,tt};},
+  readouts(s){const c=this.calc(s);return [{l:'θB',v:rad2deg(c.tb).toFixed(2),u:'°',c:'gold'},{l:'Rₚ',v:(100*c.Rp).toFixed(4),u:'%',c:'cyan'},{l:'زاوية الانكسار',v:c.tir?'—':rad2deg(c.tt).toFixed(2),u:'°'},{l:'θr+θt',v:c.tir?'—':(s.ctrl.theta+rad2deg(c.tt)).toFixed(2),u:'°'}];},
+  hints(s){const c=this.calc(s);if(c.tir)return ['حدث انعكاس كلي؛ لا تنطبق حالة بروستر المنكسرة هنا.'];const near=Math.abs(s.ctrl.theta-rad2deg(c.tb))<.6;return [near?'✅ وصلت تقريبًا إلى زاوية بروستر؛ Rₚ تقترب من الصفر.':`حرّك θ نحو <span class="hl">${rad2deg(c.tb).toFixed(2)}°</span>.`,`عند بروستر: θᵢ+θₜ≈90°.`];},
+  equations:['\\tan\\theta_B=\\frac{n_2}{n_1}','R_p=\\left|\\frac{n_2\\cos\\theta_i-n_1\\cos\\theta_t}{n_2\\cos\\theta_i+n_1\\cos\\theta_t}\\right|^2'],
+  theory:'عند زاوية بروستر تنعدم انعكاسية المركبة p لسطح عازل مثالي غير ماص. تستخدم المحاكاة قانون سنيل ومعامل فرينل للاستقطاب p، لذلك يمكن رؤية الاقتراب الكمي من الصفر بدل إظهار الشرط فقط.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cx=W/2,cy=H*.58;ctx.strokeStyle='#64748b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(30,cy);ctx.lineTo(W-30,cy);ctx.stroke();ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(cx,35);ctx.lineTo(cx,H-25);ctx.stroke();ctx.setLineDash([]);const ti=deg2rad(s.ctrl.theta),len=Math.min(W,H)*.38;ctx.strokeStyle='#22d3ee';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(cx-len*Math.sin(ti),cy-len*Math.cos(ti));ctx.lineTo(cx,cy);ctx.stroke();ctx.strokeStyle=`rgba(244,114,182,${.12+.88*Math.sqrt(c.Rp)})`;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+len*Math.sin(ti),cy-len*Math.cos(ti));ctx.stroke();if(!c.tir){ctx.strokeStyle='#fbbf24';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+len*Math.sin(c.tt),cy+len*Math.cos(c.tt));ctx.stroke();}}
+},
+
+fiber_optics_lab: {
+  title:'الألياف البصرية والفتحة العددية', icon:'🧵', category:'بصريات',
+  desc:'اختبر زاوية القبول والانعكاس الكلي وعدد الأنماط التقريبي في ليف خطوة-معامل.',
+  welcome:{title:'🧵 الليف البصري',steps:['اجعل n_core أكبر من n_clad.','غيّر زاوية إدخال الشعاع.','تحقق من NA وزاوية القبول.','راقب قيمة V وحدّ النمط الأحادي V<2.405.']},
+  controls:[{id:'nc',label:'معامل القلب n_core',min:1.40,max:1.60,step:.005,value:1.48,unit:''},{id:'ncl',label:'معامل الغلاف n_clad',min:1.35,max:1.59,step:.005,value:1.46,unit:''},{id:'theta',label:'زاوية الإدخال في الهواء',min:0,max:30,step:.5,value:8,unit:'°'},{id:'a',label:'نصف قطر القلب a',min:2,max:25,step:.5,value:4.5,unit:'µm'},{id:'lam',label:'λ',min:400,max:1600,step:10,value:850,unit:'nm'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const ok=s.ctrl.nc>s.ctrl.ncl,NA=ok?Math.sqrt(s.ctrl.nc**2-s.ctrl.ncl**2):0,acc=ok?Math.asin(Math.min(1,NA)):NaN,crit=ok?Math.asin(s.ctrl.ncl/s.ctrl.nc):NaN,V=ok?2*Math.PI*(s.ctrl.a*1e-6)/(s.ctrl.lam*1e-9)*NA:NaN,guided=ok&&deg2rad(s.ctrl.theta)<=acc,sm=ok&&V<2.405;return {ok,NA,acc,crit,V,guided,sm,modes:ok?(V>2.405?V*V/2:1):NaN};},
+  readouts(s){const c=this.calc(s);return [{l:'NA',v:c.ok?c.NA.toFixed(4):'—',u:'',c:'gold'},{l:'زاوية القبول',v:c.ok?rad2deg(c.acc).toFixed(2):'—',u:'°'},{l:'الزاوية الحرجة داخل القلب',v:c.ok?rad2deg(c.crit).toFixed(2):'—',u:'°'},{l:'V-number',v:c.ok?c.V.toFixed(3):'—',u:'',c:'cyan'},{l:'التوجيه',v:c.guided?'✅ موجّه':'❌ غير موجّه',u:''},{l:'نمط أحادي؟',v:c.ok?(c.sm?'نعم تقريبًا':'متعدد الأنماط'):'—',u:''}];},
+  hints(s){const c=this.calc(s);if(!c.ok)return ['❌ يجب أن يكون n_core > n_clad كي يعمل الليف بتوجيه الانعكاس الكلي.'];return [c.guided?'✅ زاوية الإدخال داخل مخروط القبول.':`زاوية الإدخال أكبر من θₐ=${rad2deg(c.acc).toFixed(2)}°؛ جزء كبير من الضوء لن يُوجَّه.`,c.sm?'V<2.405: شرط النمط الأحادي في ليف step-index مثالي.':`V>2.405: الليف متعدد الأنماط؛ العدد التقريبي للأنماط ≈ ${c.modes.toFixed(0)} عندما تكون V كبيرة.`];},
+  equations:['NA=\\sqrt{n_{core}^2-n_{clad}^2}','n_0\\sin\\theta_a=NA','V=\\frac{2\\pi a}{\\lambda}NA'],
+  theory:'لليف خطوة-معامل في الهواء، NA≈√(n_core²−n_clad²) وزاوية القبول تحقق sinθa=NA. معيار القطع للنمط الأحادي هو V<2.405. التقريب M≈V²/2 مناسب للألياف متعددة الأنماط ذات V كبيرة ولا يستخدم للعد الدقيق قرب القطع.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),x0=W*.24,x1=W*.93,cy=H/2,h=H*.28;ctx.fillStyle='rgba(96,165,250,.12)';ctx.fillRect(x0,cy-h,x1-x0,2*h);ctx.fillStyle='rgba(34,211,238,.12)';ctx.fillRect(x0,cy-h*.55,x1-x0,1.1*h);const ti=deg2rad(s.ctrl.theta),startX=35,startY=cy-Math.tan(ti)*(x0-startX);ctx.strokeStyle=c.guided?'#a3e635':'#ef4444';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(startX,startY);ctx.lineTo(x0,cy);if(c.guided){let x=x0,y=cy,dir=1;for(let k=0;k<7;k++){x+= (x1-x0)/7;y=cy+dir*h*.48;ctx.lineTo(x,y);dir*=-1;}}else ctx.lineTo(x1,cy+Math.tan(ti)*(x1-x0));ctx.stroke();label(ctx,c.guided?'توجيه بالانعكاس الكلي':'خارج مخروط القبول',W*.62,45,c.guided?'#a3e635':'#ef4444','center',13,true);}
+},
+
+newtons_rings: {
+  title:'حلقات نيوتن', icon:'⭕', category:'بصريات',
+  desc:'قِس أقطار الحلقات المظلمة واستنتج الطول الموجي أو نصف قطر تكور العدسة.',
+  welcome:{title:'⭕ حلقات نيوتن',steps:['ضع عدسة محدبة على لوح زجاجي فتتكوّن طبقة هواء رقيقة.','اختر رتبة الحلقة المظلمة m.','تحقق من rₘ²=mλR في الضوء المنعكس.','قارن مربعات أنصاف الأقطار للرتب المتتالية.']},
+  controls:[{id:'lam',label:'λ',min:400,max:700,step:5,value:589,unit:'nm'},{id:'R',label:'نصف قطر تكور العدسة R',min:.2,max:3,step:.1,value:1,unit:'m'},{id:'m',label:'رتبة الحلقة المظلمة m',min:1,max:20,step:1,value:5,unit:''}],
+  reset(s){},update(s,dt){},
+  calc(s){const r=Math.sqrt(s.ctrl.m*s.ctrl.lam*1e-9*s.ctrl.R);return {r,D:2*r};},
+  readouts(s){const c=this.calc(s);return [{l:'rₘ',v:(c.r*1000).toFixed(3),u:'mm',c:'gold'},{l:'Dₘ',v:(c.D*1000).toFixed(3),u:'mm',c:'cyan'},{l:'rₘ²',v:(c.r*c.r*1e6).toFixed(4),u:'mm²'}];},
+  hints(s){const c=this.calc(s);return [`للحلقة المظلمة m=${s.ctrl.m}: rₘ=<span class="hl">${(c.r*1000).toFixed(3)} mm</span>.`,`إذا رسمت rₘ² مقابل m تحصل على خط مستقيم ميله λR.`];},
+  equations:['r_m^2=m\\lambda R','D_m^2=4m\\lambda R'],theory:'في حلقات نيوتن المنعكسة لطبقة هواء رقيقة توجد قفزة طور عند أحد الانعكاسين، لذلك تكون نقطة التلامس مظلمة ويعطي التقريب الهندسي rₘ²=mλR للحلقات المظلمة عند السقوط شبه العمودي.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2,maxR=Math.min(W,H)*.38;for(let k=0;k<=20;k++){const rr=maxR*Math.sqrt(k/20);ctx.strokeStyle=k===s.ctrl.m?'#fbbf24':`rgba(244,114,182,${.18+.5*(1-k/22)})`;ctx.lineWidth=k===s.ctrl.m?4:1.5;ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.stroke();}label(ctx,`m=${s.ctrl.m}`,cx,cy,'#fbbf24','center',14,true);}
+},
+
+laser_threshold_lab: {
+  title:'عتبة الليزر والكسب داخل التجويف', icon:'📈', category:'الليزر',
+  desc:'وازن كسب الوسط الفعال مع خسائر المرايا والخسائر الداخلية لتحديد بدء التذبذب الليزري.',
+  welcome:{title:'📈 عتبة الليزر',steps:['غيّر الكسب g وطول التجويف L.','غيّر انعكاسيتي المرآتين R₁ وR₂.','احسب الكسب الحرج g_th.','عندما يصبح كسب الرحلة الكاملة ≥1 يبدأ شرط التذبذب.']},
+  controls:[{id:'L',label:'طول الوسط الفعال L',min:5,max:100,step:1,value:30,unit:'cm'},{id:'R1',label:'انعكاسية R₁',min:80,max:99.9,step:.1,value:99,unit:'%'},{id:'R2',label:'انعكاسية R₂',min:50,max:99.5,step:.1,value:95,unit:'%'},{id:'alpha',label:'الخسارة الداخلية αᵢ',min:0,max:5,step:.1,value:.5,unit:'m⁻¹'},{id:'g',label:'الكسب g',min:0,max:10,step:.1,value:1,unit:'m⁻¹'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const L=s.ctrl.L/100,R1=s.ctrl.R1/100,R2=s.ctrl.R2/100,gth=s.ctrl.alpha+Math.log(1/(R1*R2))/(2*L),Grt=R1*R2*Math.exp(2*(s.ctrl.g-s.ctrl.alpha)*L);return {gth,Grt,on:Grt>=1};},
+  readouts(s){const c=this.calc(s);return [{l:'g_th',v:c.gth.toFixed(4),u:'m⁻¹',c:'gold'},{l:'كسب الرحلة الكاملة',v:c.Grt.toFixed(4),u:''},{l:'الحالة',v:c.on?'✅ فوق العتبة':'تحت العتبة',u:'',c:'cyan'}];},
+  hints(s){const c=this.calc(s);return [c.on?'✅ الكسب يعوض الخسائر في رحلة كاملة؛ شرط بدء الليزر متحقق.':`زد g إلى نحو <span class="hl">${c.gth.toFixed(3)} m⁻¹</span> أو خفّض الخسائر.`,`رفع R₁ وR₂ يخفض عتبة الكسب، لكن المرآة الخارجة يجب أن تسمح ببعض النفاذ للحصول على قدرة خرج.`];},
+  equations:['R_1R_2e^{2(g-\\alpha_i)L}=1','g_{th}=\\alpha_i+\\frac{1}{2L}\\ln\\frac{1}{R_1R_2}'],
+  theory:'يُعامل R₁ وR₂ هنا كـانعكاسيات قدرة. شرط العتبة ينتج من مساواة تضخيم الرحلة الكاملة مع الخسائر. فوق العتبة لا يعني أن القدرة تنمو بلا حد؛ في الليزر الحقيقي يحدث تشبع للكسب وتثبت القدرة.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),y=H/2,x1=W*.18,x2=W*.82;ctx.fillStyle='#22d3ee';ctx.fillRect(x1-6,y-100,12,200);ctx.fillStyle='#fbbf24';ctx.fillRect(x2-6,y-100,12,200);ctx.strokeStyle=c.on?'#ef4444':'#64748b';ctx.lineWidth=6;ctx.shadowColor=c.on?'#ef4444':'transparent';ctx.shadowBlur=c.on?18:0;ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();ctx.shadowBlur=0;label(ctx,c.on?'LASING':'تحت العتبة',W/2,y-45,c.on?'#ef4444':'#94a3b8','center',18,true);label(ctx,`G_rt=${c.Grt.toFixed(3)}`,W/2,y+50,'#cbd5e1','center',13,true);}
+},
+
+gaussian_beam_lab: {
+  title:'انتشار الحزمة الغاوسية', icon:'🔴', category:'الليزر',
+  desc:'استكشف خصر الحزمة ومدى رايلي وزاوية التباعد المحدودة بالحيود.',
+  welcome:{title:'🔴 الحزمة الغاوسية',steps:['غيّر خصر الحزمة w₀ والطول الموجي.','تحرك لمسافة z عن الخصر.','راقب w(z) ومدى رايلي zR.','لاحظ أن تصغير w₀ يزيد التباعد.']},
+  controls:[{id:'lam',label:'λ',min:400,max:1600,step:10,value:632.8,unit:'nm'},{id:'w0',label:'نصف قطر الخصر w₀',min:20,max:1000,step:10,value:200,unit:'µm'},{id:'z',label:'المسافة z عن الخصر',min:0,max:200,step:2,value:50,unit:'cm'}],
+  reset(s){},update(s,dt){},
+  calc(s){const lam=s.ctrl.lam*1e-9,w0=s.ctrl.w0*1e-6,z=s.ctrl.z/100,zR=Math.PI*w0*w0/lam,w=w0*Math.sqrt(1+(z/zR)**2),theta=lam/(Math.PI*w0);return {zR,w,theta};},
+  readouts(s){const c=this.calc(s);return [{l:'مدى رايلي zR',v:(c.zR*100).toFixed(2),u:'cm',c:'gold'},{l:'w(z)',v:(c.w*1e6).toFixed(2),u:'µm',c:'cyan'},{l:'نصف زاوية التباعد',v:(c.theta*1e3).toFixed(3),u:'mrad'}];},
+  hints(s){const c=this.calc(s);return [`عند z=zR يصبح w=√2 w₀. zR هنا ${(c.zR*100).toFixed(2)} cm.`,`التباعد البعيد θ≈λ/(πw₀)= ${(c.theta*1e3).toFixed(3)} mrad.`,`زيادة قطر الحزمة عند الخصر تقلل تباعدها بعيدًا.`];},
+  equations:['z_R=\\frac{\\pi w_0^2}{\\lambda}','w(z)=w_0\\sqrt{1+\\left(\\frac{z}{z_R}\\right)^2}','\\theta\\approx\\frac{\\lambda}{\\pi w_0}'],
+  theory:'هذه معادلات حزمة Gaussian مثالية من النمط TEM00 مع M²=1، حيث w هو نصف القطر عند شدة 1/e². الحزم الحقيقية ذات M²>1 تتباعد أكثر من الحد المثالي.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const lam=s.ctrl.lam*1e-9,w0=s.ctrl.w0*1e-6,zR=Math.PI*w0*w0/lam,cx=W*.18,cy=H/2,maxZ=s.ctrl.z/100||.1;ctx.fillStyle='rgba(239,68,68,.16)';ctx.beginPath();ctx.moveTo(cx,cy);for(let i=0;i<=100;i++){const z=maxZ*i/100,w=w0*Math.sqrt(1+(z/zR)**2),py=cy-Math.min(H*.36,20+w/w0*18),px=cx+(W*.72)*i/100;ctx.lineTo(px,py);}for(let i=100;i>=0;i--){const z=maxZ*i/100,w=w0*Math.sqrt(1+(z/zR)**2),py=cy+Math.min(H*.36,20+w/w0*18),px=cx+(W*.72)*i/100;ctx.lineTo(px,py);}ctx.closePath();ctx.fill();ctx.strokeStyle='#ef4444';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(W*.92,cy);ctx.stroke();label(ctx,'w₀',cx,cy-35,'#fbbf24','center',12,true);}
+},
+
+laser_longitudinal_modes: {
+  title:'الأنماط الطولية وفاصل التردد FSR', icon:'🎼', category:'الليزر',
+  desc:'احسب رتب الرنين والمسافة الترددية بين الأنماط داخل تجويف واقف.',
+  welcome:{title:'🎼 الأنماط الطولية',steps:['غيّر طول التجويف L ومعامل الانكسار.','احسب FSR بين نمطين متجاورين.','قارن عرض نطاق الكسب بعدد الأنماط التي يمكن أن تقع داخله.']},
+  controls:[{id:'L',label:'طول التجويف L',min:1,max:100,step:1,value:30,unit:'cm'},{id:'n',label:'معامل الانكسار n≈n_g',min:1,max:2,step:.01,value:1,unit:''},{id:'lam',label:'λ المركزي',min:400,max:1600,step:10,value:632.8,unit:'nm'},{id:'bw',label:'عرض نطاق الكسب',min:.1,max:20,step:.1,value:2,unit:'GHz'}],
+  reset(s){},update(s,dt){},
+  calc(s){const L=s.ctrl.L/100,n=s.ctrl.n,fsr=CONST.c/(2*n*L),q=2*n*L/(s.ctrl.lam*1e-9),modes=Math.max(1,Math.floor(s.ctrl.bw*1e9/fsr)+1);return {fsr,q,modes,nu:CONST.c/(s.ctrl.lam*1e-9)};},
+  readouts(s){const c=this.calc(s);return [{l:'FSR',v:(c.fsr/1e6).toFixed(3),u:'MHz',c:'gold'},{l:'رتبة q قرب λ',v:Math.round(c.q),u:''},{l:'التردد المركزي',v:(c.nu/1e12).toFixed(3),u:'THz'},{l:'أنماط ضمن نطاق الكسب',v:c.modes,u:'تقريبًا',c:'cyan'}];},
+  hints(s){const c=this.calc(s);return [`Δν≈c/(2n_gL)=<span class="hl">${(c.fsr/1e6).toFixed(3)} MHz</span>.`,`زيادة L تقلل FSR فتسمح عادةً بمزيد من الأنماط داخل نطاق كسب ثابت.`,`عدد الأنماط المعروض تقدير هندسي؛ الانبعاث الفعلي يعتمد أيضًا على منحنى الكسب والخسائر وتنافس الأنماط.`];},
+  equations:['2nL=q\\lambda_q','\\Delta\\nu_{FSR}=\\frac{c}{2n_gL}'],
+  theory:'في تجويف موجة واقفة، الرنين يتحقق عندما يحتوي طول الرحلة الكاملة على عدد صحيح من الأطوال الموجية. في وسط مشتت يحدد معامل المجموعة n_g فاصل التردد؛ تستخدم المحاكاة n≈n_g للتعليم.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),left=55,right=W-45,cy=H*.58;ctx.strokeStyle='#64748b';ctx.beginPath();ctx.moveTo(left,cy);ctx.lineTo(right,cy);ctx.stroke();const n=Math.min(15,c.modes);for(let i=0;i<n;i++){const x=left+(i+.5)*(right-left)/n,h=60+90*Math.exp(-Math.pow((i-(n-1)/2)/(n/4||1),2));ctx.strokeStyle='#ef4444';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,cy);ctx.lineTo(x,cy-h);ctx.stroke();}label(ctx,`FSR ${(c.fsr/1e6).toFixed(1)} MHz`,W/2,35,'#fbbf24','center',14,true);}
+},
+
+laser_cavity_stability: {
+  title:'استقرار التجويف الليزري', icon:'🪞', category:'الليزر',
+  desc:'اختبر شرط الاستقرار الهندسي لتجويف مكوّن من مرآتين كرويتين.',
+  welcome:{title:'🪞 استقرار التجويف',steps:['غيّر L ونصفي تكور المرآتين R₁,R₂.','احسب g₁ وg₂.','التجويف مستقر عندما 0<g₁g₂<1.','اقترب من الحدود ولاحظ الحساسية المتزايدة.']},
+  controls:[{id:'L',label:'طول التجويف L',min:10,max:150,step:2,value:50,unit:'cm'},{id:'R1',label:'نصف قطر المرآة R₁',min:20,max:300,step:5,value:100,unit:'cm'},{id:'R2',label:'نصف قطر المرآة R₂',min:20,max:300,step:5,value:100,unit:'cm'}],
+  reset(s){},update(s,dt){},
+  calc(s){const g1=1-s.ctrl.L/s.ctrl.R1,g2=1-s.ctrl.L/s.ctrl.R2,p=g1*g2,stable=p>0&&p<1,marg=Math.abs(p)<1e-9||Math.abs(p-1)<1e-9;return {g1,g2,p,stable,marg};},
+  readouts(s){const c=this.calc(s);return [{l:'g₁',v:c.g1.toFixed(3),u:''},{l:'g₂',v:c.g2.toFixed(3),u:''},{l:'g₁g₂',v:c.p.toFixed(3),u:'',c:'gold'},{l:'الحالة',v:c.stable?'✅ مستقر':(c.marg?'حدّي':'❌ غير مستقر'),u:'',c:'cyan'}];},
+  hints(s){const c=this.calc(s);return [c.stable?'✅ 0<g₁g₂<1، لذا توجد أنماط محصورة مستقرة في التقريب المحوري.':'خارج مجال الاستقرار؛ الحزمة لا تعيد إنتاج نفسها بصورة محصورة بعد الرحلات المتكررة.',`g₁=1−L/R₁=${c.g1.toFixed(3)}، g₂=${c.g2.toFixed(3)}.`];},
+  equations:['g_i=1-\\frac{L}{R_i}','0<g_1g_2<1\\quad\\text{(stable)}'],
+  theory:'شرط g₁g₂ هو معيار الاستقرار في تقريب الأشعة شبه المحورية لتجويف مرآتين. النقاط 0 أو 1 حالات حدّية شديدة الحساسية وليست مستقرة عمليًا تحت الاضطرابات والفتحات المحدودة.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),x1=W*.2,x2=W*.8,cy=H/2;ctx.strokeStyle='#22d3ee';ctx.lineWidth=5;ctx.beginPath();ctx.arc(x1-60,cy,70,-.75,.75);ctx.stroke();ctx.strokeStyle='#fbbf24';ctx.beginPath();ctx.arc(x2+60,cy,70,Math.PI-.75,Math.PI+.75);ctx.stroke();ctx.strokeStyle=c.stable?'#ef4444':'#64748b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x1,cy-22);ctx.quadraticCurveTo(W/2,cy-(c.stable?55:110),x2,cy-22);ctx.moveTo(x1,cy+22);ctx.quadraticCurveTo(W/2,cy+(c.stable?55:110),x2,cy+22);ctx.stroke();label(ctx,c.stable?'تجويف مستقر':'غير مستقر',W/2,40,c.stable?'#a3e635':'#ef4444','center',15,true);}
+},
+
+fabry_perot_laser: {
+  title:'مقياس فابري–بيرو بالليزر', icon:'🟥', category:'الليزر',
+  desc:'راقب قمم النفاذ الدورية وحساسية التجويف لتغير طوله الصغير جدًا.',
+  welcome:{title:'🟥 فابري–بيرو',steps:['غيّر انعكاسية المرآتين المتساويتين.','حرّك إحدى المرآتين بمقدار نانومتري ΔL.','راقب انتقال النفاذ بين القمة والقاع.','قارن FSR والفينِس Finesse.']},
+  controls:[{id:'L',label:'طول التجويف L',min:1,max:50,step:1,value:10,unit:'cm'},{id:'R',label:'انعكاسية المرآتين R',min:50,max:99.5,step:.1,value:90,unit:'%'},{id:'lam',label:'λ',min:400,max:1600,step:10,value:632.8,unit:'nm'},{id:'dL',label:'إزاحة المرآة ΔL',min:0,max:1000,step:5,value:0,unit:'nm'}],
+  reset(s){},update(s,dt){},
+  calc(s){const R=s.ctrl.R/100,F=4*R/(1-R)**2,phase=4*Math.PI*(s.ctrl.dL/s.ctrl.lam),T=1/(1+F*Math.sin(phase/2)**2),finesse=Math.PI*Math.sqrt(R)/(1-R),fsr=CONST.c/(2*(s.ctrl.L/100));return {F,phase,T,finesse,fsr};},
+  readouts(s){const c=this.calc(s);return [{l:'النفاذ T',v:c.T.toFixed(5),u:'',c:'gold'},{l:'Finesse ≈',v:c.finesse.toFixed(2),u:'',c:'cyan'},{l:'FSR',v:(c.fsr/1e9).toFixed(3),u:'GHz'},{l:'دورية ΔL',v:(s.ctrl.lam/2).toFixed(1),u:'nm'}];},
+  hints(s){const c=this.calc(s);return [`T=<span class="hl">${c.T.toFixed(4)}</span>. يعود النفاذ إلى القمة كلما تغيّر L بمقدار λ/2 في الهواء.`,`زيادة R تجعل القمم أضيق وترفع الفينِس، لكنها تزيد زمن التخزين داخل التجويف.`,`صيغة الفينِس هنا تقريب المرآتين المتساويتين عديمتي الخسارة.`];},
+  equations:['T=\\frac{1}{1+F\\sin^2(\\delta/2)}','F=\\frac{4R}{(1-R)^2}','\\delta=\\frac{4\\pi\\Delta L}{\\lambda}','\\mathcal F\\approx\\frac{\\pi\\sqrt R}{1-R}'],
+  theory:'تعتمد دالة Airy لتجويف فابري–بيرو المتماثل عديم الخسارة على فرق طور الرحلة الكاملة. تحريك المرآة بمقدار λ/2 يعيد شرط الرنين. الفينِس المعروض هو التقريب الشائع للمرايا عالية الانعكاس نسبيًا.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),x1=W*.25,x2=W*.75,cy=H*.42;ctx.fillStyle='#22d3ee';ctx.fillRect(x1-5,cy-75,10,150);ctx.fillStyle='#fbbf24';ctx.fillRect(x2-5,cy-75,10,150);ctx.strokeStyle='#ef4444';ctx.lineWidth=4;ctx.globalAlpha=.25+.75*c.T;ctx.beginPath();ctx.moveTo(35,cy);ctx.lineTo(W-35,cy);ctx.stroke();ctx.globalAlpha=1;const y0=H*.78,w=W*.78,left=W*.11;ctx.strokeStyle='#64748b';ctx.beginPath();ctx.moveTo(left,y0);ctx.lineTo(left+w,y0);ctx.stroke();ctx.strokeStyle='#f472b6';ctx.beginPath();for(let i=0;i<=220;i++){const ph=4*Math.PI*i/220,F=c.F,T=1/(1+F*Math.sin(ph/2)**2),x=left+w*i/220,y=y0-T*H*.22;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();label(ctx,`T=${c.T.toFixed(3)}`,W/2,35,'#fbbf24','center',14,true);}
 }
+
 
 };
 
@@ -3581,7 +3776,7 @@ window.addEventListener('load',()=>{
         <h1 class="text-xl font-bold mb-2 text-slate-300">أهلًا وسهلًا بك في</h1>
         <h2 class="text-3xl md:text-4xl font-black mb-4 text-gold leading-tight">مختبر الفيزياء التفاعلي</h2>
         <p class="text-slate-400 text-sm mb-6 leading-relaxed">
-          منصة تعليمية تضم <b class="text-cyan">75 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">16 فرعًا فيزيائيًا</b>:
+          منصة تعليمية تضم <b class="text-cyan">87 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">17 فرعًا فيزيائيًا</b>:
           الميكانيكا، الكهرباء، البصريات، الموجات، ميكانيكا الكم، الفيزياء الذرية والجزيئية،
           فيزياء الصلبة، النانوتكنولوجي، الأطياف، النماذج النووية، الفيزياء النووية،
           الإلكترونيات التماثلية، الإلكترونيات الرقمية، الموائع والحرارة، والنسبية.
@@ -3597,7 +3792,7 @@ window.addEventListener('load',()=>{
   `;
   document.getElementById('welcome-start').onclick=()=>{
     overlay.innerHTML='';
-    toast('استمتع بـ <b>75 تجربة</b> في <b>16 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
+    toast('استمتع بـ <b>87 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
   };
   renderFilterTabs();
 });
