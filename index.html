@@ -56,6 +56,7 @@ canvas{display:block;width:100%;height:100%;border-radius:14px;touch-action:none
 @keyframes pulseGold{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.5)}50%{box-shadow:0 0 0 8px rgba(251,191,36,0)}}
 .cat-tag{font-size:10px;padding:3px 10px;border-radius:999px;border:1px solid;display:inline-block;font-weight:700}
 .filter-btn{padding:8px 14px;border-radius:999px;font-size:12px;font-weight:700;background:#0e1424;border:1px solid #1c2540;color:#94a3b8;cursor:pointer;transition:all .18s ease;display:inline-flex;align-items:center;gap:6px}
+.choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.choice-btn{padding:9px 8px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#cbd5e1;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:.18s}.choice-btn:hover{border-color:#fbbf24;color:#fbbf24}.choice-btn.active{background:rgba(251,191,36,.14);border-color:#fbbf24;color:#fbbf24;box-shadow:0 0 0 1px rgba(251,191,36,.18) inset}
 .filter-btn:hover{border-color:#fbbf24;color:#fbbf24;transform:translateY(-1px)}
 .filter-btn.active{background:linear-gradient(135deg,#fbbf24,#b45309);color:#0a0e1a;border-color:#fbbf24;box-shadow:0 8px 24px -8px rgba(251,191,36,.6)}
 .filter-btn .cnt{font-size:10px;padding:1px 7px;border-radius:999px;background:rgba(148,163,184,.15);color:inherit}
@@ -153,7 +154,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
       <div class="sub">فكرة وإعداد وتصميم وتنفيذ: م.د موسى محمد مهدي</div>
     </div>
     <div class="text-center mb-8">
-      <div class="badge text-gold border-gold/40 mb-3">45 تجربة تفاعلية مصنّفة في 16 فرعًا</div>
+      <div class="badge text-gold border-gold/40 mb-3">75 تجربة تفاعلية مصنّفة في 16 فرعًا</div>
       <h1 class="text-4xl md:text-5xl font-black mb-3 leading-tight">
         جرّب، <span class="text-gold">شاهد</span>، وافهم الفيزياء
       </h1>
@@ -311,6 +312,22 @@ function wl2rgb(wl) {
   if (wl>=380 && wl<420) f=0.3+0.7*(wl-380)/40;
   else if (wl>700 && wl<=780) f=0.3+0.7*(780-wl)/80;
   return `rgb(${Math.round(R*255*f)},${Math.round(G*255*f)},${Math.round(B*255*f)})`;
+}
+function resistor(ctx,x,y,w,h,text='',color='#a3e635'){
+  const horizontal=w>=h;
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.fillStyle='rgba(163,230,53,.08)';
+  if(horizontal){ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h);label(ctx,text,x+w/2,y+h/2,'#e2e8f0','center',10,true);}
+  else{ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h);ctx.save();ctx.translate(x+w/2,y+h/2);ctx.rotate(-Math.PI/2);label(ctx,text,0,0,'#e2e8f0','center',10,true);ctx.restore();}
+  ctx.restore();
+}
+function battery(ctx,x,y,w,h,text='V',color='#fbbf24'){
+  ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2.5;
+  const cx=x+w/2,cy=y+h/2;
+  ctx.beginPath();ctx.moveTo(x,cy);ctx.lineTo(cx-7,cy);ctx.moveTo(cx+7,cy);ctx.lineTo(x+w,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx-7,y+h*.25);ctx.lineTo(cx-7,y+h*.75);ctx.stroke();
+  ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(cx+7,y+h*.36);ctx.lineTo(cx+7,y+h*.64);ctx.stroke();
+  label(ctx,'+',cx-15,y+h*.18,color,'center',12,true);label(ctx,'−',cx+15,y+h*.18,color,'center',12,true);label(ctx,text,cx,y+h+12,color,'center',11,true);
+  ctx.restore();
 }
 function drawScope(ctx, x, y, w, h, title, color, func, Vpeak){
   ctx.fillStyle='#0a0e1a'; ctx.fillRect(x, y, w, h);
@@ -2858,6 +2875,197 @@ franck_hertz_neon: {
   hints(s){return['راقب تكرار الانخفاضات بفاصل يقارب طاقة الإثارة بوحدة الفولت.'];},
   draw(ctx,W,H,s){drawGrid(ctx,W,H);ctx.strokeStyle='#fb923c';ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<200;i++){const V=i/199*80,ph=(V%s.ctrl.E0)/s.ctrl.E0,I=.35+.65*Math.exp(-(((ph-.72)/.23)**2)),x=45+i*(W-90)/199,y=H-50-I*(H-100);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();label(ctx,'I مقابل V',W/2,40,'#fbbf24','center',13,true);}
 }
+,
+
+resistor_network_lab: {
+  title:'مختبر التوصيل الكهربائي الحر', icon:'🧰', category:'كهرباء',
+  desc:'مختبر عملي: اسحب الأسلاك بين البطارية والأميتر والمقاومات والفولتميتر، وابنِ بنفسك دائرة توالي أو توازي أو مختلطة ثم أثبت القوانين من القياسات.',
+  welcome:{title:'🧰 مختبر التوصيل الكهربائي الحر',steps:[
+    'اختر التحدي: توالي أو توازي أو مختلط. ستظهر أمامك العناصر مفصولة بلا أسلاك.',
+    'المس طرف توصيل ثم اسحب السلك إلى الطرف الآخر. على الهاتف يمكنك أيضًا لمس طرف ثم لمس الطرف الثاني.',
+    'أدخل الأميتر على التوالي مع المصدر، وصل الفولتميتر على طرفي R₂، ثم أكمل شبكة المقاومات المطلوبة.',
+    'إذا أضفت وصلة زائدة أو خاطئة سيخبرك المرشد بها. زر «إعادة» يمسح الأسلاك ويتيح البدء من جديد.',
+    'بعد نجاح الربط استخدم V وقراءة الأميتر لحساب R_eq=V/I، ثم اكتب جوابك في خانة «إثبات الطالب».']},
+  controls:[
+    {id:'goal',type:'buttons',label:'تحدي الربط',value:1,options:[{value:1,label:'➖ توالي'},{value:2,label:'⫴ توازي'},{value:3,label:'🔀 مختلط'}],help:'المختلط هنا: R₁ على التوالي مع (R₂ ∥ R₃).'},
+    {id:'V',label:'جهد البطارية',min:2,max:24,step:1,value:12,unit:'V'},
+    {id:'R1',label:'المقاومة R₁',min:5,max:100,step:1,value:10,unit:'Ω'},
+    {id:'R2',label:'المقاومة R₂',min:5,max:100,step:1,value:20,unit:'Ω'},
+    {id:'R3',label:'المقاومة R₃',min:5,max:100,step:1,value:30,unit:'Ω'},
+    {id:'answer',type:'number',label:'إثبات الطالب: R_eq = V/I',value:'',unit:'Ω',placeholder:'اكتب النتيجة المحسوبة'}
+  ],
+  reset(s){
+    s.t=s.t||0;
+    if(!Array.isArray(s.wires))s.wires=[];
+    if(s.lastGoal!==s.ctrl.goal){s.wires=[];s.selectedNode=null;s.dragFrom=null;s.lastGoal=s.ctrl.goal;s.ctrl.answer='';}
+  },
+  hardReset(s){s.wires=[];s.selectedNode=null;s.dragFrom=null;s.dragCurrent=null;s.ctrl.answer='';this.syncAnswerField();},
+  syncAnswerField(){const el=document.getElementById('ctrl-answer');if(el)el.value=this.ctrl.answer||'';},
+  update(s,dt){s.t=(s.t||0)+dt;},
+  edge(a,b){return a<b?a+'|'+b:b+'|'+a;},
+  required(goal){
+    if(Number(goal)===1)return [['bp','aL'],['aR','r1L'],['r1R','r2L'],['r2R','r3L'],['r3R','bm'],['vL','r2L'],['vR','r2R']];
+    if(Number(goal)===2)return [['bp','aL'],['aR','r1L'],['aR','r2L'],['aR','r3L'],['r1R','bm'],['r2R','bm'],['r3R','bm'],['vL','r2L'],['vR','r2R']];
+    return [['bp','aL'],['aR','r1L'],['r1R','r2L'],['r1R','r3L'],['r2R','bm'],['r3R','bm'],['vL','r2L'],['vR','r2R']];
+  },
+  nodeNames:{bp:'موجب البطارية',bm:'سالب البطارية',aL:'طرف الأميتر الأيسر',aR:'طرف الأميتر الأيمن',r1L:'يسار R₁',r1R:'يمين R₁',r2L:'يسار R₂',r2R:'يمين R₂',r3L:'يسار R₃',r3R:'يمين R₃',vL:'طرف V الأيسر',vR:'طرف V الأيمن'},
+  check(s){
+    const need=new Set(this.required(s.ctrl.goal).map(e=>this.edge(e[0],e[1])));
+    const got=new Set((s.wires||[]).map(e=>this.edge(e[0],e[1])));
+    const missing=[...need].filter(e=>!got.has(e));
+    const extra=[...got].filter(e=>!need.has(e));
+    return {ok:missing.length===0&&extra.length===0,missing,extra,done:need.size-missing.length,total:need.size};
+  },
+  calc(s){
+    const {goal,V,R1,R2,R3}=s.ctrl;
+    if(Number(goal)===1){const Req=R1+R2+R3,It=V/Req;return {Req,It,I1:It,I2:It,I3:It,V1:It*R1,V2:It*R2,V3:It*R3};}
+    if(Number(goal)===2){const Req=1/(1/R1+1/R2+1/R3),I1=V/R1,I2=V/R2,I3=V/R3;return {Req,It:I1+I2+I3,I1,I2,I3,V1:V,V2:V,V3:V};}
+    const Rp=R2*R3/(R2+R3),Req=R1+Rp,It=V/Req,V1=It*R1,Vp=V-V1,I2=Vp/R2,I3=Vp/R3;
+    return {Req,Rp,It,I1:It,I2,I3,V1,V2:Vp,V3:Vp};
+  },
+  readouts(s){
+    const st=this.check(s),c=this.calc(s);
+    if(!st.ok)return [
+      {l:'حالة الدائرة',v:st.extra.length?'توصيل غير صحيح':'قيد البناء',u:'',c:st.extra.length?'gold':'cyan'},
+      {l:'الوصلات الصحيحة',v:`${st.done} / ${st.total}`,u:''},
+      {l:'الأميتر A',v:'—',u:'A'},{l:'الفولتميتر V على R₂',v:'—',u:'V'}
+    ];
+    const Ps=s.ctrl.V*c.It,Pr=c.I1*c.I1*s.ctrl.R1+c.I2*c.I2*s.ctrl.R2+c.I3*c.I3*s.ctrl.R3;
+    return [
+      {l:'حالة الدائرة',v:'✓ مكتملة وصحيحة',u:'',c:'gold'},
+      {l:'الأميتر I الكلي',v:c.It.toFixed(4),u:'A',c:'cyan'},
+      {l:'الفولتميتر على R₂',v:c.V2.toFixed(3),u:'V'},
+      {l:'R_eq من V/I',v:(s.ctrl.V/c.It).toFixed(3),u:'Ω',c:'gold'},
+      {l:'قدرة المصدر',v:Ps.toFixed(3),u:'W'},
+      {l:'Σ قدرة المقاومات',v:Pr.toFixed(3),u:'W'}
+    ];
+  },
+  hints(s){
+    const st=this.check(s),c=this.calc(s),goal=Number(s.ctrl.goal),names=this.nodeNames;
+    const goalName=goal===1?'التوالي':goal===2?'التوازي':'المختلط R₁ + (R₂ ∥ R₃)';
+    if(st.extra.length){
+      const parts=st.extra.slice(0,2).map(x=>{const [a,b]=x.split('|');return `${names[a]} ↔ ${names[b]}`;});
+      return [`❌ توجد وصلة لا تنتمي إلى دائرة <b>${goalName}</b>: <span class="hl">${parts.join(' ، ')}</span>.`,`امسح الأسلاك بزر «↺ إعادة» ثم حاول مجددًا. لا توصل طرفي البطارية مباشرة.`];
+    }
+    if(!st.ok){
+      let msg=`🔧 أنجزت <span class="hl">${st.done} من ${st.total}</span> وصلات صحيحة لتحدي ${goalName}.`;
+      if(s.selectedNode)msg+=` الطرف المحدد الآن: <span class="hl">${names[s.selectedNode]}</span> — المس الطرف الذي تريد وصله به.`;
+      return [msg,'تذكّر: الأميتر يوصل على التوالي، والفولتميتر يوصل على التوازي مع R₂.','لا توجد أسلاك خفية: أنت من يبني الدائرة كاملة.'];
+    }
+    const h=[`✅ ممتاز! نجح ربط <b>${goalName}</b> وأصبحت أجهزة القياس فعّالة.`];
+    if(goal===1){h.push(`قانون كيرشوف للجهد: V₁+V₂+V₃ = ${(c.V1+c.V2+c.V3).toFixed(3)} V ≈ ${s.ctrl.V} V.`);h.push(`في التوالي: I₁=I₂=I₃=${c.It.toFixed(4)} A.`);}
+    if(goal===2){h.push(`قانون كيرشوف للتيار: I₁+I₂+I₃ = ${(c.I1+c.I2+c.I3).toFixed(4)} A = I الكلي.`);h.push(`في التوازي: V₁=V₂=V₃=${s.ctrl.V.toFixed(2)} V.`);}
+    if(goal===3){h.push(`عند عقدة التفرع: I₁=${c.I1.toFixed(4)} A و I₂+I₃=${(c.I2+c.I3).toFixed(4)} A.`);h.push(`حول أي فرع: V₁+V_parallel=${(c.V1+c.V2).toFixed(3)} V ≈ ${s.ctrl.V} V.`);}
+    const ans=parseFloat(s.ctrl.answer),tol=Math.max(.02,Math.abs(c.Req)*.01);
+    if(!Number.isFinite(ans))h.push(`🧠 <b>تحدي الإثبات:</b> احسب R_eq من قراءتي البطارية والأميتر: R_eq=V/I، ثم اكتبها في خانة «إثبات الطالب».`);
+    else if(Math.abs(ans-c.Req)<=tol)h.push(`🏆 <b>إثبات صحيح:</b> جوابك ${ans.toFixed(3)} Ω يطابق R_eq=${c.Req.toFixed(3)} Ω ضمن سماحية 1%.`);
+    else h.push(`🧮 جوابك ${ans.toFixed(3)} Ω لا يطابق القياس بعد. استخدم V=${s.ctrl.V.toFixed(2)} V و I=${c.It.toFixed(4)} A ثم احسب V/I.`);
+    return h;
+  },
+  equations:['V=IR','R_{eq}=\\dfrac{V_{source}}{I_{total}}','\\sum I_{in}=\\sum I_{out}','\\sum \\Delta V=0','P_{source}=\\sum P_R'],
+  theory:'هذه التجربة لا تختار شكل الدائرة نيابة عن الطالب؛ بل تجعل العناصر مفصولة ويجب بناء التوصيلات فعليًا. الأميتر المثالي مقاومته تقارب الصفر لذلك يوضع على التوالي، والفولتميتر المثالي مقاومته كبيرة جدًا لذلك يوضع على التوازي مع العنصر المقاس. بعد نجاح الربط تُستخدم القياسات للتحقق من قانون أوم وقانوني كيرشوف ومن تعريف المقاومة المكافئة R_eq=V/I. في التحدي المختلط تكون R₁ على التوالي مع الفرع (R₂ ∥ R₃).',
+  nodes(W,H){
+    return {
+      bp:{x:72,y:H*.22},bm:{x:72,y:H*.80},
+      aL:{x:125,y:H*.23},aR:{x:215,y:H*.23},
+      r1L:{x:W*.34,y:H*.23},r1R:{x:W*.56,y:H*.23},
+      r2L:{x:W*.34,y:H*.50},r2R:{x:W*.56,y:H*.50},
+      r3L:{x:W*.34,y:H*.77},r3R:{x:W*.56,y:H*.77},
+      vL:{x:W*.70,y:H*.50},vR:{x:W*.90,y:H*.50}
+    };
+  },
+  hitNode(x,y,W,H){const ns=this.nodes(W,H);let best=null,bd=22;Object.entries(ns).forEach(([id,n])=>{const d=Math.hypot(x-n.x,y-n.y);if(d<bd){bd=d;best=id;}});return best;},
+  addWire(s,a,b){
+    if(!a||!b||a===b)return;
+    const key=this.edge(a,b);if((s.wires||[]).some(e=>this.edge(e[0],e[1])===key)){toast('هذه الوصلة موجودة بالفعل','learn',1800);return;}
+    s.wires.push([a,b]);
+    const st=this.check(s);
+    if(st.extra.length)toast('❌ وصلة غير صحيحة لهذا التحدي — راقب المرشد','err',2600);
+    else if(st.ok)toast('✅ أحسنت! اكتمل الربط واشتغلت أجهزة القياس','ok',3200);
+    else toast(`🔌 وصلة صحيحة — ${st.done}/${st.total}`,'ok',1500);
+    updateHintBox();
+  },
+  pointerDown(s,p){const n=this.hitNode(p.x,p.y,p.W,p.H);if(!n)return false;s.dragFrom=(s.selectedNode&&s.selectedNode!==n)?s.selectedNode:n;s.dragCurrent={x:p.x,y:p.y};return true;},
+  pointerMove(s,p){if(!s.dragFrom)return false;s.dragCurrent={x:p.x,y:p.y};return true;},
+  pointerUp(s,p){
+    const target=this.hitNode(p.x,p.y,p.W,p.H),from=s.dragFrom;s.dragFrom=null;s.dragCurrent=null;
+    if(from&&target&&from!==target){this.addWire(s,from,target);s.selectedNode=null;return true;}
+    if(target){s.selectedNode=(s.selectedNode===target)?null:target;updateHintBox();return true;}
+    return false;
+  },
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const ns=this.nodes(W,H),st=this.check(s),c=this.calc(s);
+    label(ctx,'اسحب سلكًا بين الدوائر الطرفية المضيئة',W/2,24,'#94a3b8','center',12,true);
+    // battery
+    ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(45,H*.30);ctx.lineTo(45,H*.70);ctx.stroke();
+    ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(35,H*.42);ctx.lineTo(62,H*.42);ctx.moveTo(40,H*.57);ctx.lineTo(57,H*.57);ctx.stroke();
+    label(ctx,'بطارية',48,H*.75,'#fbbf24','center',12,true);label(ctx,'+',62,H*.19,'#fbbf24','center',15,true);label(ctx,'−',62,H*.84,'#fbbf24','center',15,true);
+    // ammeter
+    ctx.strokeStyle='#22d3ee';ctx.lineWidth=3;ctx.beginPath();ctx.arc((ns.aL.x+ns.aR.x)/2,ns.aL.y,32,0,Math.PI*2);ctx.stroke();label(ctx,'A',(ns.aL.x+ns.aR.x)/2,ns.aL.y+6,'#22d3ee','center',22,true);
+    // resistors
+    [['r1L','r1R','R₁='+s.ctrl.R1+'Ω'],['r2L','r2R','R₂='+s.ctrl.R2+'Ω'],['r3L','r3R','R₃='+s.ctrl.R3+'Ω']].forEach(([l,r,t])=>{const a=ns[l],b=ns[r];resistor(ctx,a.x+10,a.y-14,b.x-a.x-20,28,t,'#a3e635');});
+    // voltmeter
+    ctx.strokeStyle='#f472b6';ctx.lineWidth=3;ctx.beginPath();ctx.arc((ns.vL.x+ns.vR.x)/2,ns.vL.y,30,0,Math.PI*2);ctx.stroke();label(ctx,'V',(ns.vL.x+ns.vR.x)/2,ns.vL.y+6,'#f472b6','center',21,true);
+    // completed wires
+    (s.wires||[]).forEach(([a,b])=>{const A=ns[a],B=ns[b];if(!A||!B)return;const good=this.required(s.ctrl.goal).some(e=>this.edge(e[0],e[1])===this.edge(a,b));ctx.strokeStyle=good?'#22d3ee':'#f87171';ctx.lineWidth=good?4:5;ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();});
+    // dragging wire
+    if(s.dragFrom&&s.dragCurrent&&ns[s.dragFrom]){const A=ns[s.dragFrom];ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(s.dragCurrent.x,s.dragCurrent.y);ctx.stroke();ctx.setLineDash([]);}
+    // terminals on top
+    Object.entries(ns).forEach(([id,n])=>{const selected=s.selectedNode===id||s.dragFrom===id;ctx.beginPath();ctx.arc(n.x,n.y,selected?9:7,0,Math.PI*2);ctx.fillStyle=selected?'#fbbf24':'#e2e8f0';ctx.fill();ctx.strokeStyle='#0f172a';ctx.lineWidth=2;ctx.stroke();});
+    const g=Number(s.ctrl.goal),gn=g===1?'توالي':g===2?'توازي':'مختلط';label(ctx,`التحدي: ${gn}`,W-18,H-18,'#fbbf24','right',13,true);
+    label(ctx,st.ok?`✓ I=${c.It.toFixed(3)} A`:`${st.done}/${st.total} وصلات`,18,H-18,st.ok?'#a3e635':'#94a3b8','left',13,true);
+  }
+},
+
+kirchhoff_lab: {
+  title:'قانونا كيرشوف — دائرتان', icon:'🧭', category:'كهرباء',
+  desc:'حل دائرتين متصلتين بمقاومة مشتركة وتحقق من قانون العقدة وقانون الجهد حول كل حلقة.',
+  welcome:{title:'🧭 قانونا كيرشوف',steps:['غيّر E₁ وE₂ والمقاومات الثلاث.','المحاكاة تحل تياري الشبكتين I₁ وI₂ جبريًا.','التيار في المقاومة المشتركة R₃ هو I₃ = I₁ − I₂ وفق اتجاهات الرسم.','راقب بواقي KVL: يجب أن تساوي صفرًا عدديًا.']},
+  controls:[{id:'E1',label:'المصدر E₁',min:1,max:24,step:1,value:12,unit:'V'},{id:'E2',label:'المصدر E₂',min:1,max:24,step:1,value:6,unit:'V'},{id:'R1',label:'R₁',min:1,max:50,step:1,value:10,unit:'Ω'},{id:'R2',label:'R₂',min:1,max:50,step:1,value:15,unit:'Ω'},{id:'R3',label:'R₃ المشتركة',min:1,max:50,step:1,value:20,unit:'Ω'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const {E1,E2,R1,R2,R3}=s.ctrl,D=R1*R2+R1*R3+R2*R3;const I1=(E1*(R2+R3)+E2*R3)/D,I2=(E2*(R1+R3)+E1*R3)/D,I3=I1-I2;const L1=E1-R1*I1-R3*I3,L2=E2-R2*I2+R3*I3;return {I1,I2,I3,L1,L2};},
+  readouts(s){const c=this.calc(s);return [{l:'I₁',v:c.I1.toFixed(5),u:'A',c:'gold'},{l:'I₂',v:c.I2.toFixed(5),u:'A',c:'cyan'},{l:'I₃=I₁−I₂',v:c.I3.toFixed(5),u:'A'},{l:'باقي KVL الحلقة 1',v:c.L1.toExponential(2),u:'V'},{l:'باقي KVL الحلقة 2',v:c.L2.toExponential(2),u:'V'}];},
+  hints(s){const c=this.calc(s);return [`✓ KCL عند العقدة: I₁ − I₂ − I₃ = ${(c.I1-c.I2-c.I3).toExponential(1)} A.`,`✓ KVL للحلقة اليسرى: E₁−I₁R₁−I₃R₃ = ${c.L1.toExponential(1)} V.`,`✓ KVL للحلقة اليمنى: E₂−I₂R₂+I₃R₃ = ${c.L2.toExponential(1)} V.`,c.I3<0?'↕ الإشارة السالبة لـ I₃ تعني أن اتجاه التيار الحقيقي معاكس للسهم المفترض.':'↕ إشارة I₃ موجبة: الاتجاه الحقيقي يوافق السهم المفترض.'];},
+  equations:['\\sum I=0','\\sum \\Delta V=0','E_1=(R_1+R_3)I_1-R_3I_2','E_2=-R_3I_1+(R_2+R_3)I_2'],
+  theory:'قانون كيرشوف للتيار ناتج عن حفظ الشحنة، وقانون كيرشوف للجهد ناتج عن حفظ الطاقة في الدوائر المركزة شبه الساكنة. الإشارة السالبة للتيار ليست خطأ؛ إنها تعني أن الاتجاه الحقيقي معاكس للاتجاه الذي افترضناه عند كتابة المعادلات.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),x1=W*.22,x2=W*.78,yt=H*.28,yb=H*.75,xm=W*.5;ctx.strokeStyle='#94a3b8';ctx.lineWidth=3;ctx.strokeRect(x1,yt,xm-x1,yb-yt);ctx.strokeRect(xm,yt,x2-xm,yb-yt);resistor(ctx,x1+45,yt-14,110,28,`R1=${s.ctrl.R1}Ω`,'#a3e635');resistor(ctx,x2-155,yt-14,110,28,`R2=${s.ctrl.R2}Ω`,'#a3e635');resistor(ctx,xm-15,H*.43,30,105,`R3`,'#fbbf24');battery(ctx,x1-18,H*.42,36,70,'E1','#22d3ee');battery(ctx,x2-18,H*.42,36,70,'E2','#22d3ee');label(ctx,`I₁=${c.I1.toFixed(3)} A`,W*.34,H*.19,'#fbbf24','center',13,true);label(ctx,`I₂=${c.I2.toFixed(3)} A`,W*.66,H*.19,'#22d3ee','center',13,true);label(ctx,`I₃=${c.I3.toFixed(3)} A`,xm+35,H*.55,'#f472b6','left',13,true);}
+},
+
+voltage_divider_lab: {
+  title:'مقسم الجهد وتأثير الحمل', icon:'🎚️', category:'كهرباء',
+  desc:'تحقق من قانون مقسم الجهد ثم شاهد كيف يغيّر الحمل الحقيقي قيمة جهد الخرج.',
+  welcome:{title:'🎚️ مقسم الجهد',steps:['R₁ وR₂ على التوالي مع المصدر.','بدون حمل: Vout = Vin·R₂/(R₁+R₂).','صل مقاومة حمل R_L على التوازي مع R₂.','راقب انخفاض Vout بسبب تغير المقاومة المكافئة للفرع السفلي.']},
+  controls:[{id:'Vin',label:'Vin',min:1,max:30,step:1,value:12,unit:'V'},{id:'R1',label:'R₁',min:100,max:10000,step:100,value:1000,unit:'Ω'},{id:'R2',label:'R₂',min:100,max:10000,step:100,value:2000,unit:'Ω'},{id:'RL',label:'مقاومة الحمل R_L',min:200,max:50000,step:200,value:10000,unit:'Ω'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},calc(s){const {Vin,R1,R2,RL}=s.ctrl,V0=Vin*R2/(R1+R2),Rp=R2*RL/(R2+RL),V=Vin*Rp/(R1+Rp),It=Vin/(R1+Rp),IL=V/RL;return {V0,Rp,V,It,IL,drop:V0-V};},
+  readouts(s){const c=this.calc(s);return [{l:'Vout بدون حمل',v:c.V0.toFixed(4),u:'V',c:'gold'},{l:'Vout مع الحمل',v:c.V.toFixed(4),u:'V',c:'cyan'},{l:'R₂∥R_L',v:c.Rp.toFixed(2),u:'Ω'},{l:'تيار المصدر',v:(1000*c.It).toFixed(3),u:'mA'},{l:'تيار الحمل',v:(1000*c.IL).toFixed(3),u:'mA'},{l:'هبوط بسبب الحمل',v:c.drop.toFixed(4),u:'V'}];},
+  hints(s){const c=this.calc(s),pct=100*c.drop/c.V0;return [`بدون حمل: Vout = <span class="hl">${c.V0.toFixed(3)} V</span>.`,`مع الحمل يصبح R₂ الفعال = R₂∥R_L = ${c.Rp.toFixed(1)} Ω.`,`انخفض الخرج بنسبة ${pct.toFixed(2)}%. كلما كان R_L أكبر قل تأثير الحمل.`];},
+  equations:['V_{out,0}=V_{in}\\dfrac{R_2}{R_1+R_2}','R_p=R_2\\parallel R_L=\\dfrac{R_2R_L}{R_2+R_L}','V_{out}=V_{in}\\dfrac{R_p}{R_1+R_p}'],theory:'قانون مقسم الجهد البسيط يفترض أن الخرج غير محمّل. عند توصيل حمل محدود المقاومة يصبح الحمل على التوازي مع R₂، فينخفض مكافئ الفرع السفلي ويهبط جهد الخرج. هذا يفسر لماذا نستخدم دوائر عازلة (buffers) عند الحاجة إلى خرج لا يتأثر بالحمل.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),x=W*.5;ctx.strokeStyle='#94a3b8';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(W*.18,H*.2);ctx.lineTo(x,H*.2);ctx.lineTo(x,H*.3);ctx.moveTo(x,H*.43);ctx.lineTo(x,H*.53);ctx.moveTo(x,H*.66);ctx.lineTo(x,H*.8);ctx.lineTo(W*.18,H*.8);ctx.stroke();battery(ctx,W*.15,H*.42,40,90,'Vin','#fbbf24');resistor(ctx,x-45,H*.30,90,H*.13,`R1`,'#a3e635');resistor(ctx,x-45,H*.53,90,H*.13,`R2`,'#a3e635');ctx.beginPath();ctx.moveTo(x,H*.48);ctx.lineTo(W*.72,H*.48);ctx.lineTo(W*.72,H*.55);ctx.moveTo(W*.72,H*.68);ctx.lineTo(W*.72,H*.8);ctx.stroke();resistor(ctx,W*.68,H*.55,W*.08,H*.13,'RL','#22d3ee');label(ctx,`Vout=${c.V.toFixed(2)} V`,W*.72,H*.42,'#22d3ee','center',14,true);}
+},
+
+wheatstone_bridge_lab: {
+  title:'جسر ويتستون', icon:'⚖️', category:'كهرباء',
+  desc:'وازن الجسر بجعل فرق جهد الكاشف صفرًا واستنتج علاقة نسب المقاومات.',
+  welcome:{title:'⚖️ جسر ويتستون',steps:['عدّل R₄ حتى يقترب جهد الكاشف Vg من الصفر.','عند الاتزان لا يمر تيار في الكاشف المثالي.','تحقق من R₁/R₂ = R₃/R₄.','استخدم الجسر لقياس مقاومة مجهولة من ثلاث مقاومات معلومة.']},
+  controls:[{id:'V',label:'جهد المصدر',min:1,max:20,step:1,value:10,unit:'V'},{id:'R1',label:'R₁',min:10,max:500,step:5,value:100,unit:'Ω'},{id:'R2',label:'R₂',min:10,max:500,step:5,value:200,unit:'Ω'},{id:'R3',label:'R₃',min:10,max:500,step:5,value:150,unit:'Ω'},{id:'R4',label:'R₄ — اضبط للاتزان',min:10,max:500,step:5,value:300,unit:'Ω'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},calc(s){const {V,R1,R2,R3,R4}=s.ctrl,VA=V*R2/(R1+R2),VB=V*R4/(R3+R4),Vg=VA-VB,R4bal=R2*R3/R1;return {VA,VB,Vg,R4bal,ratio1:R1/R2,ratio2:R3/R4};},
+  readouts(s){const c=this.calc(s);return [{l:'VA',v:c.VA.toFixed(4),u:'V'},{l:'VB',v:c.VB.toFixed(4),u:'V'},{l:'Vg = VA−VB',v:c.Vg.toFixed(5),u:'V',c:'gold'},{l:'R₄ للاتزان',v:c.R4bal.toFixed(2),u:'Ω',c:'cyan'},{l:'R₁/R₂',v:c.ratio1.toFixed(5),u:''},{l:'R₃/R₄',v:c.ratio2.toFixed(5),u:''}];},
+  hints(s){const c=this.calc(s),balanced=Math.abs(c.Vg)<0.01;return [balanced?'✅ الجسر متزن تقريبًا: Vg ≈ 0.':'حرّك R₄ حتى يصبح Vg قريبًا من الصفر.',`شرط الاتزان: R₁/R₂ = R₃/R₄.`,`القيمة النظرية المطلوبة: R₄ = <span class="hl">${c.R4bal.toFixed(2)} Ω</span>.`];},
+  equations:['V_A=V\\dfrac{R_2}{R_1+R_2}','V_B=V\\dfrac{R_4}{R_3+R_4}','V_g=V_A-V_B','V_g=0\\Rightarrow \\dfrac{R_1}{R_2}=\\dfrac{R_3}{R_4}'],theory:'جسر ويتستون يقارن نسب المقاومات. عند الاتزان يتساوى جهدا نقطتي الوسط، فلا يوجد فرق جهد على الكاشف المثالي. من شرط الاتزان يمكن إيجاد مقاومة مجهولة بدقة عالية دون الاعتماد المباشر على قيمة جهد المصدر.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cx=W*.52,cy=H*.5,dx=Math.min(W*.26,190),dy=Math.min(H*.28,120);ctx.strokeStyle='#94a3b8';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx,cy-dy);ctx.lineTo(cx-dx,cy);ctx.lineTo(cx,cy+dy);ctx.lineTo(cx+dx,cy);ctx.closePath();ctx.stroke();resistor(ctx,cx-dx*.78,cy-dy*.58,95,24,'R1','#a3e635');resistor(ctx,cx-dx*.78,cy+dy*.40,95,24,'R2','#a3e635');resistor(ctx,cx+dx*.30,cy-dy*.58,95,24,'R3','#22d3ee');resistor(ctx,cx+dx*.30,cy+dy*.40,95,24,'R4','#22d3ee');ctx.strokeStyle='#f472b6';ctx.beginPath();ctx.moveTo(cx-dx,cy);ctx.lineTo(cx+dx,cy);ctx.stroke();label(ctx,`Vg=${c.Vg.toFixed(3)} V`,cx,cy-10,'#f472b6','center',13,true);battery(ctx,cx-20,cy-dy-48,40,65,'V','#fbbf24');}
+},
+
+capacitor_network_lab: {
+  title:'ربط المكثفات', icon:'🔋', category:'كهرباء',
+  desc:'اربط ثلاثة مكثفات على التوالي أو التوازي أو بصورة مختلطة وتحقق من الشحنة والجهد والسعة المكافئة.',
+  welcome:{title:'🔋 ربط المكثفات',steps:['اختر توالي أو توازي أو مختلط.','في التوالي تكون الشحنة نفسها وتُجمع فروق الجهد.','في التوازي يكون الجهد نفسه وتُجمع الشحنات والسعات.','في المختلط: C₁ على التوالي مع (C₂+C₃).']},
+  controls:[{id:'mode',type:'buttons',label:'طريقة الربط',value:1,options:[{value:1,label:'➖ توالي'},{value:2,label:'⫴ توازي'},{value:3,label:'🔀 مختلط'}]},{id:'V',label:'جهد المصدر',min:1,max:24,step:1,value:12,unit:'V'},{id:'C1',label:'C₁',min:1,max:100,step:1,value:10,unit:'µF'},{id:'C2',label:'C₂',min:1,max:100,step:1,value:20,unit:'µF'},{id:'C3',label:'C₃',min:1,max:100,step:1,value:30,unit:'µF'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},calc(s){const {mode,V,C1,C2,C3}=s.ctrl;if(mode===1){const Ceq=1/(1/C1+1/C2+1/C3),Q=Ceq*V;return {Ceq,Q1:Q,Q2:Q,Q3:Q,V1:Q/C1,V2:Q/C2,V3:Q/C3,Qt:Q};}if(mode===2){const Ceq=C1+C2+C3;return {Ceq,Q1:C1*V,Q2:C2*V,Q3:C3*V,V1:V,V2:V,V3:V,Qt:Ceq*V};}const Cp=C2+C3,Ceq=C1*Cp/(C1+Cp),Qt=Ceq*V,V1=Qt/C1,Vp=Qt/Cp;return {Ceq,Q1:Qt,Q2:C2*Vp,Q3:C3*Vp,V1,V2:Vp,V3:Vp,Qt};},
+  readouts(s){const c=this.calc(s);return [{l:'C المكافئة',v:c.Ceq.toFixed(4),u:'µF',c:'gold'},{l:'Q الكلية',v:c.Qt.toFixed(3),u:'µC',c:'cyan'},{l:'Q₁ / Q₂ / Q₃',v:`${c.Q1.toFixed(2)} / ${c.Q2.toFixed(2)} / ${c.Q3.toFixed(2)}`,u:'µC'},{l:'V₁ / V₂ / V₃',v:`${c.V1.toFixed(2)} / ${c.V2.toFixed(2)} / ${c.V3.toFixed(2)}`,u:'V'}];},
+  hints(s){const c=this.calc(s),m=s.ctrl.mode;if(m===1)return [`✓ التوالي: Q₁=Q₂=Q₃=${c.Q1.toFixed(2)} µC.`,`✓ V₁+V₂+V₃=${(c.V1+c.V2+c.V3).toFixed(3)} V = V.`,`✓ 1/Ceq=1/C₁+1/C₂+1/C₃.`];if(m===2)return [`✓ التوازي: V₁=V₂=V₃=${s.ctrl.V.toFixed(2)} V.`,`✓ Q_total=Q₁+Q₂+Q₃=${(c.Q1+c.Q2+c.Q3).toFixed(2)} µC.`,`✓ Ceq=C₁+C₂+C₃=${c.Ceq.toFixed(2)} µF.`];return [`✓ المختلط: C₂ وC₃ متوازيان، ثم مكافئهما على التوالي مع C₁.`,`✓ Q₁ = Q₂+Q₃ = ${(c.Q2+c.Q3).toFixed(2)} µC.`,`✓ V = V₁+V_parallel = ${(c.V1+c.V2).toFixed(3)} V.`];},
+  equations:['Q=CV','C_p=C_1+C_2+C_3','\\dfrac1{C_s}=\\dfrac1{C_1}+\\dfrac1{C_2}+\\dfrac1{C_3}','U=\\tfrac12CV^2'],theory:'تنعكس قواعد الجمع بين المقاومات والمكثفات: المكثفات المتوازية تجمع مباشرة، أما المتسلسلة فتجمع مقلوبات سعاتها. في التوالي تكون شحنة كل مكثف متساوية مقدارًا، وفي التوازي يكون فرق الجهد نفسه على جميع المكثفات.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),m=s.ctrl.mode;label(ctx,`Ceq=${c.Ceq.toFixed(2)} µF`,W-25,30,'#fbbf24','right',14,true);label(ctx,`Q=${c.Qt.toFixed(2)} µC`,W-25,55,'#22d3ee','right',13,true);const cap=(x,y,name,C)=>{ctx.strokeStyle='#22d3ee';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x-8,y-22);ctx.lineTo(x-8,y+22);ctx.moveTo(x+8,y-22);ctx.lineTo(x+8,y+22);ctx.stroke();label(ctx,`${name}=${C}µF`,x,y-35,'#cbd5e1','center',11,true);};const y=H*.52;ctx.strokeStyle='#94a3b8';ctx.lineWidth=3;if(m===1){ctx.beginPath();ctx.moveTo(70,y);ctx.lineTo(W-60,y);ctx.stroke();[W*.35,W*.55,W*.75].forEach((x,i)=>cap(x,y,`C${i+1}`,[s.ctrl.C1,s.ctrl.C2,s.ctrl.C3][i]));}else{const xl=W*.3,xr=W*.78,ys=[H*.32,H*.52,H*.72];ctx.beginPath();ctx.moveTo(xl,H*.25);ctx.lineTo(xl,H*.79);ctx.moveTo(xr,H*.25);ctx.lineTo(xr,H*.79);ctx.stroke();if(m===2){ys.forEach((yy,i)=>{ctx.beginPath();ctx.moveTo(xl,yy);ctx.lineTo(xr,yy);ctx.stroke();cap(W*.54,yy,`C${i+1}`,[s.ctrl.C1,s.ctrl.C2,s.ctrl.C3][i]);});}else{ctx.beginPath();ctx.moveTo(70,y);ctx.lineTo(xl,y);ctx.stroke();cap(W*.2,y,'C1',s.ctrl.C1);[H*.42,H*.64].forEach((yy,i)=>{ctx.beginPath();ctx.moveTo(xl,yy);ctx.lineTo(xr,yy);ctx.stroke();cap(W*.56,yy,`C${i+2}`,[s.ctrl.C2,s.ctrl.C3][i]);});}}}
+}
 
 };
 
@@ -3033,22 +3241,69 @@ function showWelcome(sim){
 
 function renderControls(){
   const wrap=document.getElementById('controls');
-  wrap.innerHTML=currentSim.controls.map(c=>`
-    <div>
+  const valueText=c=>{
+    if(c.type==='buttons'){
+      const op=(c.options||[]).find(o=>Number(o.value)===Number(currentSim.ctrl[c.id]));
+      return op?op.label:currentSim.ctrl[c.id];
+    }
+    return `${currentSim.ctrl[c.id]} <span class="text-slate-500 text-xs">${c.unit||''}</span>`;
+  };
+  wrap.innerHTML=currentSim.controls.map(c=>{
+    if(c.type==='buttons'){
+      return `<div>
+        <div class="flex items-center justify-between mb-2 text-sm">
+          <label class="text-slate-300">${c.label}</label>
+          <span class="text-gold font-bold" id="val-${c.id}">${valueText(c)}</span>
+        </div>
+        <div class="choice-grid" id="ctrl-${c.id}">
+          ${(c.options||[]).map(o=>`<button type="button" class="choice-btn ${Number(o.value)===Number(currentSim.ctrl[c.id])?'active':''}" data-value="${o.value}">${o.label}</button>`).join('')}
+        </div>
+      </div>`;
+    }
+    if(c.type==='number'){
+      return `<div>
+        <div class="flex items-center justify-between mb-2 text-sm">
+          <label class="text-slate-300">${c.label}</label>
+          <span class="text-gold text-xs">${c.unit||''}</span>
+        </div>
+        <input type="number" inputmode="decimal" id="ctrl-${c.id}" value="${currentSim.ctrl[c.id]??''}" placeholder="${c.placeholder||''}" class="w-full bg-ink border border-edge rounded-xl px-3 py-2.5 text-slate-100 font-mono" />
+        <div id="val-${c.id}" class="text-xs text-slate-500 mt-1"></div>
+      </div>`;
+    }
+    return `<div>
       <div class="flex items-center justify-between mb-2 text-sm">
         <label class="text-slate-300 cursor-help">${c.label}</label>
         <span class="text-gold font-bold font-mono" id="val-${c.id}">
-          ${currentSim.ctrl[c.id]} <span class="text-slate-500 text-xs">${c.unit}</span>
+          ${valueText(c)}
         </span>
       </div>
       <input type="range" id="ctrl-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${currentSim.ctrl[c.id]}" class="w-full" />
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
   currentSim.controls.forEach(c=>{
     const input=document.getElementById('ctrl-'+c.id);
+    if(!input)return;
+    if(c.type==='buttons'){
+      input.querySelectorAll('.choice-btn').forEach(btn=>btn.addEventListener('click',()=>{
+        currentSim.ctrl[c.id]=parseFloat(btn.dataset.value);
+        input.querySelectorAll('.choice-btn').forEach(b=>b.classList.toggle('active',b===btn));
+        document.getElementById('val-'+c.id).textContent=btn.textContent;
+        currentSim.reset(currentState);
+        if(c.help)showTip(btn,c.help,2600);
+        updateHintBox();
+      }));
+      return;
+    }
+    if(c.type==='number'){
+      input.addEventListener('input',(e)=>{
+        currentSim.ctrl[c.id]=e.target.value;
+        updateHintBox();
+      });
+      return;
+    }
     input.addEventListener('input',(e)=>{
       currentSim.ctrl[c.id]=parseFloat(e.target.value);
-      document.getElementById('val-'+c.id).innerHTML=`${currentSim.ctrl[c.id]} <span class="text-slate-500 text-xs">${c.unit}</span>`;
+      document.getElementById('val-'+c.id).innerHTML=`${currentSim.ctrl[c.id]} <span class="text-slate-500 text-xs">${c.unit||''}</span>`;
       currentSim.reset(currentState);
       if(!sliderTipTimers[c.id]||Date.now()-sliderTipTimers[c.id]>4000){
         sliderTipTimers[c.id]=Date.now();
@@ -3058,7 +3313,6 @@ function renderControls(){
     });
   });
 }
-
 function renderEquations(){
   const wrap=document.getElementById('equations');
   wrap.innerHTML=currentSim.equations.map(eq=>`<div class="eq-item text-center py-1" data-eq="${escapeAttr(eq)}"></div>`).join('');
@@ -3090,9 +3344,42 @@ function fitCanvas(){
   if(!ctx)return;
   ctx.setTransform(DPR,0,0,DPR,0,0);
   W=cssW;H=cssH;
+  bindCanvasInteractions();
 }
 window.addEventListener('resize',()=>{if(currentSim)fitCanvas();});
 window.addEventListener('orientationchange',()=>{setTimeout(()=>{if(currentSim)fitCanvas();},150);});
+
+function canvasPointerPayload(e){
+  if(!canvasEl)return null;
+  const r=canvasEl.getBoundingClientRect();
+  return {x:e.clientX-r.left,y:e.clientY-r.top,W:r.width||W,H:r.height||H,event:e};
+}
+function bindCanvasInteractions(){
+  if(!canvasEl||canvasEl.dataset.interactionBound)return;
+  canvasEl.dataset.interactionBound='1';
+  canvasEl.addEventListener('pointerdown',(e)=>{
+    if(!currentSim||typeof currentSim.pointerDown!=='function')return;
+    const p=canvasPointerPayload(e);if(!p)return;
+    try{
+      const used=currentSim.pointerDown(currentState,p);
+      if(used){e.preventDefault();try{canvasEl.setPointerCapture(e.pointerId);}catch(_){}}
+    }catch(err){console.error(err);}
+  });
+  canvasEl.addEventListener('pointermove',(e)=>{
+    if(!currentSim||typeof currentSim.pointerMove!=='function')return;
+    const p=canvasPointerPayload(e);if(!p)return;
+    try{if(currentSim.pointerMove(currentState,p))e.preventDefault();}catch(err){console.error(err);}
+  });
+  const finish=(e)=>{
+    if(!currentSim||typeof currentSim.pointerUp!=='function')return;
+    const p=canvasPointerPayload(e);if(!p)return;
+    try{if(currentSim.pointerUp(currentState,p))e.preventDefault();}catch(err){console.error(err);}
+  };
+  canvasEl.addEventListener('pointerup',finish);
+  canvasEl.addEventListener('pointercancel',(e)=>{
+    if(currentState){currentState.dragFrom=null;currentState.dragCurrent=null;}
+  });
+}
 
 let lastHintUpdate=0;
 function loop(now){
@@ -3137,7 +3424,8 @@ document.getElementById('btn-play').addEventListener('click',()=>{
 
 document.getElementById('btn-reset').addEventListener('click',()=>{
   if(!currentSim)return;
-  currentSim.reset(currentState);
+  if(typeof currentSim.hardReset==='function')currentSim.hardReset(currentState);
+  else currentSim.reset(currentState);
   toast('↺ أُعيدت التجربة.','ok');
   updateHintBox();
 });
@@ -3293,7 +3581,7 @@ window.addEventListener('load',()=>{
         <h1 class="text-xl font-bold mb-2 text-slate-300">أهلًا وسهلًا بك في</h1>
         <h2 class="text-3xl md:text-4xl font-black mb-4 text-gold leading-tight">مختبر الفيزياء التفاعلي</h2>
         <p class="text-slate-400 text-sm mb-6 leading-relaxed">
-          منصة تعليمية تضم <b class="text-cyan">70 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">16 فرعًا فيزيائيًا</b>:
+          منصة تعليمية تضم <b class="text-cyan">75 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">16 فرعًا فيزيائيًا</b>:
           الميكانيكا، الكهرباء، البصريات، الموجات، ميكانيكا الكم، الفيزياء الذرية والجزيئية،
           فيزياء الصلبة، النانوتكنولوجي، الأطياف، النماذج النووية، الفيزياء النووية،
           الإلكترونيات التماثلية، الإلكترونيات الرقمية، الموائع والحرارة، والنسبية.
@@ -3309,7 +3597,7 @@ window.addEventListener('load',()=>{
   `;
   document.getElementById('welcome-start').onclick=()=>{
     overlay.innerHTML='';
-    toast('استمتع بـ <b>70 تجربة</b> في <b>16 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
+    toast('استمتع بـ <b>75 تجربة</b> في <b>16 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
   };
   renderFilterTabs();
 });
