@@ -255,7 +255,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
 const deg2rad = d => d * Math.PI / 180;
 const rad2deg = r => r * 180 / Math.PI;
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-const CONST = Object.freeze({c:299792458,h:6.62607015e-34,h_eVs:4.135667696e-15,e:1.602176634e-19,me:9.1093837139e-31,G:6.67430e-11,kB_eV:8.617333262e-5,muB_eVT:5.7883817982e-5,Rinf:10973731.568157,a0_A:0.529177210544,lambdaC_pm:2.42631023867,wien_nmK:2.897771955e6});
+const CONST = Object.freeze({c:299792458,h:6.62607015e-34,hbar:1.054571817e-34,h_eVs:4.135667696e-15,e:1.602176634e-19,me:9.1093837139e-31,mp:1.67262192595e-27,u:1.66053906892e-27,G:6.67430e-11,kB:1.380649e-23,kB_eV:8.617333262e-5,mu0:1.25663706127e-6,eps0:8.8541878188e-12,muB_eVT:5.7883817982e-5,Rinf:10973731.568157,a0_A:0.529177210544,lambdaC_pm:2.42631023867,wien_nmK:2.897771955e6});
 
 function toast(msg, type='info', ms=2600) {
   const c = { info:'bg-panel border-edge', ok:'bg-emerald-900/60 border-emerald-500/40', err:'bg-red-900/60 border-red-500/40', learn:'bg-cyan-900/40 border-cyan/40' };
@@ -936,104 +936,62 @@ freefall: {
 
 work_energy: {
   title:'الشغل والطاقة الحركية', icon:'💪', category:'ميكانيكا',
-  desc:'مبدأ الشغل-الطاقة: W = ΔKE.',
-  welcome:{title:'💪 الشغل والطاقة',steps:['الشغل: W = F·d·cosθ.','الطاقة الحركية: KE = ½mv².','مبدأ الشغل-الطاقة: W_net = ΔKE.','غيّر القوة والمسافة وراقب تغيّر السرعة.']},
+  desc:'مبدأ الشغل-الطاقة مع التمييز بين الاحتكاك السكوني والحركي.',
+  welcome:{title:'💪 الشغل والطاقة',steps:['يبدأ الجسم من السكون فقط إذا F > μs mg.','بعد بدء الحركة: fₖ = μk mg.','مبدأ الشغل-الطاقة: W_net = ΔKE.','راقب توافق الشغل الصافي والطاقة الحركية.']},
   controls:[
-    {id:'F',label:'القوة المؤثرة F',min:0,max:100,step:2,value:30,unit:'N',help:'<b>F</b>'},
-    {id:'d',label:'المسافة d',min:1,max:15,step:0.5,value:5,unit:'m',help:'<b>d</b>'},
-    {id:'m',label:'الكتلة m',min:0.5,max:15,step:0.5,value:4,unit:'kg',help:'<b>m</b>'},
-    {id:'mu',label:'معامل الاحتكاك μ',min:0,max:0.5,step:0.05,value:0.1,unit:'',help:'<b>μ</b>'}
+    {id:'F',label:'القوة المؤثرة F',min:0,max:100,step:2,value:30,unit:'N',help:'قوة أفقية ثابتة.'},
+    {id:'d',label:'المسافة d',min:1,max:15,step:0.5,value:5,unit:'m',help:'نهاية المسار.'},
+    {id:'m',label:'الكتلة m',min:0.5,max:15,step:0.5,value:4,unit:'kg'},
+    {id:'mus',label:'معامل الاحتكاك السكوني μs',min:0,max:0.6,step:0.05,value:0.15,unit:'',help:'يحدد شرط بدء الحركة.'},
+    {id:'muk',label:'معامل الاحتكاك الحركي μk',min:0,max:0.5,step:0.05,value:0.10,unit:'',help:'يحدد الاحتكاك بعد بدء الحركة.'}
   ],
   reset(s){s.t=0;s.x=0;s.v=0;},
   update(s,dt){
-    const g=9.81,Ff=s.ctrl.mu*s.ctrl.m*g,Fnet=s.ctrl.F-Ff;
+    const g=9.81,fsMax=s.ctrl.mus*s.ctrl.m*g;
+    if(s.ctrl.F<=fsMax){s.v=0;s.x=0;s.t+=dt;return;}
+    const Ff=s.ctrl.muk*s.ctrl.m*g,Fnet=s.ctrl.F-Ff;
     if(Fnet<=0){s.v=0;s.x=0;s.t+=dt;return;}
     const a=Fnet/s.ctrl.m;s.t+=dt;s.x=0.5*a*s.t*s.t;s.v=a*s.t;
     if(s.x>=s.ctrl.d){s.x=s.ctrl.d;s.v=Math.sqrt(2*a*s.ctrl.d);}
   },
   readouts(s){
-    const g=9.81;
-    const Ff=s.ctrl.mu*s.ctrl.m*g;
-    const Fnet=s.ctrl.F-Ff;
-    const W_net=Fnet*s.x;
-    const KE=0.5*s.ctrl.m*s.v*s.v;
+    const g=9.81,fsMax=s.ctrl.mus*s.ctrl.m*g,starts=s.ctrl.F>fsMax;
+    const Ff=starts?s.ctrl.muk*s.ctrl.m*g:Math.min(s.ctrl.F,fsMax);
+    const Fnet=starts?Math.max(0,s.ctrl.F-Ff):0;
+    const Wnet=Fnet*s.x,KE=0.5*s.ctrl.m*s.v*s.v;
     return[
+      {l:'الحركة تبدأ؟',v:starts?'نعم':'لا',u:'',c:'gold'},
       {l:'القوة الصافية F_net',v:Fnet.toFixed(2),u:'N',c:'cyan'},
-      {l:'الشغل الصافي حتى الموضع الحالي',v:W_net.toFixed(2),u:'J',c:'gold'},
-      {l:'الطاقة الحركية KE',v:KE.toFixed(2),u:'J',c:'cyan'},
-      {l:'السرعة v',v:s.v.toFixed(2),u:'m/s'}
+      {l:'W_net حتى الموضع الحالي',v:Wnet.toFixed(2),u:'J',c:'gold'},
+      {l:'الطاقة الحركية KE',v:KE.toFixed(2),u:'J',c:'cyan'}
     ];
   },
   hints(s){
-    const g=9.81;
-    const Ff=s.ctrl.mu*s.ctrl.m*g;
-    const Fnet=s.ctrl.F-Ff;
-    const h=[];
-    if(Fnet<=0){h.push('❌ القوة لا تكفي للتغلب على الاحتكاك.');return h;}
-    const W=Fnet*s.ctrl.d;
-    h.push(`W = F_net × d = <span class="hl">${W.toFixed(2)} J</span>.`);
-    h.push(`KE النهائية = W = ${W.toFixed(2)} J ⇒ v = √(2KE/m).`);
-    if(s.ctrl.mu>0)h.push(`الاحتكاك يسحب ${(Ff*s.ctrl.d).toFixed(2)} J كحرارة.`);
+    const g=9.81,fsMax=s.ctrl.mus*s.ctrl.m*g,h=[];
+    if(s.ctrl.F<=fsMax){h.push(`✋ لا تبدأ الحركة لأن F ≤ μs mg = <span class="hl">${fsMax.toFixed(2)} N</span>.`);return h;}
+    const Ff=s.ctrl.muk*s.ctrl.m*g,Fnet=s.ctrl.F-Ff,W=Fnet*s.ctrl.d;
+    h.push(`بعد بدء الحركة: F_net = F − μk mg = <span class="hl">${Fnet.toFixed(2)} N</span>.`);
+    h.push(`عند نهاية المسار: W_net = ${W.toFixed(2)} J = ΔKE.`);
+    if(s.ctrl.muk>0)h.push(`شغل الاحتكاك = −${(Ff*s.ctrl.d).toFixed(2)} J.`);
     if(s.x>=s.ctrl.d)h.push('✅ وصل الجسم لنهاية المسافة.');
     return h;
   },
-  equations:['W = F \\cdot d','KE = \\tfrac{1}{2}mv^2','W_{net} = \\Delta KE'],
-  theory:'على سطح أفقي، ومع احتكاك حركي ثابت μ، يكون الشغل الصافي حتى الموضع الحالي W_net=(F−μmg)x ويساوي التغير في الطاقة الحركية. قراءة d تمثل نهاية المسار المخطط.',
+  equations:['F>\\mu_smg\\;(\\text{لبدء الحركة})','f_k=\\mu_kmg','W_{net}=(F-\\mu_kmg)d','W_{net}=\\Delta KE'],
+  theory:'يفصل النموذج بين حد الاحتكاك السكوني الذي يحدد بدء الحركة والاحتكاك الحركي بعد الانزلاق. عند بدء الحركة من السكون وعلى سطح أفقي يكون W_net=(F−μkmg)x=ΔKE ضمن افتراض قوة واحتكاك ثابتين.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);
-    const groundY=H*0.65;
-    ctx.fillStyle='#1c2540';ctx.fillRect(0,groundY,W,H-groundY);
-    ctx.strokeStyle='#334155';ctx.lineWidth=3;
-    ctx.beginPath();ctx.moveTo(0,groundY);ctx.lineTo(W,groundY);ctx.stroke();
-    const startX=60;
-    const pxPerM=(W-160)/15;
-    const endX=startX+s.ctrl.d*pxPerM;
-    ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(251,191,36,.5)';
-    ctx.beginPath();ctx.moveTo(endX,groundY);ctx.lineTo(endX,groundY-140);ctx.stroke();
-    ctx.setLineDash([]);
+    const groundY=H*0.65;ctx.fillStyle='#1c2540';ctx.fillRect(0,groundY,W,H-groundY);
+    ctx.strokeStyle='#334155';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,groundY);ctx.lineTo(W,groundY);ctx.stroke();
+    const startX=60,pxPerM=(W-160)/15,endX=startX+s.ctrl.d*pxPerM;
+    ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(251,191,36,.5)';ctx.beginPath();ctx.moveTo(endX,groundY);ctx.lineTo(endX,groundY-140);ctx.stroke();ctx.setLineDash([]);
     label(ctx,`d = ${s.ctrl.d} m`,(startX+endX)/2,groundY+25,'#fbbf24','center',13,true);
-    const bs=50;
-    const bx=startX+s.x*pxPerM;
-    const by=groundY-bs/2;
-    const gr=ctx.createLinearGradient(bx-bs/2,by-bs/2,bx+bs/2,by+bs/2);
-    gr.addColorStop(0,'#22d3ee');gr.addColorStop(1,'#0e7490');
-    ctx.fillStyle=gr;
-    ctx.beginPath();
-    const r=8;
-    const x0=bx-bs/2,y0=by-bs/2,w=bs,h=bs;
-    ctx.moveTo(x0+r,y0);ctx.arcTo(x0+w,y0,x0+w,y0+h,r);ctx.arcTo(x0+w,y0+h,x0,y0+h,r);
-    ctx.arcTo(x0,y0+h,x0,y0,r);ctx.arcTo(x0,y0,x0+w,y0,r);ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2;ctx.stroke();
-    label(ctx,`${s.ctrl.m} kg`,bx,by,'#0a0e1a','center',13,true);
-    const Ff=s.ctrl.mu*s.ctrl.m*9.81;
-    if(s.ctrl.F>0){
-      arrow(ctx,bx+bs/2,by,bx+bs/2+s.ctrl.F*1.5,by,'#fbbf24',3,12);
-      label(ctx,`F=${s.ctrl.F}N`,bx+bs/2+s.ctrl.F*1.5+20,by,'#fbbf24','left',12,true);
-    }
-    if(Ff>0){
-      arrow(ctx,bx-bs/2,by,bx-bs/2-Ff*1.5,by,'#ef4444',3,12);
-      label(ctx,`f=${Ff.toFixed(0)}N`,bx-bs/2-Ff*1.5-20,by,'#ef4444','right',12,true);
-    }
-    if(s.v>0.1){
-      arrow(ctx,bx,by-bs/2-25,bx+Math.min(s.v*15,150),by-bs/2-25,'#22d3ee',2.5,10);
-      label(ctx,`v=${s.v.toFixed(1)} m/s`,bx+Math.min(s.v*15,150),by-bs/2-40,'#22d3ee','center',11,true);
-    }
-    const barX=W-140,barW=30;
-    const KE=0.5*s.ctrl.m*s.v*s.v;
-    const Wnet=Math.max(0,(s.ctrl.F-Ff)*s.ctrl.d);
-    const maxE=Math.max(Wnet,1);
-    ctx.fillStyle='#0a0e1a';ctx.fillRect(barX-40,H-180,80,140);
-    ctx.strokeStyle='#334155';ctx.strokeRect(barX-40,H-180,80,140);
-    const keH=(KE/maxE)*120;
-    ctx.fillStyle='rgba(34,211,238,.6)';
-    ctx.fillRect(barX-25,H-40-keH,barW,keH);
-    const wH=(Wnet/maxE)*120;
-    ctx.fillStyle='rgba(251,191,36,.6)';
-    ctx.fillRect(barX+10,H-40-wH,barW,wH);
-    label(ctx,'KE',barX-10,H-30,'#22d3ee','center',11,true);
-    label(ctx,'W',barX+25,H-30,'#fbbf24','center',11,true);
-    label(ctx,'الطاقة (J)',barX,H-190,'#94a3b8','center',12,true);
+    const bs=50,bx=startX+s.x*pxPerM,by=groundY-bs/2;
+    ctx.fillStyle='#22d3ee';ctx.fillRect(bx-bs/2,by-bs/2,bs,bs);label(ctx,`${s.ctrl.m} kg`,bx,by,'#0a0e1a','center',13,true);
+    const starts=s.ctrl.F>s.ctrl.mus*s.ctrl.m*9.81,Ff=starts?s.ctrl.muk*s.ctrl.m*9.81:Math.min(s.ctrl.F,s.ctrl.mus*s.ctrl.m*9.81);
+    if(s.ctrl.F>0){arrow(ctx,bx+bs/2,by,bx+bs/2+s.ctrl.F*1.2,by,'#fbbf24',3,12);label(ctx,`F=${s.ctrl.F}N`,bx+bs/2+s.ctrl.F*1.2+15,by,'#fbbf24','left',11,true);}
+    if(Ff>0){arrow(ctx,bx-bs/2,by,bx-bs/2-Ff*1.2,by,'#ef4444',3,12);label(ctx,`f=${Ff.toFixed(1)}N`,bx-bs/2-Ff*1.2-12,by,'#ef4444','right',11,true);}
+    const KE=0.5*s.ctrl.m*s.v*s.v,Fnet=starts?Math.max(0,s.ctrl.F-s.ctrl.muk*s.ctrl.m*9.81):0,Wnet=Fnet*s.x;
+    label(ctx,`W_net=${Wnet.toFixed(1)} J · KE=${KE.toFixed(1)} J`,W/2,35,'#cbd5e1','center',13,true);
   }
 },
 
@@ -1215,9 +1173,9 @@ bohr: {
   controls:[{id:'n',label:'مستوى الطاقة n',min:1,max:6,step:1,value:1,unit:'',help:'<b>n</b><br>E ∝ -1/n².'}],
   reset(s){s.t=0;},update(s,dt){s.t+=dt;},
   readouts(s){return[
-    {l:'Eₙ',v:(-13.6/(s.ctrl.n**2)).toFixed(2),u:'eV',c:'gold'},
-    {l:'rₙ',v:(0.529*s.ctrl.n**2).toFixed(2),u:'Å',c:'cyan'},
-    {l:'v',v:(2.18e6/s.ctrl.n/1e6).toFixed(2),u:'×10⁶ m/s'}];},
+    {l:'Eₙ',v:(-13.605693/(s.ctrl.n**2)).toFixed(3),u:'eV',c:'gold'},
+    {l:'rₙ',v:(CONST.a0_A*s.ctrl.n**2).toFixed(3),u:'Å',c:'cyan'},
+    {l:'v (نموذج بور)',v:(2.18769126364e6/s.ctrl.n/1e6).toFixed(3),u:'×10⁶ m/s'}];},
   hints(s){return[
     `عند n=${s.ctrl.n}: E = <span class="hl">${(-13.6/s.ctrl.n**2).toFixed(2)} eV</span>.`,
     `طاقة التأين: ${(13.6/s.ctrl.n**2).toFixed(2)} eV.`,
@@ -1264,7 +1222,7 @@ spectrum: {
     `λ = <span class="hl">${lam.toFixed(1)} nm</span>.`,
     'كلما زاد n اقتربنا من حد السلسلة.'];},
   equations:['\\dfrac{1}{\\lambda} = R_H\\left(\\dfrac{1}{2^2}-\\dfrac{1}{n^2}\\right)'],
-  theory:'كل ذرة لها بصمة طيفية مميزة.',
+  theory:'في سلسلة بالمر تنتهي الانتقالات عند n=2. تستخدم القراءة ثابت ريدبرغ المصحح لكتلة نواة الهيدروجين تقريبًا، ثم تحسب فرق الطاقة من E=hc/λ.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);
     const barY=H*0.35,barH=50,barL=40,barR=W-40;
@@ -2419,7 +2377,7 @@ torricelli: {
     {id:'rho',label:'كثافة السائل',min:8000,max:13600,step:200,value:13600,unit:'kg/m³',help:'الزئبق ≈ 13600 kg/m³.'}
   ],
   reset(s){s.t=0;}, update(s,dt){s.t+=dt;},
-  readouts(s){const h=s.ctrl.p*1000/(s.ctrl.rho*9.81);return[{l:'ارتفاع العمود',v:(h*100).toFixed(1),u:'cm',c:'gold'},{l:'الضغط',v:s.ctrl.p.toFixed(1),u:'kPa',c:'cyan'}];},
+  readouts(s){const h=s.ctrl.p*1000/(s.ctrl.rho*9.80665);return[{l:'ارتفاع العمود',v:(h*100).toFixed(1),u:'cm',c:'gold'},{l:'الضغط',v:s.ctrl.p.toFixed(1),u:'kPa',c:'cyan'}];},
   equations:['P=\\rho gh','h=\\frac{P}{\\rho g}'],
   theory:'توضح تجربة تورشيللي أن للهواء ضغطًا يمكن موازنته بعمود من السائل. في البارومتر الزئبقي يحدد ارتفاع العمود قيمة الضغط الجوي.',
   hints(s){const h=s.ctrl.p*1000/(s.ctrl.rho*9.81);return[`ارتفاع العمود الحالي ≈ <b>${(h*100).toFixed(1)} cm</b>.`,`زيادة الضغط ترفع العمود، وزيادة كثافة السائل تقلل ارتفاعه.`];},
@@ -2433,8 +2391,9 @@ cavendish: {
   controls:[
     {id:'M',label:'الكتلة الكبيرة M',min:20,max:200,step:5,value:100,unit:'kg'},
     {id:'m',label:'الكتلة الصغيرة m',min:0.5,max:5,step:0.1,value:1,unit:'kg'},
-    {id:'r',label:'المسافة r',min:0.05,max:0.30,step:0.01,value:0.10,unit:'m'},
-    {id:'k',label:'ثابت الالتواء κ',min:0.00000001,max:0.0000002,step:0.00000001,value:0.00000005,unit:'N·m/rad'}
+    {id:'r',label:'المسافة بين مركزي الكتلتين r',min:0.05,max:0.30,step:0.01,value:0.10,unit:'m'},
+    {id:'ell',label:'ذراع ميزان الالتواء ℓ',min:0.05,max:0.25,step:0.01,value:0.10,unit:'m'},
+    {id:'k',label:'ثابت الالتواء κ',min:0.000001,max:0.00002,step:0.000001,value:0.000005,unit:'N·m/rad'}
   ],
   reset(s){s.t=0;}, update(s,dt){s.t+=dt;},
   readouts(s){const G=CONST.G,F=G*s.ctrl.M*s.ctrl.m/(s.ctrl.r*s.ctrl.r),th=F*.1/s.ctrl.k;return[{l:'قوة الجذب',v:F.toExponential(2),u:'N',c:'gold'},{l:'زاوية الالتواء',v:(th*180/Math.PI).toFixed(4),u:'°',c:'cyan'}];},
@@ -2489,9 +2448,9 @@ millikan: {
   welcome:{title:'💧 تجربة ميليكان',steps:['غيّر المجال الكهربائي.','راقب صعود/هبوط القطرة.','عند التعليق تتوازن القوة الكهربائية مع الوزن الفعّال بعد طرح الطفو.']},
   controls:[{id:'E',label:'المجال الكهربائي E',min:10000,max:120000,step:1000,value:50000,unit:'V/m'},{id:'n',label:'عدد الشحنات الأولية n',min:1,max:8,step:1,value:3,unit:'e'},{id:'r',label:'نصف قطر القطرة',min:0.4,max:1.2,step:0.05,value:0.7,unit:'µm'}],
   reset(s){s.y=0;s.v=0;},update(s,dt){const rhoOil=860,rhoAir=1.225,eta=1.81e-5,r=s.ctrl.r*1e-6,V=4/3*Math.PI*r**3,m=rhoOil*V,q=s.ctrl.n*CONST.e,F=q*s.ctrl.E-(rhoOil-rhoAir)*V*9.80665,drag=6*Math.PI*eta*r;s.v+=(F-drag*s.v)/m*dt;s.y+=s.v*dt;if(Math.abs(s.y)>.004){s.y=0;s.v=0;}},
-  readouts(s){const rhoOil=860,rhoAir=1.225,r=s.ctrl.r*1e-6,V=4/3*Math.PI*r*r*r,q=s.ctrl.n*CONST.e,FgEff=(rhoOil-rhoAir)*V*9.80665;return[{l:'شحنة القطرة',v:q.toExponential(3),u:'C',c:'gold'},{l:'qE / الوزن الفعّال',v:(q*s.ctrl.E/FgEff).toFixed(2),u:'',c:'cyan'}];},
+  readouts(s){const rhoOil=860,rhoAir=1.225,r=s.ctrl.r*1e-6,V=4/3*Math.PI*r*r*r,q=s.ctrl.n*CONST.e,FgEff=(rhoOil-rhoAir)*V*9.80665,Ebal=FgEff/q;return[{l:'شحنة القطرة q',v:q.toExponential(3),u:'C',c:'gold'},{l:'مجال التعليق المطلوب',v:(Ebal/1000).toFixed(1),u:'kV/m'},{l:'qE / الوزن الفعّال',v:(q*s.ctrl.E/FgEff).toFixed(2),u:'',c:'cyan'}];},
   equations:['qE\\approx(\\rho_{oil}-\\rho_{air})Vg','F_d=6\\pi\\eta rv','q=ne'],
-  theory:'يستخدم النموذج الوزن الفعّال بعد الطفو ومقاومة ستوكس Fd=6πηrv. عند التعليق qE=(ρoil−ρair)Vg. تبقى تصحيحات أدق، مثل تصحيح كننغهام للقطرات الصغيرة، خارج المحاكاة التعليمية.',
+  theory:'عند تعليق القطرة ساكنة يكون qE=(ρoil−ρair)Vg بعد احتساب الطفو. وعند الحركة البطيئة يدخل تقريب ستوكس Fd=6πηrv. التجربة الدقيقة تستنتج نصف القطر من السرعة الحدية وتحتاج تصحيح كننغهام للقطرات الصغيرة؛ هذه التفاصيل خارج النموذج الحالي.',
   hints(s){const rhoOil=860,rhoAir=1.225,r=s.ctrl.r*1e-6,V=4/3*Math.PI*r*r*r,q=s.ctrl.n*CONST.e,eq=(rhoOil-rhoAir)*V*9.80665/q;return[`مجال التعليق التقريبي بعد تصحيح الطفو ≈ <b>${eq.toFixed(0)} V/m</b>.`,`الشحنة المختارة = <b>${s.ctrl.n}e</b>.`,'المحاكاة لا تعيد بناء إجراء ميليكان الكامل؛ تحديد q تجريبيًا يتطلب أيضًا مقاومة اللزوجة (قانون ستوكس وتصحيحاته).'];},
   draw(ctx,W,H,s){drawGrid(ctx,W,H);ctx.fillStyle='#334155';ctx.fillRect(80,70,W-160,12);ctx.fillRect(80,H-80,W-160,12);label(ctx,'لوح +',W/2,52,'#fbbf24','center',13,true);label(ctx,'لوح −',W/2,H-52,'#22d3ee','center',13,true);const y=H/2-Math.max(-120,Math.min(120,s.y*40));ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(W/2,y,12,0,Math.PI*2);ctx.fill();arrow(ctx,W/2+40,H-95,W/2+40,85,'#22d3ee',2,8);}
 },
@@ -2517,7 +2476,7 @@ stern_gerlach: {
   reset(s){},update(s,dt){},
   readouts(s){return[{l:'انفصال الحزمتين',v:(s.ctrl.grad*8).toFixed(1),u:'px',c:'gold'},{l:'احتمال ↑',v:(s.ctrl.mix*100).toFixed(0),u:'%',c:'cyan'}];},
   equations:['F_z=\\mu_z\\frac{\\partial B}{\\partial z}','m_s=\\pm\\frac12'],
-  theory:'أظهرت التجربة أن الإسقاط المغناطيسي للعزم الزاوي لا يأخذ قيمًا متصلة، بل ينقسم إلى حالات كمية محددة.',
+  theory:'تعرض المحاكاة نموذجًا فعالًا لجسيم سبين-1/2 يعطي حزمتين. في تجربة شتيرن–غيرلاخ الأصلية استُخدمت ذرات الفضة، ويظهر الانقسام الثنائي نتيجة تكميم العزم المغناطيسي الكلي الفعال.',
   hints(s){return[`الحزمة تنقسم إلى مسارين منفصلين بدل شريط متصل.`,`النسبة العلوية الحالية <b>${(s.ctrl.mix*100).toFixed(0)}%</b>.`];},
   draw(ctx,W,H,s){drawGrid(ctx,W,H);const cy=H/2;ctx.fillStyle='#475569';ctx.fillRect(40,cy-25,70,50);label(ctx,'فرن ذرات',75,cy,'#e2e8f0','center',12,true);ctx.fillStyle='#334155';ctx.fillRect(W/2-45,cy-80,90,160);label(ctx,'∇B',W/2,cy,'#fbbf24','center',18,true);const sep=s.ctrl.grad*8;ctx.strokeStyle='#22d3ee';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(110,cy);ctx.quadraticCurveTo(W/2,cy,W-60,cy-sep);ctx.stroke();ctx.strokeStyle='#f472b6';ctx.beginPath();ctx.moveTo(110,cy);ctx.quadraticCurveTo(W/2,cy,W-60,cy+sep);ctx.stroke();label(ctx,'↑',W-40,cy-sep,'#22d3ee','center',18,true);label(ctx,'↓',W-40,cy+sep,'#f472b6','center',18,true);}
 },
@@ -2633,7 +2592,7 @@ oersted: {
   welcome:{title:'🧭 تجربة أورستد',steps:['غيّر شدة التيار.','راقب اتجاه إبرة البوصلة.','اعكس التيار لترى انعكاس اتجاه المجال.']},
   controls:[{id:'I',label:'شدة التيار',min:-10,max:10,step:0.5,value:5,unit:'A'},{id:'r',label:'بعد البوصلة عن السلك',min:1,max:20,step:1,value:7,unit:'cm'}],
   reset(s){},update(s,dt){},
-  readouts(s){const B=2e-7*s.ctrl.I/(s.ctrl.r/100);return[{l:'B عند البوصلة',v:(B*1e6).toFixed(1),u:'µT',c:'gold'},{l:'اتجاه المجال',v:s.ctrl.I>0?'عكس عقارب الساعة':s.ctrl.I<0?'مع عقارب الساعة':'لا مجال من السلك',u:'',c:'cyan'}];},
+  readouts(s){const B=CONST.mu0*s.ctrl.I/(2*Math.PI*(s.ctrl.r/100));return[{l:'B عند البوصلة',v:(B*1e6).toFixed(1),u:'µT',c:'gold'},{l:'اتجاه المجال',v:s.ctrl.I>0?'عكس عقارب الساعة':s.ctrl.I<0?'مع عقارب الساعة':'لا مجال من السلك',u:'',c:'cyan'}];},
   equations:['B=\\frac{\\mu_0 I}{2\\pi r}'],
   theory:'أثبت أورستد أن التيار الكهربائي يولّد مجالًا مغناطيسيًا حول السلك. اتجاه المجال يتبع قاعدة اليد اليمنى وينعكس عند عكس اتجاه التيار.',
   hints(s){return['قرّب البوصلة من السلك فتزداد شدة المجال.','بدّل إشارة التيار ولاحظ انقلاب اتجاه الإبرة.'];},
@@ -2828,7 +2787,7 @@ classical_hall: {
   welcome:{title:'🧲 تأثير هول',steps:['غيّر التيار والمجال.','راقب جهد هول.','اعكس المجال لترى انعكاس قطبية الجهد.']},
   controls:[{id:'I',label:'التيار',min:.1,max:5,step:.1,value:1,unit:'A'},{id:'B',label:'المجال',min:-2,max:2,step:.1,value:.8,unit:'T'},{id:'n',label:'كثافة الحوامل',min:1,max:10,step:.5,value:5,unit:'10²² m⁻³'},{id:'t',label:'سماكة العينة t',min:.1,max:2,step:.1,value:1,unit:'mm'},{id:'carrier',label:'نوع الحامل (+1 ثقوب / −1 إلكترونات)',min:-1,max:1,step:2,value:-1,unit:''}],
   reset(s){},update(s,dt){},
-  readouts(s){const q=s.ctrl.carrier*CONST.e,V=s.ctrl.I*s.ctrl.B/(s.ctrl.n*1e22*q*s.ctrl.t*1e-3);return[{l:'نوع الحامل',v:s.ctrl.carrier<0?'إلكترونات':'ثقوب',u:''},{l:'جهد هول',v:(V*1e3).toFixed(3),u:'mV',c:'gold'},{l:'القطبية',v:V>0?'موجبة':V<0?'سالبة':'صفر',u:'',c:'cyan'}];},
+  readouts(s){const carrier=s.ctrl.carrier<0?-1:1,q=carrier*CONST.e,V=s.ctrl.I*s.ctrl.B/(s.ctrl.n*1e22*q*s.ctrl.t*1e-3);return[{l:'نوع الحامل',v:carrier<0?'إلكترونات':'ثقوب',u:''},{l:'جهد هول',v:(V*1e3).toFixed(3),u:'mV',c:'gold'},{l:'القطبية',v:V>0?'موجبة':V<0?'سالبة':'صفر',u:'',c:'cyan'}];},
   equations:['V_H=\\frac{IB}{nqt}'],
   theory:'تنحرف الحوامل بفعل قوة لورنتز وتتراكم على أحد جانبي العينة، مولدة فرق جهد عرضيًا يسمح بقياس نوع الحوامل وكثافتها.',
   hints(s){return['اعكس B أو إشارة الحامل q فتنقلب إشارة جهد هول.','زيادة كثافة الحوامل تقلل جهد هول.'];},
@@ -2843,7 +2802,7 @@ blackbody_planck: {
   reset(s){},update(s,dt){},
   readouts(s){const lm=CONST.wien_nmK/s.ctrl.T;return[{l:'λ عند القمة',v:lm.toFixed(0),u:'nm',c:'gold'},{l:'القدرة النسبية ∝T⁴',v:((s.ctrl.T/5000)**4).toFixed(2),u:'',c:'cyan'}];},
   equations:['B_\\lambda(T)=\\frac{2hc^2}{\\lambda^5}\\frac{1}{e^{hc/(\\lambda kT)}-1}','\\lambda_{max}T=b'],
-  theory:'قانون بلانك يصف طيف الجسم الأسود وحل أزمة فوق البنفسج، وكان من البدايات الأساسية لفكرة تكميم الطاقة.',
+  theory:'قانون بلانك يصف الطيف الإشعاعي للجسم الأسود، وقانون فين يحدد موضع القمة، بينما يصف قانون ستيفان–بولتزمان القدرة الكلية المنبعثة لكل وحدة مساحة بأنها تتناسب مع T⁴.',
   hints(s){return['ارفع T فتتحرك القمة إلى أطوال موجية أقصر وتزداد القدرة الكلية بقوة.'];},
   draw(ctx,W,H,s){drawGrid(ctx,W,H);const lm=CONST.wien_nmK/s.ctrl.T;ctx.strokeStyle='#f59e0b';ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<200;i++){const l=200+i*8,x=45+i*(W-90)/199,z=l/lm,y=H-55-(H-120)*(z**-5/(Math.exp(4.965/z)-1))*21.2;i?ctx.lineTo(x,Math.max(45,y)):ctx.moveTo(x,Math.max(45,y));}ctx.stroke();label(ctx,`λmax≈${lm.toFixed(0)} nm`,W*.65,55,'#fbbf24','center',13,true);}
 },
@@ -2856,7 +2815,7 @@ zeeman_effect: {
   reset(s){},update(s,dt){},
   readouts(s){const dE=CONST.muB_eVT*s.ctrl.g*s.ctrl.B;return[{l:'فاصل طاقة (Δm=1)',v:(dE*1e3).toFixed(3),u:'meV',c:'gold'},{l:'المجال',v:s.ctrl.B.toFixed(1),u:'T',c:'cyan'}];},
   equations:['\\Delta E=g\\mu_B m_j B'],
-  theory:'إزاحة المستوى ΔE=gμ_B mB، أما القراءة المعروضة فهي الفاصل بين مستويين متجاورين Δm=1، أي gμ_BB.',
+  theory:'إزاحة المستوى في التقريب الخطي هي ΔE=gμ_B m_jB. أما القراءة المعروضة فهي الفاصل بين مستويين متجاورين عندما Δm_j=1، أي gμ_BB.',
   hints(s){return['زيادة B تزيد المسافة بين المركبات خطيًا تقريبًا.'];},
   draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2,sep=s.ctrl.B*s.ctrl.g*18;for(const dx of [-sep,0,sep]){ctx.strokeStyle=dx===0?'#fbbf24':'#22d3ee';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(cx+dx,70);ctx.lineTo(cx+dx,H-70);ctx.stroke();}label(ctx,'خطوط طيفية منقسمة',cx,H-35,'#cbd5e1','center',13,true);}
 },
