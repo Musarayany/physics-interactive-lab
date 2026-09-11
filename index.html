@@ -283,6 +283,23 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
   .quiz-btn{flex:1;min-height:40px;padding:8px 9px;font-size:10px}
 }
 
+
+/* Curated learning resources */
+#resources-panel{grid-column:1 / -1;min-width:0}
+.resource-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.resource-card{display:flex;flex-direction:column;gap:8px;min-height:150px;border:1px solid #25304a;background:rgba(10,14,26,.78);border-radius:15px;padding:14px;transition:.18s}
+.resource-card:hover{border-color:rgba(34,211,238,.55);transform:translateY(-1px)}
+.resource-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.resource-type{font-size:10px;font-weight:900;border:1px solid #334155;border-radius:999px;padding:4px 8px;color:#22d3ee;background:#0b1220;white-space:nowrap}
+.resource-source{font-size:10px;color:#94a3b8;text-align:left}
+.resource-title{font-size:13px;font-weight:900;color:#f8fafc;line-height:1.7}
+.resource-note{font-size:11px;color:#94a3b8;line-height:1.75;flex:1}
+.resource-open{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:39px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#e2e8f0;font-size:11px;font-weight:900;text-decoration:none;transition:.16s}
+.resource-open:hover{border-color:#fbbf24;color:#fbbf24}
+.resource-empty{padding:18px;border:1px dashed #334155;border-radius:13px;text-align:center;color:#94a3b8;font-size:12px;line-height:1.8}
+.resource-disclaimer{font-size:10px;color:#64748b;line-height:1.7;margin-top:10px}
+@media(max-width:1023px){.resource-grid{grid-template-columns:1fr}.resource-card{min-height:auto}#mobile-panel-tabs{grid-template-columns:repeat(6,minmax(0,1fr))!important}.mobile-panel-btn{font-size:9px!important;padding:6px 1px!important}}
+
 </style>
 </head>
 <body class="grid-bg">
@@ -383,6 +400,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
           <button type="button" class="mobile-panel-btn" data-panel-target="guide" role="tab">🧭 ماذا يحدث؟</button>
           <button type="button" class="mobile-panel-btn" data-panel-target="explain" role="tab">📐 شرح</button>
           <button type="button" class="mobile-panel-btn" data-panel-target="quiz" role="tab">🧠 اختبار</button>
+          <button type="button" class="mobile-panel-btn" data-panel-target="resources" role="tab">🎓 مصادر</button>
         </div>
       </div>
       <div id="sim-side" class="space-y-4">
@@ -430,6 +448,16 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
       <div class="quiz-progress"><span id="quiz-progress-bar"></span></div>
       <div id="quiz-box" class="quiz-empty">يتم إعداد أسئلة التجربة…</div>
     </div>
+    </div>
+    <div id="resources-panel" class="glass rounded-2xl p-5 mt-5" data-mobile-panel="resources">
+      <div class="quiz-head">
+        <div>
+          <div class="quiz-head-title">🎓 مصادر موثوقة للتجربة</div>
+          <div class="quiz-head-sub">فيديوهات عملية، مراجع جامعية وملفات PDF تم اختيارها يدويًا. تفتح الروابط في صفحة جديدة.</div>
+        </div>
+      </div>
+      <div id="resources-box" class="resource-empty">يتم تحميل المصادر الخاصة بهذه التجربة…</div>
+      <div class="resource-disclaimer">ملاحظة: الروابط الخارجية مستقلة عن المنصة وقد تغيّر الجهة الناشرة عنوانها أو توفرها بمرور الوقت.</div>
     </div>
     <div class="social-follow-card mt-6">
       <div class="social-follow-copy">
@@ -3778,10 +3806,693 @@ rl_phase_frequency_lab: {
 }
 };
 
+
+const RESOURCE_CATALOG = {
+  "ohm": [
+    {
+      "type": "مرجع",
+      "title": "قانون أوم: العلاقة بين الجهد والتيار والمقاومة",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/9-4-ohms-law",
+      "note": "شرح جامعي مباشر لقانون أوم وحدود تطبيقه."
+    },
+    {
+      "type": "فيديو",
+      "title": "Series & Parallel Circuits + Ohm’s Law",
+      "source": "The Organic Chemistry Tutor",
+      "url": "https://www.youtube.com/watch?v=wejz5s31Cts",
+      "note": "شرح مرئي مع أمثلة حسابية على V وI وR."
+    },
+    {
+      "type": "PDF",
+      "title": "Experiment 6: Ohm’s Law, RC and RL Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/4a47def39861449ef7407fd1003bc2e0_experiment6.pdf",
+      "note": "دليل مختبر جامعي من قسم الفيزياء في MIT."
+    }
+  ],
+  "kelvin_dropper": [
+    {
+      "type": "مختبر",
+      "title": "Kelvin Water Dropper — Lecture Demonstration",
+      "source": "University of Iowa",
+      "url": "https://instructional-resources.physics.uiowa.edu/5a4070-kelvin-water-dropper-relaxation-oscillator",
+      "note": "إعداد عملي للجهاز ومبدأ تراكم الشحنة والتفريغ."
+    },
+    {
+      "type": "مرجع",
+      "title": "Electrostatics & Electric Potential — University Physics",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/7-introduction",
+      "note": "مرجع تأسيسي لفهم الشحنة والجهد الكهربائي في التجربة."
+    }
+  ],
+  "oersted": [
+    {
+      "type": "مرجع",
+      "title": "اكتشاف أورستد: التيار يولد مجالًا مغناطيسيًا",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/11-1-magnetism-and-its-historical-discoveries",
+      "note": "خلفية تاريخية وفيزيائية لتجربة انحراف إبرة البوصلة."
+    },
+    {
+      "type": "فيديو",
+      "title": "Forces on a Current-Carrying Wire",
+      "source": "MIT Physics Demo",
+      "url": "https://www.youtube.com/watch?v=43AeuDvWc0k",
+      "note": "عرض عملي لعلاقة التيار بالمجال والقوة المغناطيسية."
+    }
+  ],
+  "faraday_induction": [
+    {
+      "type": "مرجع",
+      "title": "Faraday’s Law",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/13-1-faradays-law",
+      "note": "شرح الفيض المغناطيسي والقوة الدافعة المحتثة وقانون لنز."
+    },
+    {
+      "type": "فيديو",
+      "title": "Experiment 10: Faraday’s Law",
+      "source": "Benha University Physics Lab",
+      "url": "https://www.youtube.com/watch?v=fQDgZakba24",
+      "note": "عرض عملي جامعي لقانون فاراداي."
+    },
+    {
+      "type": "PDF",
+      "title": "Experiment 5: Faraday’s Law",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/a4cb17d792e60dae1cac0167fd84366b_experiment5.pdf",
+      "note": "دليل مختبر MIT مع الأهداف والجهاز والإجراءات والأسئلة."
+    }
+  ],
+  "classical_hall": [
+    {
+      "type": "مرجع",
+      "title": "The Hall Effect",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/11-6-the-hall-effect",
+      "note": "اشتقاق جهد هول وعلاقته بنوع حوامل الشحنة والمجال."
+    },
+    {
+      "type": "فيديو",
+      "title": "Hall Effect Experiment",
+      "source": "University of Hong Kong",
+      "url": "https://www.youtube.com/watch?v=niXf9WWGl4E",
+      "note": "فيديو مختبري جامعي يوضح إعداد وقياس تأثير هول."
+    }
+  ],
+  "resistor_network_lab": [
+    {
+      "type": "مرجع",
+      "title": "Resistors in Series and Parallel",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/10-2-resistors-in-series-and-parallel",
+      "note": "القواعد الصحيحة للتوالي والتوازي والمقاومة المكافئة."
+    },
+    {
+      "type": "فيديو",
+      "title": "Series and Parallel Circuits",
+      "source": "The Organic Chemistry Tutor",
+      "url": "https://www.youtube.com/watch?v=7mdc-lRrW1c",
+      "note": "شرح مرئي لحساب التيار والجهد في الربطين."
+    },
+    {
+      "type": "PDF",
+      "title": "Ohm’s Law, RC and RL Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/4a47def39861449ef7407fd1003bc2e0_experiment6.pdf",
+      "note": "مختبر MIT يتضمن قياسات الجهد والتيار وقانون أوم."
+    }
+  ],
+  "kirchhoff_lab": [
+    {
+      "type": "مرجع",
+      "title": "Kirchhoff’s Rules",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/10-3-kirchhoffs-rules",
+      "note": "قاعدة العقد KCL وقاعدة الحلقات KVL وتحليل الدوائر متعددة الحلقات."
+    },
+    {
+      "type": "فيديو",
+      "title": "Kirchhoff’s Law — KCL & KVL Circuit Analysis",
+      "source": "The Organic Chemistry Tutor",
+      "url": "https://www.youtube.com/watch?v=2Zu3ppq3n8I",
+      "note": "شرح تفصيلي للإشارات واتجاهات التيار والجهد."
+    },
+    {
+      "type": "PDF",
+      "title": "Ohm’s Law, RC and RL Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/4a47def39861449ef7407fd1003bc2e0_experiment6.pdf",
+      "note": "مرجع مختبري للقياسات وقواعد الدوائر."
+    }
+  ],
+  "voltage_divider_lab": [
+    {
+      "type": "فيديو",
+      "title": "Voltage Divider Circuit Explained",
+      "source": "The Organic Chemistry Tutor",
+      "url": "https://www.youtube.com/watch?v=JGXdi7XcQi8",
+      "note": "يوضح مقسم الجهد وتأثير مقاومة الحمل مباشرة."
+    },
+    {
+      "type": "مرجع",
+      "title": "Resistors in Series and Parallel",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/10-2-resistors-in-series-and-parallel",
+      "note": "الأساس الفيزيائي لعلاقة تقسيم الجهد في المقاومات المتسلسلة."
+    },
+    {
+      "type": "PDF",
+      "title": "Ohm’s Law, RC and RL Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/4a47def39861449ef7407fd1003bc2e0_experiment6.pdf",
+      "note": "تطبيقات مختبرية لقياس الجهد والتيار."
+    }
+  ],
+  "wheatstone_bridge_lab": [
+    {
+      "type": "فيديو",
+      "title": "How To Solve The Wheatstone Bridge Circuit",
+      "source": "The Organic Chemistry Tutor",
+      "url": "https://www.youtube.com/watch?v=jFvVtB10B1I",
+      "note": "الاتزان وغير الاتزان وتيارات فروع جسر ويتستون."
+    },
+    {
+      "type": "مرجع",
+      "title": "Kirchhoff’s Rules",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/10-3-kirchhoffs-rules",
+      "note": "القواعد العامة التي يُشتق منها شرط اتزان الجسر."
+    },
+    {
+      "type": "PDF",
+      "title": "Ohm’s Law, RC and RL Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/4a47def39861449ef7407fd1003bc2e0_experiment6.pdf",
+      "note": "مرجع مختبري لقياس فروق الجهد والتيارات."
+    }
+  ],
+  "capacitor_network_lab": [
+    {
+      "type": "مرجع",
+      "title": "Capacitors in Series and in Parallel",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/8-2-capacitors-in-series-and-in-parallel",
+      "note": "السعة المكافئة والشحنة والجهد في التوالي والتوازي."
+    },
+    {
+      "type": "فيديو",
+      "title": "Capacitors in Series and Parallel Explained",
+      "source": "The Organic Chemistry Tutor",
+      "url": "https://www.youtube.com/watch?v=zaT4JorVUz0",
+      "note": "أمثلة عددية توضح Q وV وC في الشبكات."
+    },
+    {
+      "type": "PDF",
+      "title": "Ohm’s Law, RC and RL Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/4a47def39861449ef7407fd1003bc2e0_experiment6.pdf",
+      "note": "يتضمن استخدام المكثف وسلوكه في الدوائر."
+    }
+  ],
+  "measurement_graph_lab": [
+    {
+      "type": "مرجع",
+      "title": "The International System of Units (SI)",
+      "source": "NIST",
+      "url": "https://www.nist.gov/publications/international-system-units-si-2019-edition",
+      "note": "مرجع رسمي لوحدات SI والرموز والتعاريف."
+    },
+    {
+      "type": "PDF",
+      "title": "Guide for the Use of the SI",
+      "source": "NIST",
+      "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication811e2008.pdf",
+      "note": "دليل NIST لكتابة الوحدات والرموز بصورة صحيحة."
+    },
+    {
+      "type": "PDF",
+      "title": "XYZs of Oscilloscopes Primer",
+      "source": "Tektronix",
+      "url": "https://download.tek.com/document/XYZs-of-Oscilloscopes_Primer_03W-8605-8.pdf",
+      "note": "مبادئ القياس، المحاور، الحساسية، الزمن والتردد بالأوسلسكوب."
+    }
+  ],
+  "magnetic_properties_lab": [
+    {
+      "type": "مرجع",
+      "title": "Magnetism in Matter",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/12-7-magnetism-in-matter",
+      "note": "تصنيف المواد إلى دايامغناطيسية وبارامغناطيسية وفيرومغناطيسية."
+    },
+    {
+      "type": "PDF",
+      "title": "Magnetic Fields of a Bar Magnet and Helmholtz Coil",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/ed0120a5ffcd7ef88f18ebd30b427b00_experiment3.pdf",
+      "note": "مختبر جامعي للحقول المغناطيسية وقياسها."
+    }
+  ],
+  "current_balance_current_lab": [
+    {
+      "type": "مرجع",
+      "title": "Magnetic Force on a Current-Carrying Conductor",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/11-4-magnetic-force-on-a-current-carrying-conductor",
+      "note": "العلاقة F=ILB sinθ واتجاه القوة بقاعدة اليد اليمنى."
+    },
+    {
+      "type": "فيديو",
+      "title": "Forces on a Current-Carrying Wire",
+      "source": "MIT Physics Demo",
+      "url": "https://www.youtube.com/watch?v=43AeuDvWc0k",
+      "note": "عرض عملي مباشر للقوة على موصل يمر فيه تيار."
+    },
+    {
+      "type": "PDF",
+      "title": "Forces and Torques on Magnetic Dipoles",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/c67532f2fd929f8bae57bd7099e83f79_experiment4.pdf",
+      "note": "مختبر MIT للقوى والعزوم المغناطيسية."
+    }
+  ],
+  "current_balance_field_lab": [
+    {
+      "type": "مرجع",
+      "title": "Magnetic Force on a Current-Carrying Conductor",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/11-4-magnetic-force-on-a-current-carrying-conductor",
+      "note": "العلاقة F=ILB sinθ واتجاه القوة بقاعدة اليد اليمنى."
+    },
+    {
+      "type": "فيديو",
+      "title": "Forces on a Current-Carrying Wire",
+      "source": "MIT Physics Demo",
+      "url": "https://www.youtube.com/watch?v=43AeuDvWc0k",
+      "note": "عرض عملي مباشر للقوة على موصل يمر فيه تيار."
+    },
+    {
+      "type": "PDF",
+      "title": "Forces and Torques on Magnetic Dipoles",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/c67532f2fd929f8bae57bd7099e83f79_experiment4.pdf",
+      "note": "مختبر MIT للقوى والعزوم المغناطيسية."
+    }
+  ],
+  "mutual_induction_frequency_current_lab": [
+    {
+      "type": "مرجع",
+      "title": "Mutual Inductance",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/14-1-mutual-inductance",
+      "note": "العلاقة ε=-M dI/dt واعتماد الاقتران على هندسة الملفين."
+    },
+    {
+      "type": "مرجع",
+      "title": "Faraday’s Law",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/13-1-faradays-law",
+      "note": "يفسر أثر التردد وعدد اللفات ومساحة الملف في الجهد المحتث."
+    },
+    {
+      "type": "PDF",
+      "title": "Experiment 5: Faraday’s Law",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/a4cb17d792e60dae1cac0167fd84366b_experiment5.pdf",
+      "note": "دليل مختبري مباشر للحث والفيض وقانون لنز."
+    }
+  ],
+  "induced_voltage_turns_diameter_lab": [
+    {
+      "type": "مرجع",
+      "title": "Mutual Inductance",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/14-1-mutual-inductance",
+      "note": "العلاقة ε=-M dI/dt واعتماد الاقتران على هندسة الملفين."
+    },
+    {
+      "type": "مرجع",
+      "title": "Faraday’s Law",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/13-1-faradays-law",
+      "note": "يفسر أثر التردد وعدد اللفات ومساحة الملف في الجهد المحتث."
+    },
+    {
+      "type": "PDF",
+      "title": "Experiment 5: Faraday’s Law",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/a4cb17d792e60dae1cac0167fd84366b_experiment5.pdf",
+      "note": "دليل مختبري مباشر للحث والفيض وقانون لنز."
+    }
+  ],
+  "motional_emf_lab": [
+    {
+      "type": "مرجع",
+      "title": "Faraday’s Law and Motional EMF",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/13-key-equations",
+      "note": "يتضمن العلاقة ε=Blv للقوة الدافعة الحركية."
+    },
+    {
+      "type": "PDF",
+      "title": "Experiment 5: Faraday’s Law",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/a4cb17d792e60dae1cac0167fd84366b_experiment5.pdf",
+      "note": "تجارب الحث والقوة المرتبطة بالموصل المتحرك."
+    }
+  ],
+  "step_up_transformer_lab": [
+    {
+      "type": "مرجع",
+      "title": "Transformers",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/15-6-transformers",
+      "note": "نسبة اللفات والجهد والتيار في المحولة المثالية."
+    },
+    {
+      "type": "فيديو",
+      "title": "Coil and Transformer Experiment",
+      "source": "University of Göttingen",
+      "url": "https://www.youtube.com/watch?v=UuI67h03bKs",
+      "note": "تجربة جامعية توضح الملف والمحولة عمليًا."
+    },
+    {
+      "type": "مرجع",
+      "title": "Mutual Inductance",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/14-1-mutual-inductance",
+      "note": "الأساس الفيزيائي لانتقال الطاقة بين الملفين."
+    }
+  ],
+  "step_down_transformer_lab": [
+    {
+      "type": "مرجع",
+      "title": "Transformers",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/15-6-transformers",
+      "note": "نسبة اللفات والجهد والتيار في المحولة المثالية."
+    },
+    {
+      "type": "فيديو",
+      "title": "Coil and Transformer Experiment",
+      "source": "University of Göttingen",
+      "url": "https://www.youtube.com/watch?v=UuI67h03bKs",
+      "note": "تجربة جامعية توضح الملف والمحولة عمليًا."
+    },
+    {
+      "type": "مرجع",
+      "title": "Mutual Inductance",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/14-1-mutual-inductance",
+      "note": "الأساس الفيزيائي لانتقال الطاقة بين الملفين."
+    }
+  ],
+  "self_induction_lab": [
+    {
+      "type": "مرجع",
+      "title": "Self-Inductance and Inductors",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/14-2-self-inductance-and-inductors",
+      "note": "العلاقة ε=-L dI/dt وتعريف الحث الذاتي."
+    },
+    {
+      "type": "مرجع",
+      "title": "RL Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/14-4-rl-circuits",
+      "note": "ثابت الزمن L/R ونمو واضمحلال التيار."
+    },
+    {
+      "type": "PDF",
+      "title": "Ohm’s Law, RC and RL Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/4a47def39861449ef7407fd1003bc2e0_experiment6.pdf",
+      "note": "مختبر MIT لدائرة RL والاستجابة الزمنية."
+    }
+  ],
+  "inductor_ac_general_lab": [
+    {
+      "type": "مرجع",
+      "title": "Simple AC Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/15-2-simple-ac-circuits",
+      "note": "المفاعلة الحثية X_L=ωL وفرق الطور في الملف."
+    },
+    {
+      "type": "PDF",
+      "title": "Undriven and Driven RLC Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/2f97bce93e297cfc286cfddb7d653053_experiment7.pdf",
+      "note": "دليل مختبري لدوائر AC وRLC."
+    },
+    {
+      "type": "PDF",
+      "title": "XYZs of Oscilloscopes Primer",
+      "source": "Tektronix",
+      "url": "https://download.tek.com/document/XYZs-of-Oscilloscopes_Primer_03W-8605-8.pdf",
+      "note": "مرجع لقياس السعة والتردد والطور."
+    }
+  ],
+  "oscilloscope_basics_lab": [
+    {
+      "type": "فيديو",
+      "title": "How to use an oscilloscope",
+      "source": "Tektronix",
+      "url": "https://www.youtube.com/watch?v=tzndcBJu-Ns",
+      "note": "فيديو رسمي من شركة أجهزة القياس يشرح المحاور والـtrigger والقياسات الأساسية."
+    },
+    {
+      "type": "مرجع",
+      "title": "XYZs of Oscilloscopes Primer",
+      "source": "Tektronix",
+      "url": "https://www.tek.com/en/documents/primer/xyzs-oscilloscopes-primer",
+      "note": "مرجع رسمي لآلية عمل الأوسلسكوب والتحكم والقياس."
+    },
+    {
+      "type": "PDF",
+      "title": "XYZs of Oscilloscopes Primer",
+      "source": "Tektronix",
+      "url": "https://download.tek.com/document/XYZs-of-Oscilloscopes_Primer_03W-8605-8.pdf",
+      "note": "نسخة PDF تشمل قياس الجهد والزمن والتردد وفرق الطور."
+    }
+  ],
+  "oscilloscope_dc_lab": [
+    {
+      "type": "فيديو",
+      "title": "How to use an oscilloscope",
+      "source": "Tektronix",
+      "url": "https://www.youtube.com/watch?v=tzndcBJu-Ns",
+      "note": "فيديو رسمي من شركة أجهزة القياس يشرح المحاور والـtrigger والقياسات الأساسية."
+    },
+    {
+      "type": "مرجع",
+      "title": "XYZs of Oscilloscopes Primer",
+      "source": "Tektronix",
+      "url": "https://www.tek.com/en/documents/primer/xyzs-oscilloscopes-primer",
+      "note": "مرجع رسمي لآلية عمل الأوسلسكوب والتحكم والقياس."
+    },
+    {
+      "type": "PDF",
+      "title": "XYZs of Oscilloscopes Primer",
+      "source": "Tektronix",
+      "url": "https://download.tek.com/document/XYZs-of-Oscilloscopes_Primer_03W-8605-8.pdf",
+      "note": "نسخة PDF تشمل قياس الجهد والزمن والتردد وفرق الطور."
+    }
+  ],
+  "oscilloscope_ac_voltage_lab": [
+    {
+      "type": "فيديو",
+      "title": "How to use an oscilloscope",
+      "source": "Tektronix",
+      "url": "https://www.youtube.com/watch?v=tzndcBJu-Ns",
+      "note": "فيديو رسمي من شركة أجهزة القياس يشرح المحاور والـtrigger والقياسات الأساسية."
+    },
+    {
+      "type": "مرجع",
+      "title": "XYZs of Oscilloscopes Primer",
+      "source": "Tektronix",
+      "url": "https://www.tek.com/en/documents/primer/xyzs-oscilloscopes-primer",
+      "note": "مرجع رسمي لآلية عمل الأوسلسكوب والتحكم والقياس."
+    },
+    {
+      "type": "PDF",
+      "title": "XYZs of Oscilloscopes Primer",
+      "source": "Tektronix",
+      "url": "https://download.tek.com/document/XYZs-of-Oscilloscopes_Primer_03W-8605-8.pdf",
+      "note": "نسخة PDF تشمل قياس الجهد والزمن والتردد وفرق الطور."
+    }
+  ],
+  "oscilloscope_frequency_lab": [
+    {
+      "type": "فيديو",
+      "title": "How to use an oscilloscope",
+      "source": "Tektronix",
+      "url": "https://www.youtube.com/watch?v=tzndcBJu-Ns",
+      "note": "فيديو رسمي من شركة أجهزة القياس يشرح المحاور والـtrigger والقياسات الأساسية."
+    },
+    {
+      "type": "مرجع",
+      "title": "XYZs of Oscilloscopes Primer",
+      "source": "Tektronix",
+      "url": "https://www.tek.com/en/documents/primer/xyzs-oscilloscopes-primer",
+      "note": "مرجع رسمي لآلية عمل الأوسلسكوب والتحكم والقياس."
+    },
+    {
+      "type": "PDF",
+      "title": "XYZs of Oscilloscopes Primer",
+      "source": "Tektronix",
+      "url": "https://download.tek.com/document/XYZs-of-Oscilloscopes_Primer_03W-8605-8.pdf",
+      "note": "نسخة PDF تشمل قياس الجهد والزمن والتردد وفرق الطور."
+    }
+  ],
+  "rc_phase_lab": [
+    {
+      "type": "مرجع",
+      "title": "Simple AC Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/15-2-simple-ac-circuits",
+      "note": "المفاعلة السعوية X_C=1/(ωC) وعلاقة الطور في المتسعة."
+    },
+    {
+      "type": "PDF",
+      "title": "Ohm’s Law, RC and RL Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/4a47def39861449ef7407fd1003bc2e0_experiment6.pdf",
+      "note": "مختبر RC وقياس الاستجابة بالزمن."
+    },
+    {
+      "type": "فيديو",
+      "title": "How to use an oscilloscope — RC example",
+      "source": "Tektronix",
+      "url": "https://www.youtube.com/watch?v=tzndcBJu-Ns",
+      "note": "يعرض مثال دائرة RC على الأوسلسكوب."
+    }
+  ],
+  "capacitive_reactance_frequency_lab": [
+    {
+      "type": "مرجع",
+      "title": "Simple AC Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/15-2-simple-ac-circuits",
+      "note": "المفاعلة السعوية X_C=1/(ωC) وعلاقة الطور في المتسعة."
+    },
+    {
+      "type": "PDF",
+      "title": "Ohm’s Law, RC and RL Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/4a47def39861449ef7407fd1003bc2e0_experiment6.pdf",
+      "note": "مختبر RC وقياس الاستجابة بالزمن."
+    },
+    {
+      "type": "فيديو",
+      "title": "How to use an oscilloscope — RC example",
+      "source": "Tektronix",
+      "url": "https://www.youtube.com/watch?v=tzndcBJu-Ns",
+      "note": "يعرض مثال دائرة RC على الأوسلسكوب."
+    }
+  ],
+  "rc_phase_frequency_lab": [
+    {
+      "type": "مرجع",
+      "title": "Simple AC Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/15-2-simple-ac-circuits",
+      "note": "المفاعلة السعوية X_C=1/(ωC) وعلاقة الطور في المتسعة."
+    },
+    {
+      "type": "PDF",
+      "title": "Ohm’s Law, RC and RL Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/4a47def39861449ef7407fd1003bc2e0_experiment6.pdf",
+      "note": "مختبر RC وقياس الاستجابة بالزمن."
+    },
+    {
+      "type": "فيديو",
+      "title": "How to use an oscilloscope — RC example",
+      "source": "Tektronix",
+      "url": "https://www.youtube.com/watch?v=tzndcBJu-Ns",
+      "note": "يعرض مثال دائرة RC على الأوسلسكوب."
+    }
+  ],
+  "rl_phase_lab": [
+    {
+      "type": "مرجع",
+      "title": "Simple AC Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/15-2-simple-ac-circuits",
+      "note": "المفاعلة الحثية X_L=ωL وعلاقة الطور في الملف."
+    },
+    {
+      "type": "مرجع",
+      "title": "RL Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/14-4-rl-circuits",
+      "note": "الاستجابة الزمنية وثابت الزمن L/R."
+    },
+    {
+      "type": "PDF",
+      "title": "Undriven and Driven RLC Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/2f97bce93e297cfc286cfddb7d653053_experiment7.pdf",
+      "note": "مختبر AC/RLC لقياسات السعة والطور."
+    }
+  ],
+  "inductive_reactance_frequency_lab": [
+    {
+      "type": "مرجع",
+      "title": "Simple AC Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/15-2-simple-ac-circuits",
+      "note": "المفاعلة الحثية X_L=ωL وعلاقة الطور في الملف."
+    },
+    {
+      "type": "مرجع",
+      "title": "RL Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/14-4-rl-circuits",
+      "note": "الاستجابة الزمنية وثابت الزمن L/R."
+    },
+    {
+      "type": "PDF",
+      "title": "Undriven and Driven RLC Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/2f97bce93e297cfc286cfddb7d653053_experiment7.pdf",
+      "note": "مختبر AC/RLC لقياسات السعة والطور."
+    }
+  ],
+  "rl_phase_frequency_lab": [
+    {
+      "type": "مرجع",
+      "title": "Simple AC Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/15-2-simple-ac-circuits",
+      "note": "المفاعلة الحثية X_L=ωL وعلاقة الطور في الملف."
+    },
+    {
+      "type": "مرجع",
+      "title": "RL Circuits",
+      "source": "OpenStax",
+      "url": "https://openstax.org/books/university-physics-volume-2/pages/14-4-rl-circuits",
+      "note": "الاستجابة الزمنية وثابت الزمن L/R."
+    },
+    {
+      "type": "PDF",
+      "title": "Undriven and Driven RLC Circuits",
+      "source": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/8-02-physics-ii-electricity-and-magnetism-spring-2007/2f97bce93e297cfc286cfddb7d653053_experiment7.pdf",
+      "note": "مختبر AC/RLC لقياسات السعة والطور."
+    }
+  ]
+};
+
 /* ============================================================
    APP STATE
    ============================================================ */
 let currentSim=null;
+let currentSimKey=null;
 let currentState=null;
 let running=true;
 let lastTime=0;
@@ -3921,9 +4632,34 @@ function initMobilePanelTabs(){
   setMobilePanel(mobilePanelName);
 }
 
+
+function resourceEscape(v){return String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function renderResources(){
+  const box=document.getElementById('resources-box');
+  if(!box)return;
+  const list=(currentSimKey&&RESOURCE_CATALOG[currentSimKey])||[];
+  if(!list.length){
+    box.className='resource-empty';
+    box.innerHTML='🔎 لم تُعتمد مصادر هذه التجربة بعد. نضيف فقط الروابط التي تم التحقق من صلتها ومصدرها، بدل وضع روابط عامة أو عشوائية.';
+    return;
+  }
+  box.className='resource-grid';
+  const icons={'فيديو':'🎥','PDF':'📄','مرجع':'📘','مختبر':'🧪','محاكاة':'🖥️'};
+  box.innerHTML=list.map(r=>{
+    const icon=icons[r.type]||'🔗';
+    return '<article class="resource-card">'+
+      '<div class="resource-top"><span class="resource-type">'+icon+' '+resourceEscape(r.type)+'</span><span class="resource-source">'+resourceEscape(r.source)+'</span></div>'+
+      '<div class="resource-title">'+resourceEscape(r.title)+'</div>'+
+      '<div class="resource-note">'+resourceEscape(r.note||'')+'</div>'+
+      '<a class="resource-open" href="'+resourceEscape(r.url)+'" target="_blank" rel="noopener noreferrer">فتح المصدر ↗</a>'+
+    '</article>';
+  }).join('');
+}
+
 function openSim(key){
   document.getElementById('view-home').classList.add('hidden');
   document.getElementById('view-sim').classList.remove('hidden');
+  currentSimKey=key;
   currentSim=SIMS[key];
   if(!currentSim.ctrl){
     currentSim.ctrl={};
@@ -3937,6 +4673,7 @@ function openSim(key){
   renderControls();
   renderEquations();
   document.getElementById('theory').innerHTML=currentSim.theory;
+  renderResources();
   prepareQuizForCurrentSim();
   mobilePanelName='controls';
   initMobilePanelTabs();
@@ -3952,7 +4689,7 @@ function openSim(key){
   });
 }
 
-function closeSim(){currentSim=null;currentState=null;}
+function closeSim(){currentSim=null;currentSimKey=null;currentState=null;}
 
 function showWelcome(sim){
   if(!sim.welcome)return;
