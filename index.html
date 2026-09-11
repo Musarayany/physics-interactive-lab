@@ -255,7 +255,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
       <div class="sub">فكرة وإعداد وتصميم وتنفيذ: م.د موسى محمد مهدي</div>
     </div>
     <div class="text-center mb-8">
-      <div class="badge text-gold border-gold/40 mb-3">87 تجربة تفاعلية مصنّفة في 17 فرعًا</div>
+      <div class="badge text-gold border-gold/40 mb-3">108 تجربة تفاعلية مصنّفة في 17 فرعًا</div>
       <h1 class="text-4xl md:text-5xl font-black mb-3 leading-tight">
         جرّب، <span class="text-gold">شاهد</span>، وافهم الفيزياء
       </h1>
@@ -491,7 +491,7 @@ function drawScope(ctx, x, y, w, h, title, color, func, Vpeak){
 const CATEGORIES = {
   'ميكانيكا':          { icon:'⚙️', color:'#fbbf24', desc:'الحركة والقوى والطاقة' },
   'موجات':             { icon:'〰️', color:'#22d3ee', desc:'الموجات والصوت والاهتزاز' },
-  'كهرباء':            { icon:'⚡', color:'#a3e635', desc:'التيار والجهد والمقاومة' },
+  'كهرباء':            { icon:'⚡', color:'#a3e635', desc:'القياسات والدوائر والمغناطيسية والحث والتيار المتناوب' },
   'بصريات':            { icon:'🔦', color:'#f472b6', desc:'العدسات والحيود والاستقطاب والألياف البصرية' },
   'الليزر':             { icon:'🔴', color:'#ef4444', desc:'الكسب والتجويف وأنماط الليزر والحزم الغاوسية' },
   'ميكانيكا الكم':     { icon:'⚛️', color:'#a78bfa', desc:'الفوتونات والدوال الموجية' },
@@ -3401,6 +3401,311 @@ fabry_perot_laser: {
 }
 
 
+
+,
+measurement_graph_lab: {
+  title:'الرسم البياني ووحدات القياس وأجهزة القياس', icon:'📏', category:'كهرباء',
+  desc:'تعلّم قراءة الفولتميتر والأميتر، دقة الجهاز، الخطأ النسبي، وتمثيل V مقابل I بيانيًا.',
+  welcome:{title:'📏 القياس والرسم البياني',steps:['غيّر R والتيار الحقيقي.','اختر دقة الفولتميتر والأميتر.','قارن القيمة الحقيقية بالقراءة المكمّمة حسب أقل تدريج.','استنتج R من ميل منحني V–I.']},
+  controls:[
+    {id:'R',label:'المقاومة الحقيقية R',min:10,max:500,step:10,value:100,unit:'Ω'},
+    {id:'I',label:'التيار الحقيقي I',min:0.01,max:0.20,step:0.005,value:0.08,unit:'A'},
+    {id:'dV',label:'أقل تدريج للفولتميتر',min:0.01,max:0.5,step:0.01,value:0.10,unit:'V'},
+    {id:'dI',label:'أقل تدريج للأميتر',min:0.001,max:0.02,step:0.001,value:0.005,unit:'A'}
+  ],
+  reset(s){},update(s,dt){},
+  calc(s){const V=s.ctrl.R*s.ctrl.I;const Vm=Math.round(V/s.ctrl.dV)*s.ctrl.dV;const Im=Math.max(s.ctrl.dI,Math.round(s.ctrl.I/s.ctrl.dI)*s.ctrl.dI);const Rm=Vm/Im;const err=Math.abs(Rm-s.ctrl.R)/s.ctrl.R*100;return{V,Vm,Im,Rm,err};},
+  readouts(s){const c=this.calc(s);return[{l:'قراءة الفولتميتر',v:c.Vm.toFixed(2),u:'V',c:'gold'},{l:'قراءة الأميتر',v:c.Im.toFixed(3),u:'A',c:'cyan'},{l:'R من V/I',v:c.Rm.toFixed(2),u:'Ω'},{l:'الخطأ النسبي',v:c.err.toFixed(2),u:'%'}];},
+  equations:['V=IR','R_{\\rm meas}=\\frac{V_{\\rm meas}}{I_{\\rm meas}}','\\%\\,error=\\frac{|R_{\\rm meas}-R|}{R}\\times100'],
+  theory:'يعطي كل جهاز قراءة محدودة بأقل تدريج. في علاقة أومية مثالية يكون منحنى V مقابل I خطيًا وميله يساوي المقاومة R. الوحدات القياسية المستخدمة هنا هي الفولت V والأمبير A والأوم Ω.',
+  hints(s){const c=this.calc(s);return[`ميل منحنى V–I النظري يساوي <span class="hl">${s.ctrl.R.toFixed(0)} Ω</span>.`,`تقليل أقل تدريج يحسن دقة القراءة غالبًا؛ الخطأ الحالي في R يساوي <span class="hl">${c.err.toFixed(2)}%</span>.`];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),left=70,bottom=H-55,right=W-45,top=55;ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,bottom);ctx.lineTo(right,bottom);ctx.stroke();const Imax=.22,Vmax=Math.max(5,500*Imax);ctx.strokeStyle='#a3e635';ctx.lineWidth=3;ctx.beginPath();for(let k=0;k<=60;k++){const I=Imax*k/60,V=s.ctrl.R*I,x=left+(right-left)*I/Imax,y=bottom-(bottom-top)*V/Vmax;k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();const px=left+(right-left)*s.ctrl.I/Imax,py=bottom-(bottom-top)*Math.min(c.V,Vmax)/Vmax;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fill();label(ctx,'I (A)',right,bottom+24,'#cbd5e1','right',12,true);label(ctx,'V (V)',left-10,top,'#cbd5e1','right',12,true);label(ctx,`V=${c.Vm.toFixed(2)} V ، I=${c.Im.toFixed(3)} A`,W/2,28,'#fbbf24','center',13,true);}
+},
+
+magnetic_properties_lab: {
+  title:'الخصائص المغناطيسية للمواد', icon:'🧲', category:'كهرباء',
+  desc:'قارن الديامغناطيسية والبارامغناطيسية والفيرومغناطيسية من استجابة العينة للمجال.',
+  welcome:{title:'🧲 الخصائص المغناطيسية',steps:['اختر نوع المادة.','غيّر شدة المجال H.','راقب المغنطة M واتجاهها.','لاحظ أن النموذج الفيرومغناطيسي غير خطي ويصل إلى التشبع.']},
+  controls:[
+    {id:'type',type:'buttons',label:'نوع المادة',value:1,options:[{value:1,label:'ديامغناطيسية'},{value:2,label:'بارامغناطيسية'},{value:3,label:'فيرومغناطيسية'}]},
+    {id:'H',label:'شدة المجال H',min:-5000,max:5000,step:100,value:2500,unit:'A/m'}
+  ],
+  reset(s){},update(s,dt){},
+  calc(s){const H=s.ctrl.H,t=Number(s.ctrl.type);if(t===1){const chi=-1.0e-5,M=chi*H;return{chi,M,B:CONST.mu0*(H+M),name:'ديامغناطيسية'};}if(t===2){const chi=2.2e-5,M=chi*H;return{chi,M,B:CONST.mu0*(H+M),name:'بارامغناطيسية'};}const Ms=8e5,H0=900,M=Ms*Math.tanh(H/H0);return{chi:null,M,B:CONST.mu0*(H+M),name:'فيرومغناطيسية'};},
+  readouts(s){const c=this.calc(s);return[{l:'نوع الاستجابة',v:c.name,u:'',c:'gold'},{l:'المغنطة M',v:c.M.toFixed(1),u:'A/m',c:'cyan'},{l:'B داخل النموذج',v:(c.B*1e3).toFixed(3),u:'mT'},{l:'χ (للنموذج الخطي)',v:c.chi===null?'غير ثابت':c.chi.toExponential(2),u:''}];},
+  equations:['M=\\chi H\\quad(\\text{مواد خطية})','B=\\mu_0(H+M)','M\\approx M_s\\tanh(H/H_0)\\quad(\\text{نموذج تعليمي للفيرومغناطيسية})'],
+  theory:'في المواد الديامغناطيسية تكون χ سالبة وصغيرة، وفي البارامغناطيسية موجبة وصغيرة. الفيرومغناطيسية ليست ذات χ ثابتة؛ لذلك تستخدم المحاكاة منحنى تشبع مبسطًا ولا تدّعي تمثيل حلقة هسترة مادية محددة.',
+  hints(s){const c=this.calc(s);const dir=Math.abs(s.ctrl.H)<1e-12?'عند H=0 يعطي هذا النموذج M=0.':(c.M*s.ctrl.H<0?'المغنطة تعاكس المجال المطبق.':'المغنطة في اتجاه المجال المطبق.');return[dir,Number(s.ctrl.type)===3?'الاستجابة الفيرومغناطيسية غير خطية وتقترب من التشبع.':'العلاقة M=χH خطية في هذا النموذج.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cx=W/2,cy=H/2;ctx.fillStyle='rgba(148,163,184,.16)';ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.fillRect(cx-115,cy-70,230,140);ctx.strokeRect(cx-115,cy-70,230,140);const dir=s.ctrl.H>=0?1:-1;for(let y=cy-45;y<=cy+45;y+=30)arrow(ctx,cx-dir*90,y,cx+dir*90,y,'#22d3ee',2,7);const mdir=c.M>=0?1:-1;arrow(ctx,cx-mdir*55,cy+92,cx+mdir*55,cy+92,'#fbbf24',5,10);label(ctx,`M = ${c.M.toFixed(0)} A/m`,cx,cy+120,'#fbbf24','center',13,true);label(ctx,c.name,cx,35,'#cbd5e1','center',15,true);}
+},
+
+current_balance_current_lab: {
+  title:'ميزان التيار — القوة المغناطيسية مع التيار', icon:'⚖️', category:'كهرباء',
+  desc:'تحقق عمليًا من التناسب الخطي F ∝ I لملف/موصل موضوع عموديًا على مجال منتظم.',
+  welcome:{title:'⚖️ ميزان التيار: F مع I',steps:['ثبّت B وطول الموصل داخل المجال.','غيّر التيار I.','راقب القوة المغناطيسية.','استنتج ميل منحنى F–I.']},
+  controls:[{id:'I',label:'التيار I',min:-5,max:5,step:.1,value:2,unit:'A'},{id:'B',label:'المجال B',min:.05,max:1.5,step:.05,value:.4,unit:'T'},{id:'l',label:'الطول الفعال ℓ',min:1,max:20,step:1,value:8,unit:'cm'},{id:'N',label:'عدد المقاطع الفعالة N',min:1,max:20,step:1,value:5,unit:''}],
+  reset(s){},update(s,dt){},
+  calc(s){const l=s.ctrl.l/100,F=s.ctrl.N*s.ctrl.I*l*s.ctrl.B;return{F,slope:s.ctrl.N*l*s.ctrl.B};},
+  readouts(s){const c=this.calc(s);return[{l:'القوة F',v:c.F.toFixed(4),u:'N',c:'gold'},{l:'|F|',v:Math.abs(c.F).toFixed(4),u:'N'},{l:'ميل F–I',v:c.slope.toFixed(4),u:'N/A',c:'cyan'}];},
+  equations:['F=NBI\\ell\\sin\\theta','\\theta=90^\\circ\\Rightarrow F=NBI\\ell','\\frac{dF}{dI}=NB\\ell'],
+  theory:'القوة على مقطع مستقيم حامل للتيار هي F=BIℓ sinθ. تمثل N هنا عدد المقاطع المتكافئة الموجودة داخل المجال وبالاتجاه نفسه، لذا تجمع قواها. عكس التيار يعكس اتجاه القوة.',
+  hints(s){return['ضاعف I مع ثبات بقية المتغيرات فتتضاعف F.','الإشارة تحدد اتجاه القوة وفق قاعدة اليد اليمنى.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cx=W/2,cy=H/2;ctx.fillStyle='rgba(34,211,238,.1)';ctx.fillRect(W*.18,H*.25,W*.64,H*.5);for(let x=W*.23;x<W*.8;x+=40)for(let y=H*.3;y<H*.72;y+=40)label(ctx,'×',x,y,'#22d3ee','center',18,true);ctx.strokeStyle='#fbbf24';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(cx-120,cy);ctx.lineTo(cx+120,cy);ctx.stroke();arrow(ctx,cx,cy,cx,cy-Math.max(-110,Math.min(110,c.F*80)),'#f87171',4,10);label(ctx,`F=${c.F.toFixed(3)} N`,cx,35,'#fbbf24','center',14,true);}
+},
+
+current_balance_field_lab: {
+  title:'ميزان التيار — القوة المغناطيسية مع المجال', icon:'⚖️', category:'كهرباء',
+  desc:'تحقق من التناسب F ∝ B عند ثبوت التيار وطول الموصل.',
+  welcome:{title:'⚖️ ميزان التيار: F مع B',steps:['ثبّت التيار I.','غيّر المجال B.','راقب القوة F.','قارن ميل F–B بالقيمة NIℓ.']},
+  controls:[{id:'B',label:'المجال B',min:-1.5,max:1.5,step:.05,value:.5,unit:'T'},{id:'I',label:'التيار I',min:.1,max:5,step:.1,value:1.5,unit:'A'},{id:'l',label:'الطول الفعال ℓ',min:1,max:20,step:1,value:10,unit:'cm'},{id:'N',label:'عدد المقاطع الفعالة N',min:1,max:20,step:1,value:4,unit:''}],
+  reset(s){},update(s,dt){},
+  calc(s){const l=s.ctrl.l/100,F=s.ctrl.N*s.ctrl.I*l*s.ctrl.B;return{F,slope:s.ctrl.N*s.ctrl.I*l};},
+  readouts(s){const c=this.calc(s);return[{l:'القوة F',v:c.F.toFixed(4),u:'N',c:'gold'},{l:'ميل F–B',v:c.slope.toFixed(4),u:'N/T',c:'cyan'},{l:'اتجاه القوة',v:c.F>0?'موجب':c.F<0?'معكوس':'صفر',u:''}];},
+  equations:['F=NBI\\ell\\quad(\\theta=90^\\circ)','\\frac{dF}{dB}=NI\\ell'],
+  theory:'عندما يكون الموصل عموديًا على المجال، تصبح القوة متناسبة خطيًا مع B. عكس اتجاه المجال مع بقاء التيار ثابتًا يعكس اتجاه القوة.',
+  hints(s){return['غيّر إشارة B ولاحظ انقلاب إشارة F.','عند B=0 تختفي القوة المغناطيسية.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cx=W/2,cy=H/2;ctx.strokeStyle='#fbbf24';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(cx-120,cy);ctx.lineTo(cx+120,cy);ctx.stroke();const symbol=s.ctrl.B>=0?'×':'•';for(let x=80;x<W-60;x+=55)for(let y=75;y<H-50;y+=55)label(ctx,symbol,x,y,'#22d3ee','center',18,true);arrow(ctx,cx,cy,cx,cy-Math.max(-120,Math.min(120,c.F*100)),'#f87171',4,10);label(ctx,`B=${s.ctrl.B.toFixed(2)} T`,cx,32,'#22d3ee','center',14,true);}
+},
+
+mutual_induction_frequency_current_lab: {
+  title:'الجهد المحتث مع تردد وتيار الملف الرئيسي', icon:'🌀', category:'كهرباء',
+  desc:'ادرس كيف يزداد الجهد المستحث في ملف ثانوي مع التردد وتيار الملف الرئيسي.',
+  welcome:{title:'🌀 الحث المتبادل: f و Iₚ',steps:['اعتبر اقترانًا خطيًا ثابتًا M.','غيّر f والتيار الرئيسي RMS.','راقب جهد الثانوي RMS.','تحقق من Vₛ,rms=ωMIₚ,rms.']},
+  controls:[{id:'f',label:'التردد f',min:5,max:500,step:5,value:50,unit:'Hz'},{id:'Ip',label:'تيار الرئيسي Iₚ,rms',min:.01,max:2,step:.01,value:.5,unit:'A'},{id:'M',label:'الحث المتبادل M',min:1,max:100,step:1,value:20,unit:'mH'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const w=2*Math.PI*s.ctrl.f,M=s.ctrl.M/1000,Vs=w*M*s.ctrl.Ip;return{w,M,Vs,Vpk:Vs*Math.SQRT2};},
+  readouts(s){const c=this.calc(s);return[{l:'Vₛ,rms',v:c.Vs.toFixed(3),u:'V',c:'gold'},{l:'ω',v:c.w.toFixed(1),u:'rad/s'},{l:'M',v:s.ctrl.M.toFixed(1),u:'mH',c:'cyan'}];},
+  equations:['\\mathcal E_s=-M\\frac{dI_p}{dt}','I_p(t)=I_{p0}\\sin\\omega t','V_{s,\\rm rms}=\\omega M I_{p,\\rm rms}'],
+  theory:'في نظام خطي ذي حث متبادل ثابت M، مشتقة تيار جيبي تضيف عامل ω، لذلك يتناسب جهد الثانوي RMS مع كل من f وIₚ,rms. لا يشمل النموذج تشبع القلب أو خسائره.',
+  hints(s){return['ضاعف f مع ثبات M وIₚ فتتضاعف Vₛ.','ضاعف Iₚ مع ثبات f وM فتتضاعف Vₛ.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cy=H/2;ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;for(let k=0;k<8;k++){ctx.beginPath();ctx.ellipse(W*.33+k*4,cy,35,75,0,0,Math.PI*2);ctx.stroke();}ctx.strokeStyle='#22d3ee';for(let k=0;k<8;k++){ctx.beginPath();ctx.ellipse(W*.66+k*4,cy,35,75,0,0,Math.PI*2);ctx.stroke();}label(ctx,'الملف الرئيسي',W*.33,cy+105,'#fbbf24','center',12,true);label(ctx,'الملف الثانوي',W*.68,cy+105,'#22d3ee','center',12,true);label(ctx,`Vₛ=${c.Vs.toFixed(2)} V rms`,W/2,35,'#cbd5e1','center',14,true);}
+},
+
+induced_voltage_turns_diameter_lab: {
+  title:'الجهد المحتث مع عدد اللفات وقطر الملف الثانوي', icon:'🧿', category:'كهرباء',
+  desc:'تحقق من اعتماد الجهد المستحث على N ومساحة الملف A∝d² في مجال جيبي منتظم.',
+  welcome:{title:'🧿 N والقطر في الحث',steps:['غيّر عدد لفات الملف الثانوي.','غيّر قطر الملف.','راقب المساحة A=πd²/4.','تحقق من E_rms=N A ω B_max/√2.']},
+  controls:[{id:'N',label:'عدد اللفات N',min:10,max:1000,step:10,value:200,unit:''},{id:'d',label:'قطر الملف d',min:1,max:20,step:.5,value:8,unit:'cm'},{id:'f',label:'تردد المجال',min:10,max:200,step:5,value:50,unit:'Hz'},{id:'Bpk',label:'B الأقصى',min:.001,max:.05,step:.001,value:.01,unit:'T'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const d=s.ctrl.d/100,A=Math.PI*d*d/4,w=2*Math.PI*s.ctrl.f,Erms=s.ctrl.N*A*w*s.ctrl.Bpk/Math.SQRT2;return{A,w,Erms,Epk:Erms*Math.SQRT2};},
+  readouts(s){const c=this.calc(s);return[{l:'مساحة اللفة A',v:(c.A*1e4).toFixed(2),u:'cm²'},{l:'E_rms',v:c.Erms.toFixed(3),u:'V',c:'gold'},{l:'E_peak',v:c.Epk.toFixed(3),u:'V',c:'cyan'}];},
+  equations:['A=\\frac{\\pi d^2}{4}','\\Phi=BA','E_{\\rm rms}=\\frac{N A\\omega B_{\\max}}{\\sqrt2}'],
+  theory:'لملف دائري في مجال مغناطيسي جيبي منتظم وعمودي على مستوى الملف، يتناسب الجهد المستحث مع N ومع المساحة A؛ لذلك يتناسب مع مربع القطر d²، لا مع القطر خطيًا.',
+  hints(s){return['إذا ضاعفت N يتضاعف الجهد المستحث.','إذا ضاعفت القطر يصبح A أربعة أمثال تقريبًا، وبالتالي يصبح الجهد أربعة أمثال.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cx=W/2,cy=H/2,r=Math.min(105,30+s.ctrl.d*4);ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;for(let k=0;k<10;k++){ctx.beginPath();ctx.arc(cx+k*.8,cy,r-k*2.5,0,Math.PI*2);ctx.stroke();}for(let x=70;x<W-50;x+=55)label(ctx,'×',x,cy,'#22d3ee','center',18,true);label(ctx,`A=${(c.A*1e4).toFixed(1)} cm²`,cx,35,'#fbbf24','center',14,true);}
+},
+
+motional_emf_lab: {
+  title:'القوة الدافعة الحركية', icon:'🛤️', category:'كهرباء',
+  desc:'قضيب موصل يتحرك عموديًا على مجال مغناطيسي: ε=Bℓv والتيار I=ε/R.',
+  welcome:{title:'🛤️ القوة الدافعة الحركية',steps:['غيّر B وطول القضيب ℓ وسرعته v.','راقب ε=Bℓv.','أضف مقاومة الدائرة لرؤية التيار.','اعكس اتجاه v فتنقلب قطبية ε.']},
+  controls:[{id:'B',label:'المجال B',min:-1.5,max:1.5,step:.05,value:.6,unit:'T'},{id:'l',label:'طول القضيب ℓ',min:5,max:100,step:5,value:40,unit:'cm'},{id:'v',label:'سرعة القضيب v',min:-10,max:10,step:.2,value:3,unit:'m/s'},{id:'R',label:'مقاومة الدائرة R',min:1,max:100,step:1,value:20,unit:'Ω'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const emf=s.ctrl.B*(s.ctrl.l/100)*s.ctrl.v,I=emf/s.ctrl.R;return{emf,I};},
+  readouts(s){const c=this.calc(s);return[{l:'ε',v:c.emf.toFixed(3),u:'V',c:'gold'},{l:'I',v:c.I.toFixed(4),u:'A',c:'cyan'},{l:'القطبية',v:c.emf>0?'موجبة':c.emf<0?'معكوسة':'صفر',u:''}];},
+  equations:['\\varepsilon=B\\ell v\\quad(B,\\ell,v\\ \\text{متعامدة})','I=\\frac{\\varepsilon}{R}'],
+  theory:'عندما يتحرك قضيب موصل بسرعة v عموديًا على كل من طوله والمجال B، تفصل قوة لورنتز الشحنات ويظهر فرق جهد مقداره Bℓv. اتجاهه يتبع قاعدة اليد اليمنى/قانون لنز.',
+  hints(s){return['ε تتناسب خطيًا مع B وℓ وv في الهندسة المتعامدة.','عكس B أو v يعكس الإشارة.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;for(let x=70;x<W-50;x+=55)for(let y=65;y<H-50;y+=55)label(ctx,s.ctrl.B>=0?'×':'•',x,y,'#22d3ee','center',17,true);ctx.strokeStyle='#fbbf24';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(cx,cy-90);ctx.lineTo(cx,cy+90);ctx.stroke();const dir=s.ctrl.v>=0?1:-1;arrow(ctx,cx,cy,cx+dir*120,cy,'#f87171',4,11);label(ctx,'v',cx+dir*135,cy,'#f87171','center',14,true);}
+},
+
+step_up_transformer_lab: {
+  title:'المحولة الرافعة', icon:'🔺', category:'كهرباء',
+  desc:'محولة مثالية تحقق Vₛ/Vₚ=Nₛ/Nₚ مع Nₛ>Nₚ وتوضح علاقة التيار والقدرة.',
+  welcome:{title:'🔺 المحولة الرافعة',steps:['اختر Nₚ صغيرًا وNₛ أكبر.','غيّر Vₚ.','راقب Vₛ وIₛ مع حمل مقاومي.','تحقق من حفظ القدرة في النموذج المثالي.']},
+  controls:[{id:'Vp',label:'Vₚ,rms',min:1,max:240,step:1,value:24,unit:'V'},{id:'Np',label:'Nₚ',min:50,max:400,step:10,value:100,unit:''},{id:'Ns',label:'Nₛ',min:500,max:2000,step:20,value:500,unit:''},{id:'RL',label:'حمل الثانوي R_L',min:10,max:1000,step:10,value:200,unit:'Ω'}],
+  reset(s){},update(s,dt){},
+  calc(s){const ratio=s.ctrl.Ns/s.ctrl.Np,Vs=s.ctrl.Vp*ratio,Is=Vs/s.ctrl.RL,Ps=Vs*Is,Ip=Ps/s.ctrl.Vp;return{ratio,Vs,Is,Ip,Ps};},
+  readouts(s){const c=this.calc(s);return[{l:'نسبة اللفات Nₛ/Nₚ',v:c.ratio.toFixed(3),u:'',c:'cyan'},{l:'Vₛ,rms',v:c.Vs.toFixed(2),u:'V',c:'gold'},{l:'Iₛ,rms',v:c.Is.toFixed(3),u:'A'},{l:'Iₚ,rms',v:c.Ip.toFixed(3),u:'A'},{l:'القدرة المثالية',v:c.Ps.toFixed(2),u:'W'}];},
+  equations:['\\frac{V_s}{V_p}=\\frac{N_s}{N_p}','\\frac{I_s}{I_p}=\\frac{N_p}{N_s}','V_pI_p=V_sI_s\\quad(\\text{مثالية})'],
+  theory:'في المحولة المثالية ذات الاقتران الكامل والخسائر المهملة، تتناسب الجهود مع عدد اللفات وتتناسب التيارات عكسيًا معها. لأن Nₛ>Nₚ هنا فهي محولة رافعة للجهد.',
+  hints(s){const c=this.calc(s);return[c.ratio>1?'الشرط Nₛ>Nₚ متحقق: الجهد مرفوع.':'اجعل Nₛ أكبر من Nₚ لتكون المحولة رافعة.','رفع الجهد يقابله خفض التيار عند القدرة نفسها في النموذج المثالي.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;ctx.fillStyle='#64748b';ctx.fillRect(cx-15,cy-105,30,210);ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;for(let k=0;k<8;k++){ctx.beginPath();ctx.ellipse(cx-70+k*2,cy,30,85,0,0,Math.PI*2);ctx.stroke();}ctx.strokeStyle='#22d3ee';for(let k=0;k<13;k++){ctx.beginPath();ctx.ellipse(cx+70+k*1.4,cy,30,85,0,0,Math.PI*2);ctx.stroke();}label(ctx,'P',cx-80,cy+110,'#fbbf24','center',14,true);label(ctx,'S',cx+80,cy+110,'#22d3ee','center',14,true);}
+},
+
+step_down_transformer_lab: {
+  title:'المحولة الخافضة', icon:'🔻', category:'كهرباء',
+  desc:'محولة مثالية تحقق Vₛ/Vₚ=Nₛ/Nₚ مع Nₛ<Nₚ.',
+  welcome:{title:'🔻 المحولة الخافضة',steps:['اختر Nₚ أكبر من Nₛ.','غيّر Vₚ.','راقب انخفاض Vₛ.','قارن تيار الثانوي بتيار الرئيسي.']},
+  controls:[{id:'Vp',label:'Vₚ,rms',min:12,max:240,step:1,value:220,unit:'V'},{id:'Np',label:'Nₚ',min:500,max:2000,step:20,value:1000,unit:''},{id:'Ns',label:'Nₛ',min:20,max:400,step:10,value:100,unit:''},{id:'RL',label:'حمل الثانوي R_L',min:1,max:500,step:1,value:20,unit:'Ω'}],
+  reset(s){},update(s,dt){},
+  calc(s){const ratio=s.ctrl.Ns/s.ctrl.Np,Vs=s.ctrl.Vp*ratio,Is=Vs/s.ctrl.RL,Ps=Vs*Is,Ip=Ps/s.ctrl.Vp;return{ratio,Vs,Is,Ip,Ps};},
+  readouts(s){const c=this.calc(s);return[{l:'Nₛ/Nₚ',v:c.ratio.toFixed(3),u:'',c:'cyan'},{l:'Vₛ,rms',v:c.Vs.toFixed(2),u:'V',c:'gold'},{l:'Iₛ,rms',v:c.Is.toFixed(3),u:'A'},{l:'Iₚ,rms',v:c.Ip.toFixed(3),u:'A'}];},
+  equations:['\\frac{V_s}{V_p}=\\frac{N_s}{N_p}','\\frac{I_s}{I_p}=\\frac{N_p}{N_s}','P_p=P_s\\quad(\\text{مثالية})'],
+  theory:'عندما يكون Nₛ<Nₚ تخفض المحولة الجهد. في المحولة المثالية تبقى القدرة ثابتة، لذلك قد يكون تيار الثانوي أكبر من تيار الرئيسي بحسب الحمل.',
+  hints(s){const c=this.calc(s);return[c.ratio<1?'الشرط Nₛ<Nₚ متحقق: الجهد منخفض.':'اجعل Nₛ أقل من Nₚ.','العلاقات المعروضة مثالية ولا تتضمن خسائر النحاس أو القلب.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;ctx.fillStyle='#64748b';ctx.fillRect(cx-15,cy-105,30,210);ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;for(let k=0;k<13;k++){ctx.beginPath();ctx.ellipse(cx-70+k*1.4,cy,30,85,0,0,Math.PI*2);ctx.stroke();}ctx.strokeStyle='#22d3ee';for(let k=0;k<7;k++){ctx.beginPath();ctx.ellipse(cx+70+k*2,cy,30,85,0,0,Math.PI*2);ctx.stroke();}label(ctx,'P',cx-80,cy+110,'#fbbf24','center',14,true);label(ctx,'S',cx+80,cy+110,'#22d3ee','center',14,true);}
+},
+
+self_induction_lab: {
+  title:'الحث الذاتي ودائرة RL', icon:'🪢', category:'كهرباء',
+  desc:'راقب نمو التيار في دائرة RL والقوة الدافعة المستحثة ذاتيًا وثابت الزمن τ=L/R.',
+  welcome:{title:'🪢 الحث الذاتي',steps:['غيّر L وR والجهد.','غيّر الزمن بعد غلق المفتاح.','راقب I(t) و|ε_L|.','تحقق من τ=L/R.']},
+  controls:[{id:'V',label:'جهد المصدر V',min:1,max:50,step:1,value:12,unit:'V'},{id:'R',label:'المقاومة R',min:1,max:100,step:1,value:20,unit:'Ω'},{id:'L',label:'الحث L',min:1,max:500,step:1,value:100,unit:'mH'},{id:'t',label:'الزمن بعد الغلق t',min:0,max:1,step:.005,value:.05,unit:'s'}],
+  reset(s){},update(s,dt){},
+  calc(s){const L=s.ctrl.L/1000,tau=L/s.ctrl.R,e=Math.exp(-s.ctrl.t/tau),I=s.ctrl.V/s.ctrl.R*(1-e),emf=-s.ctrl.V*e,UR=s.ctrl.R*I;return{L,tau,I,emf,UR};},
+  readouts(s){const c=this.calc(s);return[{l:'τ=L/R',v:(c.tau*1000).toFixed(2),u:'ms',c:'cyan'},{l:'I(t)',v:c.I.toFixed(4),u:'A',c:'gold'},{l:'ε_L',v:c.emf.toFixed(3),u:'V'},{l:'V_R',v:c.UR.toFixed(3),u:'V'}];},
+  equations:['\\varepsilon_L=-L\\frac{dI}{dt}','\\tau=\\frac{L}{R}','I(t)=\\frac{V}{R}(1-e^{-t/\\tau})'],
+  theory:'عند غلق دائرة RL يعارض الحث الذاتي تغير التيار. يبدأ التيار من الصفر ويقترب أسيًا من V/R، بينما تتناقص القوة الدافعة على الملف من −V نحو الصفر.',
+  hints(s){const c=this.calc(s);return[`عند t=τ يصل التيار إلى نحو 63.2% من قيمته النهائية. τ الحالية <span class="hl">${(c.tau*1000).toFixed(1)} ms</span>.`,'زيادة L تطيل زمن الاستجابة، وزيادة R تقصره.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),left=65,right=W-45,top=55,bottom=H-55,tmax=Math.max(.02,5*c.tau);ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,bottom);ctx.lineTo(right,bottom);ctx.stroke();ctx.strokeStyle='#a3e635';ctx.lineWidth=3;ctx.beginPath();for(let k=0;k<=100;k++){const t=tmax*k/100,I=s.ctrl.V/s.ctrl.R*(1-Math.exp(-t/c.tau)),x=left+(right-left)*k/100,y=bottom-(bottom-top)*I/(s.ctrl.V/s.ctrl.R);k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();const x=left+(right-left)*Math.min(1,s.ctrl.t/tmax),y=bottom-(bottom-top)*c.I/(s.ctrl.V/s.ctrl.R);ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();label(ctx,'I(t)',left-12,top,'#cbd5e1','right',12,true);label(ctx,'t',right,bottom+20,'#cbd5e1','right',12,true);}
+},
+
+inductor_ac_general_lab: {
+  title:'الملف في دوائر التيار المتناوب', icon:'🌀', category:'كهرباء',
+  desc:'دائرة RL متسلسلة: المفاعلة الحثية والممانعة والتيار وفرق الطور.',
+  welcome:{title:'🌀 الملف في AC',steps:['غيّر f وL وR.','راقب X_L=2πfL.','احسب Z والتيار RMS.','لاحظ أن الجهد الكلي يتقدم التيار.']},
+  controls:[{id:'Vrms',label:'V_rms',min:1,max:240,step:1,value:24,unit:'V'},{id:'f',label:'التردد f',min:5,max:1000,step:5,value:50,unit:'Hz'},{id:'L',label:'الحث L',min:1,max:500,step:1,value:100,unit:'mH'},{id:'R',label:'المقاومة R',min:1,max:500,step:1,value:50,unit:'Ω'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const XL=2*Math.PI*s.ctrl.f*s.ctrl.L/1000,Z=Math.hypot(s.ctrl.R,XL),I=s.ctrl.Vrms/Z,phi=Math.atan2(XL,s.ctrl.R);return{XL,Z,I,phi};},
+  readouts(s){const c=this.calc(s);return[{l:'X_L',v:c.XL.toFixed(2),u:'Ω',c:'cyan'},{l:'Z',v:c.Z.toFixed(2),u:'Ω'},{l:'I_rms',v:c.I.toFixed(3),u:'A',c:'gold'},{l:'V يتقدم I',v:(c.phi*180/Math.PI).toFixed(2),u:'°'}];},
+  equations:['X_L=\\omega L=2\\pi fL','Z=\\sqrt{R^2+X_L^2}','I_{\\rm rms}=\\frac{V_{\\rm rms}}{Z}','\\phi_{V-I}=\\tan^{-1}\\frac{X_L}{R}'],
+  theory:'في دائرة RL متسلسلة، تزداد المفاعلة الحثية خطيًا مع التردد. يكون الجهد الكلي متقدمًا على التيار بزاوية بين 0° و90° بحسب نسبة X_L/R.',
+  hints(s){return['زيادة f أو L تزيد X_L فتقل شدة التيار.','إذا كان X_L≫R تقترب زاوية التأخر من 90°.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),Vpk=s.ctrl.Vrms*Math.SQRT2,Ipk=c.I*Math.SQRT2,cycles=2.2,phase=c.phi;drawScope(ctx,55,60,W-110,H-120,'V (أصفر) و I (سماوي)','#fbbf24',t=>Vpk*Math.sin(2*Math.PI*cycles*t),Vpk);ctx.strokeStyle='#22d3ee';ctx.lineWidth=2.5;ctx.beginPath();for(let i=0;i<=W-110;i++){const t=i/(W-110),v=Ipk*Math.sin(2*Math.PI*cycles*t-phase),py=60+(H-120)/2-(v/Ipk)*((H-120)/2-10);i?ctx.lineTo(55+i,py):ctx.moveTo(55+i,py);}ctx.stroke();}
+},
+
+oscilloscope_basics_lab: {
+  title:'الأوسلسكوب — المحاكاة الأساسية', icon:'📺', category:'كهرباء',
+  desc:'تعرف إلى V/div وTime/div وكيف يظهر الجهد بدلالة الزمن على شاشة راسم الإشارة.',
+  welcome:{title:'📺 الأوسلسكوب',steps:['غيّر سعة الإشارة وترددها.','غيّر V/div وTime/div.','راقب عدد الأقسام الرأسية والأفقية.','تأكد أن الإشارة لا تخرج من الشاشة.']},
+  controls:[{id:'Vpk',label:'سعة الإشارة V_peak',min:.1,max:20,step:.1,value:4,unit:'V'},{id:'f',label:'التردد f',min:1,max:2000,step:1,value:100,unit:'Hz'},{id:'vdiv',label:'V/div',min:.1,max:10,step:.1,value:2,unit:'V/div'},{id:'tdiv',label:'Time/div',min:.0001,max:.02,step:.0001,value:.002,unit:'s/div'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const vDivs=s.ctrl.Vpk/s.ctrl.vdiv,T=1/s.ctrl.f,tDivs=T/s.ctrl.tdiv,totalTime=8*s.ctrl.tdiv,cycles=totalTime*s.ctrl.f;return{vDivs,T,tDivs,totalTime,cycles};},
+  readouts(s){const c=this.calc(s);return[{l:'القمة عن خط الصفر',v:c.vDivs.toFixed(2),u:'div',c:'gold'},{l:'الدورة T',v:(c.T*1000).toFixed(3),u:'ms'},{l:'الدورة أفقيًا',v:c.tDivs.toFixed(2),u:'div',c:'cyan'},{l:'الدورات على الشاشة',v:c.cycles.toFixed(2),u:''}];},
+  equations:['V_{peak}=n_V\\,(V/div)','T=n_t\\,(Time/div)','f=\\frac1T'],
+  theory:'راسم الإشارة يرسم الجهد رأسيًا والزمن أفقيًا. V/div يحدد الحساسية الرأسية وTime/div يحدد قاعدة الزمن. القياس الصحيح يعتمد على عد الأقسام وضربها بمعامل الضبط.',
+  hints(s){const c=this.calc(s);return[c.vDivs>2?'قد تُقص القمم لأن السعة أكبر من نصف الارتفاع؛ زد V/div.':'السعة الرأسية مناسبة للشاشة.',c.cycles<1?'زمن الشاشة أقصر من دورة واحدة؛ زد Time/div.':'تظهر دورة واحدة أو أكثر على الشاشة.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),vp=Math.max(s.ctrl.Vpk,2*s.ctrl.vdiv),cycles=c.cycles;drawScope(ctx,55,60,W-110,H-120,'Oscilloscope','#a3e635',t=>s.ctrl.Vpk*Math.sin(2*Math.PI*cycles*t),vp);}
+},
+
+oscilloscope_dc_lab: {
+  title:'قياس التيار المستمر بواسطة الأوسلسكوب', icon:'🔋', category:'كهرباء',
+  desc:'قِس تيار DC بصورة غير مباشرة من جهد مقاومة شنت معلومة: I=V_sh/R_sh.',
+  welcome:{title:'🔋 قياس تيار DC بالأوسلسكوب',steps:['مرّر التيار في مقاومة شنت معلومة R_sh.','صل قناة الأوسلسكوب على طرفي الشنت.','اقرأ V_sh من الإزاحة الرأسية وV/div.','احسب I_DC=V_sh/R_sh.']},
+  controls:[{id:'Idc',label:'تيار DC الحقيقي',min:-.5,max:.5,step:.01,value:.12,unit:'A'},{id:'Rsh',label:'مقاومة الشنت R_sh',min:1,max:100,step:1,value:20,unit:'Ω'},{id:'vdiv',label:'V/div',min:.1,max:10,step:.1,value:2,unit:'V/div'},{id:'offset',label:'إزاحة خط الصفر',min:-2,max:2,step:.1,value:0,unit:'div'}],
+  reset(s){},update(s,dt){},
+  calc(s){const Vsh=s.ctrl.Idc*s.ctrl.Rsh,n=Vsh/s.ctrl.vdiv,total=s.ctrl.offset+n,Imeas=(total-s.ctrl.offset)*s.ctrl.vdiv/s.ctrl.Rsh;return{Vsh,n,total,Imeas};},
+  readouts(s){const c=this.calc(s);return[{l:'V_sh',v:c.Vsh.toFixed(3),u:'V',c:'cyan'},{l:'الإزاحة بسبب الإشارة',v:c.n.toFixed(2),u:'div'},{l:'I_DC المقاس',v:c.Imeas.toFixed(4),u:'A',c:'gold'}];},
+  equations:['V_{sh}=I_{DC}R_{sh}','V_{sh}=n\\,(V/div)','I_{DC}=\\frac{V_{sh}}{R_{sh}}'],
+  theory:'الأوسلسكوب يقيس الجهد مباشرة لا التيار. لقياس تيار DC يوضع شنت مقاوم معلوم في مسار التيار، ثم يقاس فرق الجهد عليه وتستخدم علاقة أوم. يجب أن تكون قيمة الشنت وقدرته مناسبتين للدائرة الحقيقية.',
+  hints(s){const c=this.calc(s);return[Math.abs(c.total)>2?'إشارة الشنت خارج نصف ارتفاع الشاشة؛ زد V/div أو عدّل الإزاحة.':'إشارة الشنت ظاهرة ضمن الشاشة.','تغيير R_sh يغير جهد القياس لكنه قد يؤثر في الدائرة الحقيقية؛ هنا نفترض أن التيار المحدد مستقل.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const x=55,y=60,w=W-110,h=H-120;ctx.fillStyle='#0a0e1a';ctx.fillRect(x,y,w,h);ctx.strokeStyle='#334155';ctx.strokeRect(x,y,w,h);for(let i=0;i<=8;i++){ctx.strokeStyle='rgba(148,163,184,.13)';ctx.beginPath();ctx.moveTo(x+i*w/8,y);ctx.lineTo(x+i*w/8,y+h);ctx.stroke();}for(let j=0;j<=4;j++){ctx.beginPath();ctx.moveTo(x,y+j*h/4);ctx.lineTo(x+w,y+j*h/4);ctx.stroke();}const c=this.calc(s),cy=y+h/2,scale=h/4,zero=cy-s.ctrl.offset*scale,sy=zero-c.n*scale;ctx.strokeStyle='#64748b';ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(x,zero);ctx.lineTo(x+w,zero);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#a3e635';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,sy);ctx.lineTo(x+w,sy);ctx.stroke();label(ctx,'0 V',x+35,zero-12,'#94a3b8','left',11,true);label(ctx,`R_sh=${s.ctrl.Rsh.toFixed(0)} Ω`,W/2,H-25,'#fbbf24','center',12,true);}
+},
+
+
+oscilloscope_ac_voltage_lab: {
+  title:'قياس التيار المتناوب بواسطة الأوسلسكوب', icon:'〰️', category:'كهرباء',
+  desc:'استخرج I_peak وI_rms لتيار جيبي من جهد الشنت الظاهر على الأوسلسكوب.',
+  welcome:{title:'〰️ قياس تيار AC بالأوسلسكوب',steps:['مرّر التيار الجيبي في مقاومة شنت معلومة.','قِس Vpp للشنت من الأقسام الرأسية.','استنتج V_peak=Vpp/2 ثم I_peak=V_peak/R_sh.','للتيار الجيبي I_rms=I_peak/√2.']},
+  controls:[{id:'Ipk',label:'I_peak الحقيقي',min:.01,max:1,step:.01,value:.20,unit:'A'},{id:'Rsh',label:'مقاومة الشنت R_sh',min:1,max:100,step:1,value:20,unit:'Ω'},{id:'vdiv',label:'V/div',min:.1,max:10,step:.1,value:2,unit:'V/div'},{id:'f',label:'التردد',min:1,max:1000,step:1,value:100,unit:'Hz'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const Vpk=s.ctrl.Ipk*s.ctrl.Rsh,Vpp=2*Vpk,npp=Vpp/s.ctrl.vdiv,Irms=s.ctrl.Ipk/Math.SQRT2;return{Vpk,Vpp,npp,Irms};},
+  readouts(s){const c=this.calc(s);return[{l:'V_sh,pp',v:c.Vpp.toFixed(3),u:'V',c:'cyan'},{l:'قمة–قمة على الشاشة',v:c.npp.toFixed(2),u:'div'},{l:'I_peak المقاس',v:(c.Vpk/s.ctrl.Rsh).toFixed(4),u:'A'},{l:'I_rms (جيب)',v:c.Irms.toFixed(4),u:'A',c:'gold'}];},
+  equations:['V_{sh,peak}=I_{peak}R_{sh}','I_{peak}=\\frac{V_{pp}}{2R_{sh}}','I_{rms}=\\frac{I_{peak}}{\\sqrt2}\\quad(\\text{جيب})'],
+  theory:'الأوسلسكوب يعرض جهد الشنت المتناسب لحظيًا مع التيار. لتيار جيبي مثالي يمكن تحويل Vpp إلى Ipeak ثم إلى Irms. هذه الطريقة تتطلب شنتًا مناسبًا من حيث المقاومة والقدرة وعرض الحزمة في المختبر الحقيقي.',
+  hints(s){const c=this.calc(s);return[c.npp>4?'موجة الشنت قد تتجاوز ارتفاع الشاشة؛ زد V/div أو استخدم شنتًا أصغر.':'المدى الرأسي مناسب.','علاقة I_rms=I_peak/√2 خاصة بالموجة الجيبية.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),vp=Math.max(c.Vpk,2*s.ctrl.vdiv);drawScope(ctx,55,60,W-110,H-120,'V_sh(t) على الأوسلسكوب','#a3e635',t=>c.Vpk*Math.sin(4*Math.PI*t),vp);label(ctx,`I_rms=${c.Irms.toFixed(3)} A`,W/2,H-28,'#fbbf24','center',12,true);}
+},
+
+
+oscilloscope_frequency_lab: {
+  title:'قياس تردد التيار المتناوب بواسطة الأوسلسكوب', icon:'⏱️', category:'كهرباء',
+  desc:'استخرج زمن الدورة T من الأقسام الأفقية ثم احسب f=1/T.',
+  welcome:{title:'⏱️ قياس التردد',steps:['غيّر التردد الحقيقي.','غيّر Time/div.','قِس عدد الأقسام لدورة كاملة.','احسب T ثم f.']},
+  controls:[{id:'f',label:'التردد الحقيقي',min:1,max:5000,step:1,value:250,unit:'Hz'},{id:'tdiv',label:'Time/div',min:.00002,max:.02,step:.00002,value:.001,unit:'s/div'},{id:'Vpk',label:'V_peak',min:.5,max:10,step:.5,value:3,unit:'V'}],
+  reset(s){},update(s,dt){},
+  calc(s){const T=1/s.ctrl.f,n=T/s.ctrl.tdiv,fm=1/(n*s.ctrl.tdiv),cycles=8*s.ctrl.tdiv*s.ctrl.f;return{T,n,fm,cycles};},
+  readouts(s){const c=this.calc(s);return[{l:'الدورة أفقيًا',v:c.n.toFixed(3),u:'div',c:'cyan'},{l:'T',v:(c.T*1000).toFixed(4),u:'ms'},{l:'f المقاس',v:c.fm.toFixed(2),u:'Hz',c:'gold'},{l:'دورات على الشاشة',v:c.cycles.toFixed(2),u:''}];},
+  equations:['T=n_t(Time/div)','f=\\frac1T'],
+  theory:'المسافة الأفقية بين نقطتين متماثلتين متتاليتين، مثل قمتين، تعطي زمن دورة واحدة بعد ضرب عدد الأقسام في Time/div. مقلوب الزمن هو التردد.',
+  hints(s){const c=this.calc(s);return[c.n<.5?'الدورة أصغر من نصف قسم؛ قلّل Time/div لزيادة دقة القراءة.':c.n>8?'الدورة أكبر من عرض الشاشة؛ زد Time/div.':'الدورة قابلة للقياس بوضوح على الشاشة.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s);drawScope(ctx,55,60,W-110,H-120,'Frequency measurement','#22d3ee',t=>s.ctrl.Vpk*Math.sin(2*Math.PI*c.cycles*t),s.ctrl.Vpk);}
+},
+
+rc_phase_lab: {
+  title:'فرق الطور في دائرة مقاومة ومتسعة RC', icon:'📐', category:'كهرباء',
+  desc:'احسب زاوية تقدم التيار على الجهد في دائرة RC متسلسلة.',
+  welcome:{title:'📐 فرق الطور RC',steps:['غيّر R وC وf.','احسب X_C.','راقب الممانعة والتيار.','لاحظ أن التيار يتقدم الجهد الكلي.']},
+  controls:[{id:'Vrms',label:'V_rms',min:1,max:120,step:1,value:20,unit:'V'},{id:'R',label:'R',min:1,max:1000,step:1,value:100,unit:'Ω'},{id:'C',label:'C',min:.1,max:100,step:.1,value:10,unit:'µF'},{id:'f',label:'f',min:5,max:2000,step:5,value:50,unit:'Hz'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const Xc=1/(2*Math.PI*s.ctrl.f*s.ctrl.C*1e-6),Z=Math.hypot(s.ctrl.R,Xc),I=s.ctrl.Vrms/Z,lead=Math.atan2(Xc,s.ctrl.R);return{Xc,Z,I,lead};},
+  readouts(s){const c=this.calc(s);return[{l:'X_C',v:c.Xc.toFixed(2),u:'Ω',c:'cyan'},{l:'Z',v:c.Z.toFixed(2),u:'Ω'},{l:'I_rms',v:c.I.toFixed(3),u:'A'},{l:'I يتقدم V',v:(c.lead*180/Math.PI).toFixed(2),u:'°',c:'gold'}];},
+  equations:['X_C=\\frac{1}{2\\pi fC}','Z=\\sqrt{R^2+X_C^2}','\\phi_{I-V}=\\tan^{-1}\\frac{X_C}{R}'],
+  theory:'في دائرة RC متسلسلة يكون التيار متقدمًا على الجهد الكلي. عندما يزداد التردد تقل X_C، فتصغر زاوية التقدم وتصبح الدائرة أقرب إلى مقاومة خالصة.',
+  hints(s){return['عند f المنخفض تكون X_C كبيرة وزاوية تقدم التيار أكبر.','عند f العالي تصبح X_C أصغر فتقترب الزاوية من 0°.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cycles=2,Vpk=s.ctrl.Vrms*Math.SQRT2;drawScope(ctx,55,60,W-110,H-120,'V أصفر / I سماوي','#fbbf24',t=>Vpk*Math.sin(2*Math.PI*cycles*t),Vpk);ctx.strokeStyle='#22d3ee';ctx.lineWidth=2.5;ctx.beginPath();for(let i=0;i<=W-110;i++){const t=i/(W-110),v=Math.sin(2*Math.PI*cycles*t+c.lead),py=60+(H-120)/2-v*((H-120)/2-10);i?ctx.lineTo(55+i,py):ctx.moveTo(55+i,py);}ctx.stroke();}
+},
+
+rl_phase_lab: {
+  title:'فرق الطور في دائرة مقاومة وملف RL', icon:'📐', category:'كهرباء',
+  desc:'احسب زاوية تأخر التيار عن الجهد في دائرة RL متسلسلة.',
+  welcome:{title:'📐 فرق الطور RL',steps:['غيّر R وL وf.','احسب X_L.','راقب الممانعة والتيار.','لاحظ أن التيار يتأخر عن الجهد الكلي.']},
+  controls:[{id:'Vrms',label:'V_rms',min:1,max:120,step:1,value:20,unit:'V'},{id:'R',label:'R',min:1,max:1000,step:1,value:100,unit:'Ω'},{id:'L',label:'L',min:1,max:1000,step:1,value:200,unit:'mH'},{id:'f',label:'f',min:5,max:2000,step:5,value:50,unit:'Hz'}],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const XL=2*Math.PI*s.ctrl.f*s.ctrl.L/1000,Z=Math.hypot(s.ctrl.R,XL),I=s.ctrl.Vrms/Z,lag=Math.atan2(XL,s.ctrl.R);return{XL,Z,I,lag};},
+  readouts(s){const c=this.calc(s);return[{l:'X_L',v:c.XL.toFixed(2),u:'Ω',c:'cyan'},{l:'Z',v:c.Z.toFixed(2),u:'Ω'},{l:'I_rms',v:c.I.toFixed(3),u:'A'},{l:'I يتأخر عن V',v:(c.lag*180/Math.PI).toFixed(2),u:'°',c:'gold'}];},
+  equations:['X_L=2\\pi fL','Z=\\sqrt{R^2+X_L^2}','\\phi_{V-I}=\\tan^{-1}\\frac{X_L}{R}'],
+  theory:'في دائرة RL متسلسلة يتقدم الجهد الكلي على التيار. زيادة f أو L تزيد X_L، لذلك يزداد تأخر التيار حتى يقترب من 90° عندما يهيمن الملف.',
+  hints(s){return['عند f المنخفض تكون X_L صغيرة والدائرة أقرب إلى مقاومة.','زيادة f تزيد زاوية تأخر التيار.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cycles=2,Vpk=s.ctrl.Vrms*Math.SQRT2;drawScope(ctx,55,60,W-110,H-120,'V أصفر / I سماوي','#fbbf24',t=>Vpk*Math.sin(2*Math.PI*cycles*t),Vpk);ctx.strokeStyle='#22d3ee';ctx.lineWidth=2.5;ctx.beginPath();for(let i=0;i<=W-110;i++){const t=i/(W-110),v=Math.sin(2*Math.PI*cycles*t-c.lag),py=60+(H-120)/2-v*((H-120)/2-10);i?ctx.lineTo(55+i,py):ctx.moveTo(55+i,py);}ctx.stroke();}
+},
+
+capacitive_reactance_frequency_lab: {
+  title:'المتسعة في AC — علاقة المفاعلة بالتردد', icon:'▮▮', category:'كهرباء',
+  desc:'تحقق من أن المفاعلة السعوية X_C تتناقص عكسيًا مع التردد.',
+  welcome:{title:'▮▮ X_C مع f',steps:['ثبّت C.','غيّر f على مجال واسع.','راقب X_C.','تحقق من X_C=1/(2πfC).']},
+  controls:[{id:'C',label:'السعة C',min:.1,max:100,step:.1,value:10,unit:'µF'},{id:'f',label:'التردد f',min:5,max:5000,step:5,value:50,unit:'Hz'},{id:'Vrms',label:'V_rms',min:1,max:100,step:1,value:10,unit:'V'}],
+  reset(s){},update(s,dt){},
+  calc(s){const Xc=1/(2*Math.PI*s.ctrl.f*s.ctrl.C*1e-6),I=s.ctrl.Vrms/Xc;return{Xc,I};},
+  readouts(s){const c=this.calc(s);return[{l:'X_C',v:c.Xc.toFixed(3),u:'Ω',c:'gold'},{l:'I_rms (متسعة مثالية)',v:c.I.toFixed(4),u:'A',c:'cyan'},{l:'f·X_C',v:(s.ctrl.f*c.Xc).toFixed(2),u:'Hz·Ω'}];},
+  equations:['X_C=\\frac{1}{\\omega C}=\\frac{1}{2\\pi fC}','I_{rms}=\\frac{V_{rms}}{X_C}'],
+  theory:'المتسعة تعارض الترددات المنخفضة أكثر من العالية؛ لذلك X_C تتناسب عكسيًا مع f وC. في المتسعة المثالية يتقدم التيار الجهد بـ90°.',
+  hints(s){return['ضاعف f فتَنصف X_C عند ثبات C.','ضاعف C فتَنصف X_C عند ثبات f.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const left=65,right=W-45,top=50,bottom=H-55,fc=Math.max(5,s.ctrl.f);ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,bottom);ctx.lineTo(right,bottom);ctx.stroke();const fmin=5,fmax=5000,Xmax=1/(2*Math.PI*fmin*s.ctrl.C*1e-6);ctx.strokeStyle='#22d3ee';ctx.lineWidth=3;ctx.beginPath();for(let k=0;k<=120;k++){const f=fmin*Math.pow(fmax/fmin,k/120),X=1/(2*Math.PI*f*s.ctrl.C*1e-6),x=left+(right-left)*Math.log(f/fmin)/Math.log(fmax/fmin),y=bottom-(bottom-top)*X/Xmax;k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();const x=left+(right-left)*Math.log(fc/fmin)/Math.log(fmax/fmin),X=1/(2*Math.PI*fc*s.ctrl.C*1e-6),y=bottom-(bottom-top)*X/Xmax;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();label(ctx,'f → (لوغاريتمي)',right,bottom+22,'#cbd5e1','right',11,true);label(ctx,'X_C',left-8,top,'#cbd5e1','right',11,true);}
+},
+
+rc_phase_frequency_lab: {
+  title:'المتسعة في AC — تأثير التردد على زاوية الطور', icon:'⏳', category:'كهرباء',
+  desc:'في دائرة RC متسلسلة، شاهد كيف تتغير زاوية تقدم التيار مع التردد.',
+  welcome:{title:'⏳ طور RC مع f',steps:['ثبّت R وC.','غيّر التردد.','راقب X_C وزاوية تقدم التيار.','قارن السلوك عند الترددات المنخفضة والعالية.']},
+  controls:[{id:'R',label:'R',min:1,max:1000,step:1,value:100,unit:'Ω'},{id:'C',label:'C',min:.1,max:100,step:.1,value:10,unit:'µF'},{id:'f',label:'f',min:5,max:5000,step:5,value:50,unit:'Hz'}],
+  reset(s){},update(s,dt){},
+  calc(s){const Xc=1/(2*Math.PI*s.ctrl.f*s.ctrl.C*1e-6),lead=Math.atan2(Xc,s.ctrl.R);return{Xc,lead};},
+  readouts(s){const c=this.calc(s);return[{l:'X_C',v:c.Xc.toFixed(2),u:'Ω'},{l:'زاوية تقدم I',v:(c.lead*180/Math.PI).toFixed(3),u:'°',c:'gold'},{l:'tan φ',v:(c.Xc/s.ctrl.R).toFixed(4),u:'',c:'cyan'}];},
+  equations:['\\phi_{I-V}=\\tan^{-1}\\left(\\frac{X_C}{R}\\right)','X_C=\\frac{1}{2\\pi fC}'],
+  theory:'في RC المتسلسلة، عند التردد المنخفض تكون X_C كبيرة فيتقدم التيار على الجهد بزاوية كبيرة. بزيادة f تقل X_C فتقترب زاوية التقدم من الصفر.',
+  hints(s){return['ارفع f ولاحظ تناقص زاوية تقدم التيار.','هذه زاوية التيار بالنسبة للجهد الكلي، وليست زاوية جهد المتسعة وحده.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const left=65,right=W-45,top=45,bottom=H-55,fmin=5,fmax=5000;ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,bottom);ctx.lineTo(right,bottom);ctx.stroke();ctx.strokeStyle='#f472b6';ctx.lineWidth=3;ctx.beginPath();for(let k=0;k<=120;k++){const f=fmin*Math.pow(fmax/fmin,k/120),X=1/(2*Math.PI*f*s.ctrl.C*1e-6),ph=Math.atan2(X,s.ctrl.R)*180/Math.PI,x=left+(right-left)*Math.log(f/fmin)/Math.log(fmax/fmin),y=bottom-(bottom-top)*ph/90;k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();label(ctx,'90°',left-10,top,'#cbd5e1','right',11,true);label(ctx,'0°',left-10,bottom,'#cbd5e1','right',11,true);label(ctx,'f →',right,bottom+20,'#cbd5e1','right',11,true);}
+},
+
+inductive_reactance_frequency_lab: {
+  title:'الملف في AC — علاقة المفاعلة بالتردد', icon:'🌀', category:'كهرباء',
+  desc:'تحقق من أن المفاعلة الحثية X_L تزداد خطيًا مع التردد.',
+  welcome:{title:'🌀 X_L مع f',steps:['ثبّت L.','غيّر f.','راقب X_L.','تحقق من X_L=2πfL.']},
+  controls:[{id:'L',label:'L',min:1,max:1000,step:1,value:100,unit:'mH'},{id:'f',label:'f',min:5,max:5000,step:5,value:50,unit:'Hz'},{id:'Vrms',label:'V_rms',min:1,max:100,step:1,value:10,unit:'V'}],
+  reset(s){},update(s,dt){},
+  calc(s){const XL=2*Math.PI*s.ctrl.f*s.ctrl.L/1000,I=s.ctrl.Vrms/XL;return{XL,I};},
+  readouts(s){const c=this.calc(s);return[{l:'X_L',v:c.XL.toFixed(3),u:'Ω',c:'gold'},{l:'I_rms (ملف مثالي)',v:c.I.toFixed(4),u:'A',c:'cyan'},{l:'X_L/f',v:(c.XL/s.ctrl.f).toFixed(5),u:'Ω/Hz'}];},
+  equations:['X_L=\\omega L=2\\pi fL','I_{rms}=\\frac{V_{rms}}{X_L}'],
+  theory:'الملف المثالي يعارض التغير السريع في التيار؛ لذلك X_L تتناسب طرديًا مع f وL. في الملف المثالي يتأخر التيار عن الجهد بـ90°.',
+  hints(s){return['ضاعف f فتتضاعف X_L عند ثبات L.','ضاعف L فتتضاعف X_L عند ثبات f.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const left=65,right=W-45,top=50,bottom=H-55,fmax=5000,XLmax=2*Math.PI*fmax*s.ctrl.L/1000;ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,bottom);ctx.lineTo(right,bottom);ctx.stroke();ctx.strokeStyle='#22d3ee';ctx.lineWidth=3;ctx.beginPath();for(let k=0;k<=100;k++){const f=fmax*k/100,XL=2*Math.PI*f*s.ctrl.L/1000,x=left+(right-left)*k/100,y=bottom-(bottom-top)*XL/XLmax;k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();const x=left+(right-left)*s.ctrl.f/fmax,y=bottom-(bottom-top)*(2*Math.PI*s.ctrl.f*s.ctrl.L/1000)/XLmax;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();label(ctx,'f',right,bottom+20,'#cbd5e1','right',11,true);label(ctx,'X_L',left-8,top,'#cbd5e1','right',11,true);}
+},
+
+rl_phase_frequency_lab: {
+  title:'الملف في AC — تأثير التردد على زاوية الطور', icon:'🧭', category:'كهرباء',
+  desc:'في دائرة RL متسلسلة، شاهد كيف يزداد تأخر التيار مع التردد.',
+  welcome:{title:'🧭 طور RL مع f',steps:['ثبّت R وL.','غيّر التردد.','راقب X_L وزاوية التأخر.','قارن الترددات المنخفضة والعالية.']},
+  controls:[{id:'R',label:'R',min:1,max:1000,step:1,value:100,unit:'Ω'},{id:'L',label:'L',min:1,max:1000,step:1,value:200,unit:'mH'},{id:'f',label:'f',min:5,max:5000,step:5,value:50,unit:'Hz'}],
+  reset(s){},update(s,dt){},
+  calc(s){const XL=2*Math.PI*s.ctrl.f*s.ctrl.L/1000,lag=Math.atan2(XL,s.ctrl.R);return{XL,lag};},
+  readouts(s){const c=this.calc(s);return[{l:'X_L',v:c.XL.toFixed(2),u:'Ω'},{l:'زاوية تأخر I',v:(c.lag*180/Math.PI).toFixed(3),u:'°',c:'gold'},{l:'tan φ',v:(c.XL/s.ctrl.R).toFixed(4),u:'',c:'cyan'}];},
+  equations:['\\phi_{V-I}=\\tan^{-1}\\left(\\frac{X_L}{R}\\right)','X_L=2\\pi fL'],
+  theory:'في RL المتسلسلة، يزداد X_L مع التردد، ولذلك يزداد تقدم الجهد الكلي على التيار. عند التردد العالي قد تقترب زاوية تأخر التيار من 90°.',
+  hints(s){return['ارفع f ولاحظ زيادة زاوية تأخر التيار.','هذه زاوية الجهد الكلي بالنسبة للتيار، وليست فرق الطور على المقاومة وحدها.'];},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const left=65,right=W-45,top=45,bottom=H-55,fmin=5,fmax=5000;ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,bottom);ctx.lineTo(right,bottom);ctx.stroke();ctx.strokeStyle='#a3e635';ctx.lineWidth=3;ctx.beginPath();for(let k=0;k<=120;k++){const f=fmin*Math.pow(fmax/fmin,k/120),XL=2*Math.PI*f*s.ctrl.L/1000,ph=Math.atan2(XL,s.ctrl.R)*180/Math.PI,x=left+(right-left)*Math.log(f/fmin)/Math.log(fmax/fmin),y=bottom-(bottom-top)*ph/90;k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();label(ctx,'90°',left-10,top,'#cbd5e1','right',11,true);label(ctx,'0°',left-10,bottom,'#cbd5e1','right',11,true);label(ctx,'f →',right,bottom+20,'#cbd5e1','right',11,true);}
+}
 };
 
 /* ============================================================
@@ -3962,7 +4267,7 @@ window.addEventListener('load',()=>{
         <h1 class="text-xl font-bold mb-2 text-slate-300">أهلًا وسهلًا بك في</h1>
         <h2 class="text-3xl md:text-4xl font-black mb-4 text-gold leading-tight">مختبر الفيزياء التفاعلي</h2>
         <p class="text-slate-400 text-sm mb-6 leading-relaxed">
-          منصة تعليمية تضم <b class="text-cyan">87 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">17 فرعًا فيزيائيًا</b>:
+          منصة تعليمية تضم <b class="text-cyan">108 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">17 فرعًا فيزيائيًا</b>:
           الميكانيكا، الكهرباء، البصريات، الموجات، ميكانيكا الكم، الفيزياء الذرية والجزيئية،
           فيزياء الصلبة، النانوتكنولوجي، الأطياف، النماذج النووية، الفيزياء النووية،
           الإلكترونيات التماثلية، الإلكترونيات الرقمية، الموائع والحرارة، والنسبية.
@@ -3988,7 +4293,7 @@ window.addEventListener('load',()=>{
   `;
   document.getElementById('welcome-start').onclick=()=>{
     overlay.innerHTML='';
-    toast('استمتع بـ <b>87 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
+    toast('استمتع بـ <b>108 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
   };
   renderFilterTabs();
 });
