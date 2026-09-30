@@ -3697,26 +3697,67 @@ compton: {
 
 
 inertial_frames: {
-  title:'المحاور القصورية — راقب الحدث من مرجعين', icon:'🧭', category:'النسبية',
-  desc:'افهم معنى المرجع القصوري عمليًا: نفس الجسم له موضع وسرعة مختلفان عند راصدين، لكن الجسم الحر يبقى بلا تسارع في المرجعين.',
-  welcome:{title:'🧭 المحاور القصورية',steps:['راقب جسيمًا حرًا في S.','اجعل S′ يتحرك بسرعة ثابتة v.','قارن x وx′ ثم u وu′.','لاحظ أن a=a′=0 ما دام المرجعان غير متسارعين.']},
-  controls:[{id:'u',label:'سرعة الجسم u',min:-20,max:20,step:1,value:12,unit:'m/s'},{id:'v',label:'سرعة S′',min:-15,max:15,step:1,value:5,unit:'m/s'}],
-  reset(s){s.t=0;},update(s,dt){s.t=(s.t||0)+dt;},
-  readouts(s){const t=(s.t||0)%8;return[
-    {l:'t',v:t.toFixed(2),u:'s',c:'gold'},
-    {l:'x في S',v:(s.ctrl.u*t).toFixed(1),u:'m'},
-    {l:'x′ في S′',v:((s.ctrl.u-s.ctrl.v)*t).toFixed(1),u:'m',c:'cyan'},
-    {l:'u′=u−v',v:(s.ctrl.u-s.ctrl.v).toFixed(1),u:'m/s'},
-    {l:'a=a′',v:'0',u:'m/s²'}];},
-  hints(s){const up=s.ctrl.u-s.ctrl.v,h=[];h.push('لا توجد سرعة مطلقة هنا؛ السرعة تُنسب دائمًا إلى مرجع.');h.push('u′=<span class="hl">'+up.toFixed(1)+' m/s</span>.');if(Math.abs(up)<.2)h.push('🎯 الجسم ساكن تقريبًا في S′ مع أنه متحرك في S.');return h;},
-  equations:['x′=x-vt','t′=t','u′=u-v','a′=a'],
-  theory:'<b>المرجع القصوري</b> مرجع لا يتسارع. إذا كانت محصلة القوى صفرًا يبقى الجسم ساكنًا أو يتحرك بسرعة ثابتة فيه. لذلك راكب قطار يتحرك بسرعة ثابتة لا يستطيع من تجربة ميكانيكية محلية فقط أن يعرف «سرعة مطلقة» للقطار.<br><br>غاليليًا نكتب x′=x−vt وt′=t، ولذلك تختلف السرعة لكن يبقى التسارع نفسه. افتراض t′=t هو النقطة التي ستتغير لاحقًا في النسبية الخاصة.',
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const t=(s.t||0)%8,up=s.ctrl.u-s.ctrl.v,y1=H*.35,y2=H*.72;
-    ctx.strokeStyle='#475569';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(35,y1);ctx.lineTo(W-35,y1);ctx.moveTo(35,y2);ctx.lineTo(W-35,y2);ctx.stroke();
-    const scale=(W-100)/120,x1=W/2+clamp(s.ctrl.u*t,-60,60)*scale,x2=W/2+clamp(up*t,-60,60)*scale;
-    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x1,y1,10,0,7);ctx.fill();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(x2,y2,10,0,7);ctx.fill();
-    label(ctx,'S',45,y1-28,'#fbbf24','left',13,true);label(ctx,'S′',45,y2-28,'#22d3ee','left',13,true);
-    label(ctx,'x='+ (s.ctrl.u*t).toFixed(1)+' m',x1,y1+28,'#fbbf24','center',10,true);label(ctx,'x′='+ (up*t).toFixed(1)+' m',x2,y2+28,'#22d3ee','center',10,true);
+  title:'مختبر الراصدين — الحدث نفسه في S وS′', icon:'👁️', category:'النسبية', labV4:true,
+  desc:'ارمِ كرة داخل قطار يتحرك بسرعة ثابتة وشاهد المشهد نفسه في وقت واحد من داخل القطار ومن الرصيف. هنا يبدأ معنى «المرجع».',
+  welcome:{title:'👁️ قبل المعادلات: شاهد الحدث من راصدين',steps:[
+    'الكرة تُرمى عموديًا داخل القطار. راصد القطار S′ يراها تصعد وتهبط فوق يده.',
+    'راصد الرصيف S يرى الكرة تملك أيضًا سرعة أفقية مساوية لسرعة القطار، فيراها ترسم مسارًا منحنيًا.',
+    'غيّر سرعة القطار من المقبض داخل المشهد. زمن الصعود نفسه لا يتغير، لكن المسافة الأفقية تتغير.',
+    'الفكرة: الحدث واحد، لكن الإحداثيات والسرعات التي ينسبها كل راصد إليه مختلفة.'
+  ]},
+  controls:[
+    {id:'v',label:'سرعة القطار v',min:0,max:30,step:1,value:12,unit:'m/s',help:'سرعة S′ بالنسبة إلى الرصيف S. اسحب المقبض البنفسجي أسفل المشهد أيضًا.'},
+    {id:'uy',label:'سرعة رمي الكرة إلى الأعلى uᵧ',min:5,max:20,step:1,value:12,unit:'m/s',help:'السرعة العمودية الابتدائية للكرة بالنسبة للقطار.'}
+  ],
+  reset(s){s.t=0;s.dragV=false;},
+  onControlChange(s){},
+  update(s,dt){const T=2*s.ctrl.uy/9.81;s.t=(s.t+dt)%(T+0.45);},
+  _flight(s){return 2*s.ctrl.uy/9.81;},
+  _syncV(v){const el=document.getElementById('ctrl-v'),lab=document.getElementById('val-v');if(el)el.value=v;if(lab)lab.innerHTML=v+' <span class="text-slate-500 text-xs">m/s</span>';},
+  _slider(W,H){return{x:W*.23,y:H-34,w:W*.54,h:12};},
+  pointerDown(s,p){const r=this._slider(p.W,p.H);if(p.x>=r.x-10&&p.x<=r.x+r.w+10&&Math.abs(p.y-r.y)<22){s.dragV=true;return this.pointerMove(s,p)||true;}return false;},
+  pointerMove(s,p){if(!s.dragV)return false;const r=this._slider(p.W,p.H),v=clamp(Math.round(((p.x-r.x)/r.w)*30),0,30);s.ctrl.v=v;this._syncV(v);updateHintBox();return true;},
+  pointerUp(s){if(!s.dragV)return false;s.dragV=false;return true;},
+  readouts(s){
+    const T=this._flight(s),R=s.ctrl.v*T;
+    return[
+      {l:'زمن الطيران عند الراصدين',v:T.toFixed(2),u:'s',c:'gold'},
+      {l:'uₓ في S′ داخل القطار',v:'0.0',u:'m/s'},
+      {l:'uₓ في S على الرصيف',v:s.ctrl.v.toFixed(1),u:'m/s',c:'cyan'},
+      {l:'المسافة الأفقية في S',v:R.toFixed(1),u:'m'},
+      {l:'التسارع العمودي',v:'−9.81',u:'m/s²'}
+    ];
+  },
+  hints(s){const T=this._flight(s),R=s.ctrl.v*T;return[
+    'انظر إلى الكرتين في النصفين: هما <b>الكرة نفسها وفي اللحظة نفسها</b>، وليستا تجربتين مختلفتين.',
+    'في S′ لا توجد سرعة أفقية للكرة بالنسبة للقطار. في S توجد سرعة أفقية مقدارها v='+s.ctrl.v.toFixed(0)+' m/s.',
+    'زمن الرحلة بقي '+T.toFixed(2)+' s في النموذج الكلاسيكي، لذلك قطع راصد الأرض أفقيًا '+R.toFixed(1)+' m.',
+    'هذه هي فكرة المرجع قبل أي نسبية خاصة: لا تكتب x أو u من دون أن تقول «بالنسبة إلى من؟».'
+  ];},
+  equations:['x′=x-vt','u_x′=u_x-v','a′=a'],
+  theory:'<b>الحدث الفيزيائي واحد:</b><br>الكرة تغادر يد الراكب ثم تعود إليها. داخل القطار، ما دام القطار يتحرك بسرعة ثابتة، لا توجد للكرة سرعة أفقية بالنسبة للراكب؛ فيراها تصعد وتهبط على خط رأسي. راصد الرصيف يرى القطار والكرة يتحركان أفقيًا، لذلك يجمع الحركة الأفقية المنتظمة مع الحركة العمودية المتسارعة ويشاهد مسارًا قطعياً.<br><br><b>لماذا هذا مهم؟</b><br>لا يوجد «وصف واحد مطلق» للمسار. ما يبقى مشتركًا في ميكانيك غاليليو هو الزمن والتسارع، بينما تختلف الإحداثيات والسرعات. النسبية الخاصة ستحتفظ بفكرة تكافؤ المراجع القصورية لكنها ستتخلى عن الزمن المطلق.',
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const T=this._flight(s),tt=Math.min(s.t,T),half=T/2,g=9.81;
+    const yphys=s.ctrl.uy*tt-.5*g*tt*tt,yn=Math.max(0,yphys)/(s.ctrl.uy*s.ctrl.uy/(2*g)||1);
+    const top=52,bottom=H-66,ph=bottom-top,mid=W/2;
+    const panels=[{x:18,w:mid-28,title:'S — راصد الرصيف',sub:'يرى القطار والكرة يتحركان أفقيًا',color:'#fbbf24'},{x:mid+10,w:W-mid-28,title:'S′ — راصد داخل القطار',sub:'يرى الكرة فوق الموضع نفسه',color:'#22d3ee'}];
+    panels.forEach(p=>{ctx.fillStyle='rgba(6,10,20,.82)';ctx.strokeStyle='#25304a';ctx.fillRect(p.x,top,p.w,ph);ctx.strokeRect(p.x,top,p.w,ph);label(ctx,p.title,p.x+12,top+18,p.color,'left',11,true);label(ctx,p.sub,p.x+12,top+36,'#94a3b8','left',8,false);});
+    const groundY=bottom-34;
+    // ground frame
+    let p=panels[0],trackL=p.x+28,trackR=p.x+p.w-28,frac=T>0?tt/T:0,trainX=trackL+(trackR-trackL-92)*frac;
+    ctx.strokeStyle='#475569';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(trackL,groundY);ctx.lineTo(trackR,groundY);ctx.stroke();
+    ctx.fillStyle='rgba(34,211,238,.12)';ctx.strokeStyle='#22d3ee';ctx.fillRect(trainX,groundY-42,92,34);ctx.strokeRect(trainX,groundY-42,92,34);
+    const ballX=trainX+46,ballY=groundY-46-yn*(ph*.42);ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(ballX,ballY,7,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(251,191,36,.35)';ctx.setLineDash([4,4]);ctx.beginPath();
+    for(let i=0;i<=30;i++){const q=i/30,tq=T*q,xq=trackL+(trackR-trackL-92)*q+46,yq=groundY-46-(Math.max(0,s.ctrl.uy*tq-.5*g*tq*tq)/(s.ctrl.uy*s.ctrl.uy/(2*g)))*(ph*.42);i?ctx.lineTo(xq,yq):ctx.moveTo(xq,yq);}ctx.stroke();ctx.setLineDash([]);
+    // train frame
+    p=panels[1];const cx=p.x+p.w/2;ctx.strokeStyle='#475569';ctx.beginPath();ctx.moveTo(p.x+28,groundY);ctx.lineTo(p.x+p.w-28,groundY);ctx.stroke();
+    ctx.fillStyle='rgba(34,211,238,.12)';ctx.strokeStyle='#22d3ee';ctx.fillRect(cx-46,groundY-42,92,34);ctx.strokeRect(cx-46,groundY-42,92,34);
+    ctx.strokeStyle='rgba(34,211,238,.35)';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(cx,groundY-46);ctx.lineTo(cx,groundY-46-ph*.42);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(cx,groundY-46-yn*(ph*.42),7,0,Math.PI*2);ctx.fill();
+    label(ctx,'نفس t = '+tt.toFixed(2)+' s',mid,top+18,'#e879f9','center',10,true);
+    // direct velocity control
+    const r=this._slider(W,H);ctx.strokeStyle='#475569';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(r.x,r.y);ctx.lineTo(r.x+r.w,r.y);ctx.stroke();const kx=r.x+r.w*(s.ctrl.v/30);ctx.fillStyle='#e879f9';ctx.beginPath();ctx.arc(kx,r.y,10,0,Math.PI*2);ctx.fill();label(ctx,'اسحب سرعة القطار: '+s.ctrl.v+' m/s',W/2,r.y-18,'#e879f9','center',9,true);
   }
 },
 
@@ -3753,48 +3794,159 @@ newtonian_relativity: {
 },
 
 sr_postulates: {
-  title:'فرضيتا النسبية الخاصة — ثبات سرعة الضوء', icon:'💡', category:'النسبية',
-  desc:'قارن توقع غاليليو c±v مع فرضية آينشتاين التي تجعل جميع المراقبين القصوريين يقيسون c نفسها.',
-  welcome:{title:'💡 فرضيتا آينشتاين',steps:['غيّر سرعة الراصد.','قارن c−v وc+v مع القياس النسبي.','راقب شعاعي الضوء.','استنتج لماذا لا يمكن أن يبقى الزمن مطلقًا.']},
-  controls:[{id:'beta',label:'β=v/c',min:-.9,max:.9,step:.05,value:.5,unit:''}],
-  reset(s){s.t=0;},update(s,dt){s.t=(s.t||0)+dt;},
-  readouts(s){const b=s.ctrl.beta;return[{l:'β',v:b.toFixed(2),u:''},{l:'غاليلي يمينًا',v:(1-b).toFixed(2),u:'c'},{l:'غاليلي يسارًا',v:(1+b).toFixed(2),u:'c'},{l:'نسبيًا |c′|',v:'1.000',u:'c',c:'gold'},{l:'γ',v:(1/Math.sqrt(1-b*b)).toFixed(3),u:'',c:'cyan'}];},
-  hints(s){return['الفرضية الأولى: قوانين الفيزياء لها الشكل نفسه في كل المراجع القصورية.','الفرضية الثانية: سرعة الضوء في الفراغ c لكل راصد قصوري.','ثبات c يجبر المكان والزمن على التحول معًا.'];},
-  equations:['c′=c','\\gamma=\\frac{1}{\\sqrt{1-\\beta^2}}'],
-  theory:'الفرضية الأولى ترفض وجود مرجع قصوري مطلق يمكن لقوانين الطبيعة أن تميزه. والفرضية الثانية تثبت سرعة الضوء c بصرف النظر عن حركة المصدر أو الراصد القصوري. الجمع بينهما لا ينسجم مع t′=t الغاليلي، لذلك تظهر تحولات لورنتز، ونسبية التزامن، وتمدد الزمن وانكماش الطول كمنظومة واحدة.',
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const p=((s.t||0)%4)/4,cx=W/2,cy=H*.62,span=Math.min(W*.4,230),obs=cx+s.ctrl.beta*span*(2*p-1),r=cx+span*(2*p-1),l=cx-span*(2*p-1);
-    ctx.strokeStyle='#475569';ctx.beginPath();ctx.moveTo(30,cy);ctx.lineTo(W-30,cy);ctx.stroke();ctx.fillStyle='#e2e8f0';ctx.fillRect(obs-8,cy-34,16,34);ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(r,cy,7,0,7);ctx.fill();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(l,cy,7,0,7);ctx.fill();label(ctx,'الضوء يبقى ±c',W/2,55,'#fbbf24','center',14,true);
+  title:'نيوتن أم آينشتاين؟ — تجربة ثبات سرعة الضوء', icon:'💡', category:'النسبية', labV4:true,
+  desc:'شغّل النموذج الكلاسيكي ثم النموذج النسبي على المشهد نفسه: مركبة متحركة تطلق ضوءًا إلى الأمام، وعدادان يكشفان أين يقع التعارض.',
+  welcome:{title:'💡 لا تبدأ بالفرضية — اصنع التعارض أولًا',steps:[
+    'اختر «غاليلي» وشاهد ما يتنبأ به جمع السرعات لراصد الأرض.',
+    'بدّل إلى «آينشتاين» من الزر نفسه من دون تغيير سرعة المركبة.',
+    'لاحظ أن عداد المركبة وعداد الأرض كلاهما يعطي c في النموذج النسبي.',
+    'الاستنتاج: إذا كانت c ثابتة، فلا يمكن أن يبقى المكان والزمن يتحولان بطريقة غاليليو.'
+  ]},
+  controls:[
+    {id:'model',label:'نموذج الحساب',type:'buttons',value:0,options:[{value:0,label:'🟨 غاليلي / نيوتن'},{value:1,label:'🟪 آينشتاين'}],help:'بدّل بين التوقع الكلاسيكي والبنية النسبية للمشهد نفسه.'},
+    {id:'beta',label:'سرعة المركبة β=v/c',min:0,max:.9,step:.05,value:.6,unit:'',help:'سرعة المصدر بالنسبة إلى الأرض.'}
+  ],
+  reset(s){s.t=0;},onControlChange(s){},update(s,dt){s.t=(s.t+dt)%4;},
+  _vals(s){const b=s.ctrl.beta,earth=s.ctrl.model===0?1+b:1;return{b,earth,ship:1,g:1/Math.sqrt(1-b*b)};},
+  readouts(s){const q=this._vals(s);return[
+    {l:'ما يقيسه راصد المركبة',v:q.ship.toFixed(3),u:'c',c:'cyan'},
+    {l:'ما يتنبأ/يقيسه راصد الأرض',v:q.earth.toFixed(3),u:'c',c:'gold'},
+    {l:'سرعة المركبة',v:q.b.toFixed(2),u:'c'},
+    {l:'γ',v:q.g.toFixed(3),u:''},
+    {l:'النموذج',v:s.ctrl.model===0?'غاليلي':'آينشتاين',u:''}
+  ];},
+  hints(s){const q=this._vals(s);return s.ctrl.model===0?[
+    'في غاليلي: إذا أطلق مصدر يتحرك بسرعة '+q.b.toFixed(2)+'c ضوءًا إلى الأمام، يظهر التوقع c+v = <span class="hl">'+q.earth.toFixed(2)+'c</span>.',
+    'هذا هو التعارض الذي نريد رؤيته بوضوح، لا حفظه: التنبؤ يعتمد على سرعة المصدر.',
+    'بدّل الآن إلى «آينشتاين» مع إبقاء β نفسها.'
+  ]:[
+    'في النسبية الخاصة كلا العدادين يعطي <span class="hl">c</span> رغم حركة المصدر.',
+    'إذن المشكلة ليست في «إضافة تصحيح صغير للسرعة»؛ بل في أن قياسات المكان والزمن نفسها يجب أن تتحول بطريقة مختلفة.',
+    'هذه الخطوة تقود مباشرة إلى تحويلات لورنتز.'
+  ];},
+  equations:['\\text{غاليلي: }u=c+v','\\text{آينشتاين: }c′=c','\\gamma=\\frac1{\\sqrt{1-\\beta^2}}'],
+  theory:'في الميكانيك الكلاسيكي نجمع السرعات خطيًا. لو طبّقنا ذلك على الضوء المنبعث من مصدر متحرك لتوقع راصد الأرض c+v أو c−v. النسبية الخاصة تستبدل هذا بتثبيت سرعة الضوء لكل راصد قصوري. للحفاظ على هذا الثبات لا بد أن تختلط إحداثيات المكان والزمن بين المراجع وفق تحويلات لورنتز.',
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this._vals(s),cx=W*.50,trackY=H*.62,shipX=W*.32;
+    ctx.fillStyle='rgba(8,13,24,.82)';ctx.strokeStyle='#25304a';ctx.fillRect(22,52,W-44,H-92);ctx.strokeRect(22,52,W-44,H-92);
+    label(ctx,s.ctrl.model===0?'🟨 عالم غاليلي':'🟪 عالم آينشتاين',W/2,75,s.ctrl.model===0?'#fbbf24':'#e879f9','center',15,true);
+    ctx.strokeStyle='#475569';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(55,trackY);ctx.lineTo(W-55,trackY);ctx.stroke();
+    // ship
+    ctx.fillStyle='rgba(34,211,238,.16)';ctx.strokeStyle='#22d3ee';ctx.lineWidth=2;ctx.fillRect(shipX-58,trackY-60,116,38);ctx.strokeRect(shipX-58,trackY-60,116,38);label(ctx,'المصدر المتحرك',shipX,trackY-74,'#22d3ee','center',9,true);
+    arrow(ctx,shipX-38,trackY-10,shipX+46,trackY-10,'#22d3ee',3,9);label(ctx,'v='+q.b.toFixed(2)+'c',shipX,trackY+18,'#22d3ee','center',9,true);
+    // light pulse positions
+    const p=(s.t%2)/2,span=W*.42;const lx=shipX+58+p*span;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(Math.min(W-70,lx),trackY-40,8,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(251,191,36,.35)';ctx.beginPath();ctx.moveTo(shipX+58,trackY-40);ctx.lineTo(Math.min(W-70,lx),trackY-40);ctx.stroke();
+    // meters
+    const meter=(x,y,title,val,color)=>{ctx.fillStyle='rgba(5,9,18,.94)';ctx.strokeStyle=color;ctx.fillRect(x,y,210,72);ctx.strokeRect(x,y,210,72);label(ctx,title,x+105,y+16,color,'center',9,true);label(ctx,val,x+105,y+43,'#f8fafc','center',18,true);};
+    meter(55,104,'عداد داخل المركبة','1.000 c','#22d3ee');meter(W-265,104,'عداد راصد الأرض',q.earth.toFixed(3)+' c',s.ctrl.model===0?'#fbbf24':'#e879f9');
+    label(ctx,s.ctrl.model===0?'التوقع يتغير مع v — هذه هي المشكلة':'كلا الراصدين يقيسان c — إذن الزمن/المكان يجب أن يتغيرا',W/2,H-40,s.ctrl.model===0?'#fbbf24':'#e879f9','center',10,true);
   }
 },
 
 lorentz_transform: {
-  title:'تحويلات لورنتز — حوّل حدثًا بين S وS′', icon:'📐', category:'النسبية',
-  desc:'حدد حدثًا في S′ وشاهد كيف يختلط المكان بالزمن عند تحويله إلى S.',
-  welcome:{title:'📐 تحويلات لورنتز',steps:['اختر β.','حدد x′ بوحدة light-second وt′ بالثانية.','اقرأ x وt في S.','راقب محوري x′ وct′ في مخطط الزمكان.']},
-  controls:[{id:'beta',label:'β=v/c',min:-.95,max:.95,step:.05,value:.6,unit:''},{id:'xp',label:'x′',min:-5,max:5,step:.25,value:2,unit:'light-s'},{id:'tp',label:'t′',min:-5,max:5,step:.25,value:1,unit:'s'}],
-  reset(s){},update(s,dt){},
-  calc(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b);return{b,g,x:g*(s.ctrl.xp+b*s.ctrl.tp),t:g*(s.ctrl.tp+b*s.ctrl.xp)};},
-  readouts(s){const q=this.calc(s);return[{l:'γ',v:q.g.toFixed(4),u:'',c:'gold'},{l:'x′',v:s.ctrl.xp.toFixed(2),u:'light-s'},{l:'t′',v:s.ctrl.tp.toFixed(2),u:'s'},{l:'x في S',v:q.x.toFixed(3),u:'light-s',c:'cyan'},{l:'t في S',v:q.t.toFixed(3),u:'s'}];},
-  hints(s){return['في وحدات light-second يمكن أخذ c=1 عدديًا.','لاحظ أن t يعتمد على x′ أيضًا؛ هذه هي بذرة نسبية التزامن.','عندما β→0 تصبح γ→1 ونعود تقريبًا إلى غاليليو.'];},
-  equations:['x′=\\gamma(x-vt)','t′=\\gamma\\left(t-\\frac{vx}{c^2}\\right)','x=\\gamma(x′+vt′)','t=\\gamma\\left(t′+\\frac{vx′}{c^2}\\right)'],
-  theory:'تحويلات لورنتز تربط إحداثيات الحدث نفسه في مرجعين قصوريين. الحدث لا يتغير، لكن قيم x وt المنسوبة إليه تتغير. اختلاط المكان والزمن ليس خيارًا حسابيًا؛ إنه ما يحافظ على ثبات مخروط الضوء x=±ct في جميع المراجع. في حد السرعات الصغيرة يعود السلوك إلى غاليليو تقريبًا.',
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const q=this.calc(s),cx=W/2,cy=H*.78,scale=Math.min(W,H)*.065,b=q.b;arrow(ctx,45,cy,W-45,cy,'#94a3b8',2,8);arrow(ctx,cx,H-25,cx,35,'#94a3b8',2,8);
-    ctx.strokeStyle='#22d3ee';ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(cx-b*scale*6,cy+scale*6);ctx.lineTo(cx+b*scale*6,cy-scale*6);ctx.stroke();ctx.strokeStyle='#f472b6';ctx.beginPath();ctx.moveTo(cx-scale*6,cy+b*scale*6);ctx.lineTo(cx+scale*6,cy-b*scale*6);ctx.stroke();
-    const ex=cx+q.x*scale,ey=cy-q.t*scale;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(ex,ey,8,0,7);ctx.fill();label(ctx,'حدث',ex+12,ey-12,'#fbbf24','left',11,true);label(ctx,'x='+q.x.toFixed(2)+' ls , t='+q.t.toFixed(2)+' s',W/2,H-18,'#fbbf24','center',11,true);
+  title:'مختبر الأحداث — حوّل حدثًا بين S وS′', icon:'📐', category:'النسبية', labV4:true,
+  desc:'اسحب الحدث الأصفر على مخطط الزمكان بدل إدخال أرقام فقط. المنصة تعرض فورًا أين ومتى يقع الحدث نفسه في S وS′.',
+  welcome:{title:'📐 الحدث واحد — الإحداثيات ليست واحدة',steps:[
+    'النقطة الصفراء تمثل حدثًا واحدًا له مكان وزمن في S.',
+    'اسحب الحدث داخل مخطط الزمكان، ثم غيّر سرعة S′.',
+    'راقب بطاقتي S وS′: الحدث لم يتغير، لكن x,t وx′,t′ تغيرت.',
+    'راقب خطوط الضوء ±45°؛ تحويل لورنتز يحافظ على مخروط الضوء.'
+  ]},
+  controls:[
+    {id:'beta',label:'β=v/c',min:-.9,max:.9,step:.05,value:.6,unit:'',help:'سرعة S′ بالنسبة إلى S.'},
+    {id:'x',label:'مكان الحدث x في S',min:-4,max:4,step:.1,value:2,unit:'light-s',help:'يمكنك أيضًا سحب الحدث أفقيًا على مخطط الزمكان.'},
+    {id:'t',label:'زمن الحدث t في S',min:-4,max:4,step:.1,value:2,unit:'s',help:'يمكنك أيضًا سحب الحدث رأسيًا.'}
+  ],
+  reset(s){s.dragEvent=false;},onControlChange(s){},
+  _calc(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),xp=g*(s.ctrl.x-b*s.ctrl.t),tp=g*(s.ctrl.t-b*s.ctrl.x);return{b,g,x:s.ctrl.x,t:s.ctrl.t,xp,tp,interval:s.ctrl.t*s.ctrl.t-s.ctrl.x*s.ctrl.x};},
+  _plot(W,H){return{x:W*.42,y:60,w:W*.54-24,h:H-105};},
+  _sync(id,val){const el=document.getElementById('ctrl-'+id),lab=document.getElementById('val-'+id);if(el)el.value=val;if(lab)lab.innerHTML=val+' <span class="text-slate-500 text-xs">'+(id==='x'?'light-s':id==='t'?'s':'')+'</span>';},
+  pointerDown(s,p){const r=this._plot(p.W,p.H),q=this._calc(s),cx=r.x+r.w/2,cy=r.y+r.h/2,sc=Math.min(r.w,r.h)/9,ex=cx+q.x*sc,ey=cy-q.t*sc;if(Math.hypot(p.x-ex,p.y-ey)<28){s.dragEvent=true;return true;}return false;},
+  pointerMove(s,p){if(!s.dragEvent)return false;const r=this._plot(p.W,p.H),cx=r.x+r.w/2,cy=r.y+r.h/2,sc=Math.min(r.w,r.h)/9;s.ctrl.x=Math.round(clamp((p.x-cx)/sc,-4,4)*10)/10;s.ctrl.t=Math.round(clamp((cy-p.y)/sc,-4,4)*10)/10;this._sync('x',s.ctrl.x);this._sync('t',s.ctrl.t);updateHintBox();return true;},
+  pointerUp(s){if(!s.dragEvent)return false;s.dragEvent=false;return true;},
+  update(){},
+  readouts(s){const q=this._calc(s);return[
+    {l:'x في S',v:q.x.toFixed(2),u:'light-s',c:'gold'},{l:'t في S',v:q.t.toFixed(2),u:'s'},
+    {l:'x′ في S′',v:q.xp.toFixed(3),u:'light-s',c:'cyan'},{l:'t′ في S′',v:q.tp.toFixed(3),u:'s'},
+    {l:'γ',v:q.g.toFixed(3),u:''},{l:'الفاصل c²Δt²−Δx²',v:q.interval.toFixed(3),u:'(light-s)²'}
+  ];},
+  hints(s){const q=this._calc(s),kind=q.interval>0?'زمني timelike':q.interval<0?'مكاني spacelike':'ضوئي lightlike';return[
+    'اسحب الحدث الأصفر. ما يتغير بين البطاقتين هو <b>وصف الحدث</b>، لا الحدث نفسه.',
+    'عند β='+q.b.toFixed(2)+' يصبح x′='+q.xp.toFixed(2)+' light-s و t′='+q.tp.toFixed(2)+' s.',
+    'الفاصل الحالي '+kind+'، وهو كمية تبقى نفسها تحت تحويلات لورنتز.',
+    'خطا الضوء عند ±45° لا يتغيران؛ هذه هي الهندسة التي تحفظ c.'
+  ];},
+  equations:['x′=\\gamma(x-\\beta ct)','ct′=\\gamma(ct-\\beta x)','\\gamma=\\frac1{\\sqrt{1-\\beta^2}}','(c\\Delta t)^2-\\Delta x^2=\\text{ثابت}'],
+  theory:'الحدث هو شيء يقع في مكان وزمان محددين، كوميض أو تصادم. الراصدان S وS′ يتفقان على وجود الحدث لكنهما لا ينسبان إليه القيم نفسها لـx وt. تحويل لورنتز يربط الإحداثيات بطريقة تحفظ سرعة الضوء وتحفظ الفاصل الزمكاني. مخطط Minkowski يجعل هذه الفكرة هندسية: محاور S′ تميل داخل مخروط الضوء كلما زادت السرعة.',
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this._calc(s),r=this._plot(W,H);
+    // cards
+    const card=(x,y,w,title,color,lines)=>{ctx.fillStyle='rgba(6,10,20,.90)';ctx.strokeStyle=color;ctx.fillRect(x,y,w,112);ctx.strokeRect(x,y,w,112);label(ctx,title,x+w/2,y+17,color,'center',11,true);lines.forEach((z,i)=>label(ctx,z,x+12,y+43+i*22,'#e2e8f0','left',10,true));};
+    card(24,72,W*.34,'الراصد S — الأرض','#fbbf24',['x = '+q.x.toFixed(2)+' light-s','t = '+q.t.toFixed(2)+' s','الحدث: ● نفسه']);
+    card(24,205,W*.34,'الراصد S′ — المركبة','#22d3ee',['x′ = '+q.xp.toFixed(2)+' light-s','t′ = '+q.tp.toFixed(2)+' s','γ = '+q.g.toFixed(3)]);
+    label(ctx,'لا تنقل الحدث بين عالمين؛ أنت تغيّر إحداثيات الحدث نفسه.',24,H-54,'#94a3b8','left',9,true);
+    // Minkowski
+    ctx.fillStyle='rgba(6,10,20,.74)';ctx.strokeStyle='#25304a';ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeRect(r.x,r.y,r.w,r.h);
+    const cx=r.x+r.w/2,cy=r.y+r.h/2,sc=Math.min(r.w,r.h)/9;
+    arrow(ctx,r.x+18,cy,r.x+r.w-18,cy,'#64748b',1.5,7);arrow(ctx,cx,r.y+r.h-18,cx,r.y+18,'#64748b',1.5,7);label(ctx,'x',r.x+r.w-22,cy+15,'#94a3b8','right',9,true);label(ctx,'ct',cx+12,r.y+22,'#94a3b8','left',9,true);
+    // light cone
+    ctx.strokeStyle='rgba(251,191,36,.55)';ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(cx-r.h*.42,cy+r.h*.42);ctx.lineTo(cx+r.h*.42,cy-r.h*.42);ctx.moveTo(cx+r.h*.42,cy+r.h*.42);ctx.lineTo(cx-r.h*.42,cy-r.h*.42);ctx.stroke();ctx.setLineDash([]);
+    // primed axes
+    const b=q.b,L=sc*4.2;ctx.strokeStyle='#22d3ee';ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(cx-b*L,cy+L);ctx.lineTo(cx+b*L,cy-L);ctx.stroke();ctx.strokeStyle='#e879f9';ctx.beginPath();ctx.moveTo(cx-L,cy+b*L);ctx.lineTo(cx+L,cy-b*L);ctx.stroke();label(ctx,'ct′',cx+b*L,cy-L-10,'#22d3ee','center',9,true);label(ctx,'x′',cx+L,cy-b*L-10,'#e879f9','center',9,true);
+    const ex=cx+q.x*sc,ey=cy-q.t*sc;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(ex,ey,9,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.stroke();label(ctx,'اسحب الحدث',ex,ey-17,'#fbbf24','center',8,true);
   }
 },
 
 relativity_simultaneity: {
-  title:'نسبية التزامن — هل الحدثان يحدثان معًا؟', icon:'⏱️', category:'النسبية',
-  desc:'اجعل حدثين متزامنين في S ثم شاهد كيف يظهر فرق زمني بينهما في S′.',
-  welcome:{title:'⏱️ نسبية التزامن',steps:['اختر Δx.','اجعل Δt=0 في S.','غيّر β.','راقب Δt′.']},
-  controls:[{id:'beta',label:'β=v/c',min:-.9,max:.9,step:.05,value:.6,unit:''},{id:'dx',label:'Δx',min:-5,max:5,step:.25,value:3,unit:'light-s'},{id:'dt',label:'Δt في S',min:-3,max:3,step:.25,value:0,unit:'s'}],
-  reset(s){},update(s,dt){},
-  readouts(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),dtp=g*(s.ctrl.dt-b*s.ctrl.dx),dxp=g*(s.ctrl.dx-b*s.ctrl.dt);return[{l:'Δt',v:s.ctrl.dt.toFixed(2),u:'s'},{l:'Δt′',v:dtp.toFixed(3),u:'s',c:'gold'},{l:'Δx′',v:dxp.toFixed(3),u:'light-s',c:'cyan'},{l:'متزامنان في S؟',v:Math.abs(s.ctrl.dt)<.001?'نعم':'لا',u:''},{l:'متزامنان في S′؟',v:Math.abs(dtp)<.02?'تقريبًا نعم':'لا',u:''}];},
-  hints(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),dtp=g*(s.ctrl.dt-b*s.ctrl.dx),h=[];if(Math.abs(s.ctrl.dt)<.001&&Math.abs(s.ctrl.dx)>.01)h.push('في S الحدثان متزامنان، بينما S′ يقيس Δt′=<span class="hl">'+dtp.toFixed(3)+' s</span>.');h.push('التزامن المطلق يختفي لأن تحويل الزمن يحتوي على −vΔx/c².');return h;},
-  equations:['\\Delta t′=\\gamma\\left(\\Delta t-\\frac{v\\Delta x}{c^2}\\right)'],
-  theory:'إذا كان حدثان متباعدان مكانيًا ومتزامنان في S، فليس من الضروري أن يكونا متزامنين في S′. عند Δt=0 نحصل على Δt′=−γvΔx/c². هذه النتيجة تفسر لماذا لا يمكن تعريف «الآن» نفسه لجميع المراقبين على امتداد الفضاء. أما ترتيب السبب والنتيجة للأحداث المتصلة سببيًا فلا ينقلب.',
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),dtp=g*(s.ctrl.dt-b*s.ctrl.dx),x1=W*.28,x2=W*.72,y=H*.58;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x1,y,10,0,7);ctx.fill();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(x2,y-s.ctrl.dt*28,10,0,7);ctx.fill();label(ctx,'A',x1,y+24,'#fbbf24','center',11,true);label(ctx,'B',x2,y-s.ctrl.dt*28+24,'#22d3ee','center',11,true);label(ctx,'S: Δt='+s.ctrl.dt.toFixed(2)+' s',W/2,55,'#cbd5e1','center',13,true);label(ctx,'S′: Δt′='+dtp.toFixed(3)+' s',W/2,85,'#f472b6','center',13,true);}
+  title:'البرق والقطار — نسبية التزامن', icon:'⚡', category:'النسبية', labV4:true,
+  desc:'برقان يقعان معًا في مرجع الرصيف عند طرفين متباعدين. شاهد وصول الضوء إلى راصد الرصيف وإلى مركز القطار، ثم افصل بين «الوصول» و«زمن وقوع الحدث».',
+  welcome:{title:'⚡ هل «وصل الضوء معًا» يعني أن الحدثين وقعا معًا؟',steps:[
+    'في S يضرب البرق نقطتين A وB في اللحظة نفسها وعلى مسافة Δx.',
+    'راصد الرصيف في المنتصف ساكن بين الحدثين؛ تصل إليه النبضتان معًا.',
+    'مركز القطار يتحرك نحو نبضة B ويبتعد عن نبضة A؛ لذلك لا تصلان إليه معًا.',
+    'تحويل لورنتز يخبرك أن الحدثين اللذين كانا متزامنين في S ليسا متزامنين في S′.'
+  ]},
+  controls:[
+    {id:'beta',label:'سرعة القطار β=v/c',min:0,max:.9,step:.05,value:.6,unit:'',help:'كلما زادت السرعة زاد اختلاف التزامن بين المرجعين.'},
+    {id:'dx',label:'المسافة بين ضربتي البرق Δx',min:1,max:8,step:.5,value:4,unit:'light-s',help:'المسافة بين الحدثين في مرجع الرصيف.'}
+  ],
+  reset(s){s.t=0;},onControlChange(s){s.t=0;},update(s,dt){const q=this._calc(s);s.t=(s.t+dt)%(q.tLeft*1.25+.4);},
+  _calc(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),D=s.ctrl.dx,dtp=-g*b*D,tRight=D/(2*(1+b)),tLeft=D/(2*Math.max(.05,1-b));return{b,g,D,dtp,tRight,tLeft};},
+  readouts(s){const q=this._calc(s);return[
+    {l:'Δt بين الحدثين في S',v:'0.000',u:'s',c:'gold'},
+    {l:'Δt′ بين الحدثين في S′',v:q.dtp.toFixed(3),u:'s',c:'cyan'},
+    {l:'وصول ضوء B إلى مركز القطار',v:q.tRight.toFixed(3),u:'s'},
+    {l:'وصول ضوء A إلى مركز القطار',v:q.tLeft.toFixed(3),u:'s'},
+    {l:'γ',v:q.g.toFixed(3),u:''}
+  ];},
+  hints(s){const q=this._calc(s);return[
+    'في الرصيف: A وB حدثان متزامنان، لذلك Δt=0.',
+    'مركز القطار يتحرك نحو الضوء القادم من B، فيصل إليه عند '+q.tRight.toFixed(2)+' s، بينما ضوء A يلحق به عند '+q.tLeft.toFixed(2)+' s.',
+    'لكن انتبه: <b>زمن وصول الضوء ليس هو زمن وقوع الحدث</b>. بعد تصحيح انتشار الضوء، يعطي لورنتز Δt′='+q.dtp.toFixed(2)+' s.',
+    'الإشارة السالبة تعني أن ترتيب الحدثين في S′ يختلف عن S للأحداث المتباعدة spacelike.'
+  ];},
+  equations:['\\Delta t′=\\gamma\\left(\\Delta t-\\frac{v\\Delta x}{c^2}\\right)','\\Delta t=0\\Rightarrow \\Delta t′=-\\gamma\\frac{v\\Delta x}{c^2}'],
+  theory:'نسبية التزامن ليست مجرد تأخر وصول الضوء. يمكن للراصدين أن يصححا أزمنة وصول الإشارات ومع ذلك يختلفا في تعريف أي الأحداث البعيدة وقع «الآن». إذا كان الحدثان متزامنين في S ومفصولين مكانيًا، فإن تحويل الزمن يعطي Δt′ غير صفري عندما v≠0. السبب العميق هو أن مزامنة الساعات البعيدة نفسها تعتمد على حالة حركة المرجع.',
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this._calc(s),t=Math.min(s.t,q.tLeft),mid=W/2,top=60,panelH=(H-120)/2;
+    const drawFrame=(y,title,color,trainFrame)=>{
+      ctx.fillStyle='rgba(6,10,20,.84)';ctx.strokeStyle='#25304a';ctx.fillRect(22,y,W-44,panelH-8);ctx.strokeRect(22,y,W-44,panelH-8);label(ctx,title,36,y+18,color,'left',11,true);
+      const left=80,right=W-80,cy=y+panelH*.62;ctx.strokeStyle='#475569';ctx.beginPath();ctx.moveTo(left,cy);ctx.lineTo(right,cy);ctx.stroke();
+      // flashes
+      ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(left,cy,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(right,cy,6,0,Math.PI*2);ctx.fill();
+      const fracR=clamp(t/q.tRight,0,1),fracL=clamp(t/q.tLeft,0,1);
+      const center=trainFrame?(mid+(q.b*t/(q.D/2))*((right-left)/2)*.35):mid;
+      const xr=right-(right-center)*fracR,xl=left+(center-left)*fracL;
+      ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(xr,cy-24,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(xl,cy-24,5,0,Math.PI*2);ctx.fill();
+      if(trainFrame){ctx.fillStyle='rgba(232,121,249,.12)';ctx.strokeStyle='#e879f9';ctx.fillRect(center-58,cy-64,116,28);ctx.strokeRect(center-58,cy-64,116,28);label(ctx,'مركز القطار',center,cy-76,'#e879f9','center',8,true);}
+      else{ctx.fillStyle='#cbd5e1';ctx.beginPath();ctx.arc(mid,cy-20,7,0,Math.PI*2);ctx.fill();label(ctx,'راصد الرصيف',mid,cy-37,'#cbd5e1','center',8,true);}
+      label(ctx,'A',left,cy+19,'#fbbf24','center',8,true);label(ctx,'B',right,cy+19,'#22d3ee','center',8,true);
+    };
+    drawFrame(top,'S — البرقان متزامنان في الرصيف','#fbbf24',false);
+    drawFrame(top+panelH,'S′ — القطار يتحرك نحو B ويبتعد عن A','#e879f9',true);
+    label(ctx,'Δt=0 في S   ⇄   Δt′='+q.dtp.toFixed(2)+' s في S′',mid,H-27,'#e879f9','center',11,true);
+  }
 },
 
 length_contraction: {
