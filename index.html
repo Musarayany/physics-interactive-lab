@@ -326,7 +326,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
       <div class="sub">فكرة وإعداد وتصميم وتنفيذ: م.د موسى محمد مهدي</div>
     </div>
     <div class="text-center mb-8">
-      <div class="badge text-gold border-gold/40 mb-3">108 تجربة تفاعلية مصنّفة في 17 فرعًا</div>
+      <div class="badge text-gold border-gold/40 mb-3">109 تجربة تفاعلية مصنّفة في 17 فرعًا</div>
       <h1 class="text-4xl md:text-5xl font-black mb-3 leading-tight">
         جرّب، <span class="text-gold">شاهد</span>، وافهم الفيزياء
       </h1>
@@ -598,7 +598,7 @@ const CATEGORIES = {
   'فيزياء الصلبة':     { icon:'💎', color:'#60a5fa', desc:'البلورات وأشباه الموصلات' },
   'النانوتكنولوجي':    { icon:'🔵', color:'#22d3ee', desc:'الجسيمات النانوية وخواصها' },
   'الأطياف':           { icon:'🌈', color:'#f472b6', desc:'الخطوط الطيفية وتحليلها' },
-  'النماذج النووية':   { icon:'🎯', color:'#f87171', desc:'القشرة، القطرة السائلة، والنماذج النظرية' },
+  'النماذج النووية':   { icon:'🎯', color:'#f87171', desc:'IBM-1، القشرة، القطرة السائلة، والتناظرات والبنية الجماعية' },
   'الفيزياء النووية':  { icon:'☢️', color:'#facc15', desc:'الاضمحلال، الانشطار، الاندماج، وطاقة الربط' },
   'الإلكترونيات التماثلية': { icon:'📻', color:'#f59e0b', desc:'الثنائيات، الترانزستورات، والمكبرات' },
   'الإلكترونيات الرقمية':   { icon:'🔢', color:'#8b5cf6', desc:'البوابات المنطقية والدوائر الرقمية' },
@@ -1754,6 +1754,233 @@ nano: {
     ctx.globalAlpha=1;
     ctx.strokeStyle='#334155';ctx.strokeRect(60,specY,W-120,specH);
     label(ctx,'طيف الامتصاص',W/2,specY-10,'#fbbf24','center',12,true);
+  }
+},
+
+ibm1: {
+  title:'IBM-1 — نموذج البوزونات المتفاعلة', icon:'🔷', category:'النماذج النووية',
+  desc:'مختبر تفاعلي لبناء النواة البوزونية، مثلث Casten، التناظرات U(5) وSU(3) وO(6)، سطح طاقة IBM، ونسب الطيف وB(E2).',
+  welcome:{title:'🔷 مختبر IBM-1',steps:[
+    'اختر Z وN لنواة زوجية–زوجية؛ يحسب البرنامج عدد بوزونات البروتون والنيوترون ثم N_B.',
+    'حرّك النقطة بيدك داخل مثلث Casten، أو غيّر ζ وχ من أدوات التحكم.',
+    'راقب انتقال البنية بين U(5) الاهتزازي وSU(3) الدوراني وO(6) ذي γ المرن.',
+    'شاهد سطح الطاقة E(β,γ)، موضع الحد الأدنى، R₄/₂ ونسب B(E2) في الوقت نفسه.',
+    'السطح محسوب من الحد الكلاسيكي لـ ECQF؛ الطيف بين الرؤوس مرشد تعليمي، أما الرؤوس الديناميكية نفسها فتعرض العلاقات التحليلية المعروفة.'
+  ]},
+  controls:[
+    {id:'Z',label:'عدد البروتونات Z (زوجي)',min:2,max:118,step:2,value:62,unit:'',help:'يستخدم لحساب بوزونات البروتون من أقرب غلاف مغلق.'},
+    {id:'N',label:'عدد النيوترونات N (زوجي)',min:2,max:184,step:2,value:90,unit:'',help:'يستخدم لحساب بوزونات النيوترون من أقرب غلاف مغلق.'},
+    {id:'zeta',label:'معامل البنية ζ',min:0,max:1,step:0.01,value:0.62,unit:'',help:'ζ=0 يعطي U(5)، وζ=1 يضعك على قاعدة مثلث Casten.'},
+    {id:'chi',label:'معامل رباعي القطب χ',min:-1.323,max:0,step:0.001,value:-1.05,unit:'',help:'χ=0 يقود إلى O(6)، وχ≈−√7/2≈−1.323 يقود إلى SU(3) عند ζ=1.'}
+  ],
+  reset(s){s.t=0;s.dragIBM=false;s._ibmKey='';s._ibmCache=null;},
+  update(s,dt){s.t=(s.t||0)+dt;},
+  _valence(n,magic){
+    n=Math.round(Number(n)||0);
+    let lo=magic[0],hi=magic[magic.length-1];
+    for(let i=0;i<magic.length-1;i++){
+      if(n>=magic[i]&&n<=magic[i+1]){lo=magic[i];hi=magic[i+1];break;}
+    }
+    if(n<=magic[0]){lo=magic[0];hi=magic[1];}
+    if(n>=magic[magic.length-1]){lo=magic[magic.length-2];hi=magic[magic.length-1];}
+    const p=Math.abs(n-lo)/2,h=Math.abs(hi-n)/2;
+    const useP=p<=h;
+    return {count:Math.max(0,Math.round(Math.min(p,h))),mode:useP?'جسيمات':'ثقوب',closure:useP?lo:hi,lo,hi};
+  },
+  _weights(zeta,chi){
+    const cm=Math.sqrt(7)/2;
+    const q=Math.max(0,Math.min(1,(Number(chi)+cm)/cm));
+    const z=Math.max(0,Math.min(1,Number(zeta)));
+    return {u:1-z,s:z*(1-q),o:z*q,q};
+  },
+  _pes(zeta,chi,beta,gammaDeg){
+    const b=Math.max(0,Number(beta)||0),g=(Number(gammaDeg)||0)*Math.PI/180;
+    const den=1+b*b;
+    const qterm=(4*b*b-4*Math.sqrt(2/7)*chi*b*b*b*Math.cos(3*g)+(2/7)*chi*chi*Math.pow(b,4))/(den*den);
+    return (1-zeta)*(b*b/den)-(zeta/4)*qterm;
+  },
+  _bRatio(limit,I,NB){
+    const n=Math.max(1,NB||1),ii=Math.max(0,I||0);
+    if(limit==='u') return 0.5*(ii+2)*Math.max(0,1-ii/(2*n));
+    if(limit==='o') return 2.5*((ii+2)/(ii+5))*Math.max(0,1-ii/(2*n))*(1+ii/(2*(n+4)));
+    return 15*(ii+1)*(ii+2)/(2*(2*ii+3)*(2*ii+5));
+  },
+  calc(s){
+    const Z=Math.round(s.ctrl.Z),N=Math.round(s.ctrl.N),zeta=Number(s.ctrl.zeta),chi=Number(s.ctrl.chi);
+    const key=[Z,N,zeta.toFixed(3),chi.toFixed(3)].join('|');
+    if(s._ibmKey===key&&s._ibmCache)return s._ibmCache;
+    const vp=this._valence(Z,[2,8,20,28,50,82,126]);
+    const vn=this._valence(N,[2,8,20,28,50,82,126,184]);
+    const NB=vp.count+vn.count;
+    const w=this._weights(zeta,chi);
+    let minE=Infinity,betaEq=0,gammaEq=0,maxE=-Infinity;
+    const grid=[];
+    for(let ig=0;ig<=18;ig++){
+      const gamma=60*ig/18,row=[];
+      for(let ib=0;ib<=36;ib++){
+        const beta=2.4*ib/36;
+        const e=this._pes(zeta,chi,beta,gamma);
+        row.push(e);if(e<minE){minE=e;betaEq=beta;gammaEq=gamma;}if(e>maxE)maxE=e;
+      }
+      grid.push(row);
+    }
+    let b0=Math.max(0,betaEq-0.12),b1=Math.min(2.8,betaEq+0.12),g0=Math.max(0,gammaEq-4),g1=Math.min(60,gammaEq+4);
+    for(let ig=0;ig<=24;ig++)for(let ib=0;ib<=30;ib++){
+      const gamma=g0+(g1-g0)*ig/24,beta=b0+(b1-b0)*ib/30,e=this._pes(zeta,chi,beta,gamma);
+      if(e<minE){minE=e;betaEq=beta;gammaEq=gamma;}
+    }
+    const shape=betaEq<0.12?'كروي تقريبًا':Math.abs(chi)<0.06?'مشوه وγ-مرن':gammaEq<20?'مشوه محوري (prolate)':gammaEq>40?'مشوه محوري (oblate)':'مشوه';
+    const nearest=[['U(5)',w.u],['SU(3)',w.s],['O(6)',w.o]].sort((a,b)=>b[1]-a[1])[0][0];
+    const maxL=Math.max(2,Math.min(10,2*NB));
+    const spectrum=[];
+    for(let L=0;L<=maxL;L+=2){
+      const eu=L===0?0:L/2;
+      const es=L===0?0:L*(L+1)/6;
+      const tau=L/2,eo=L===0?0:tau*(tau+3)/4;
+      spectrum.push({L,E:w.u*eu+w.s*es+w.o*eo,eu,es,eo});
+    }
+    const r42=(spectrum.find(x=>x.L===4)||{E:NaN}).E;
+    const b42=w.u*this._bRatio('u',2,NB)+w.s*this._bRatio('s',2,NB)+w.o*this._bRatio('o',2,NB);
+    const ndFrac=betaEq*betaEq/(1+betaEq*betaEq);
+    const gammaText=betaEq<0.12?'غير محدد عند β≈0':Math.abs(chi)<0.06?'حرّ (γ-soft)':gammaEq.toFixed(1)+'°';
+    const out={Z,N,A:Z+N,vp,vn,NB,w,minE,maxE,betaEq,gammaEq,gammaText,shape,nearest,spectrum,r42,b42,ndFrac,grid};
+    s._ibmKey=key;s._ibmCache=out;return out;
+  },
+  readouts(s){
+    const c=this.calc(s);
+    return[
+      {l:'A = Z + N',v:c.A,u:'',c:'gold'},
+      {l:'Nπ (بوزونات البروتون)',v:c.vp.count,u:'',c:'cyan'},
+      {l:'Nν (بوزونات النيوترون)',v:c.vn.count,u:''},
+      {l:'N_B = Nπ + Nν',v:c.NB,u:'bosons',c:'gold'},
+      {l:'أقرب تناظر ديناميكي',v:c.nearest,u:''},
+      {l:'β عند الحد الأدنى',v:c.betaEq.toFixed(2),u:''},
+      {l:'γ عند الحد الأدنى',v:c.gammaText,u:''},
+      {l:'R₄/₂ (مرشد بنيوي)',v:Number.isFinite(c.r42)?c.r42.toFixed(3):'—',u:''},
+      {l:'B(E2;4→2)/B(E2;2→0)',v:Number.isFinite(c.b42)?c.b42.toFixed(3):'—',u:'نسبي'},
+      {l:'⟨n_d⟩/N_B (كلاسيكي)',v:c.ndFrac.toFixed(3),u:''}
+    ];
+  },
+  hints(s){
+    const c=this.calc(s),h=[];
+    if(c.NB===0){h.push('⚠️ النواة المختارة تقع عند إغلاقات قشرية في حساب البوزونات؛ لا توجد بوزونات تكافؤية في فضاء IBM-1 البسيط.');return h;}
+    h.push(`🧮 Nπ = <span class="hl">${c.vp.count}</span> (${c.vp.mode} بالنسبة إلى Z=${c.vp.closure})، Nν = <span class="hl">${c.vn.count}</span> (${c.vn.mode} بالنسبة إلى N=${c.vn.closure})، لذلك N_B=${c.NB}.`);
+    h.push(`📍 أوزان موقعك في مثلث Casten: U(5) ${(100*c.w.u).toFixed(0)}%، SU(3) ${(100*c.w.s).toFixed(0)}%، O(6) ${(100*c.w.o).toFixed(0)}%.`);
+    h.push(`🗺️ حد أدنى عند β≈<span class="hl">${c.betaEq.toFixed(2)}</span>، وγ: <span class="hl">${c.gammaText}</span> ⇒ ${c.shape}.`);
+    if(Math.abs(s.ctrl.zeta-0.5)<0.08)h.push('⚖️ أنت قريب من منطقة التحول كروي↔مشوه في مقياس ECQF؛ الموضع الحرج الدقيق يعتمد على χ وعدد البوزونات وطريقة تعريف الهاملتونيان.');
+    if(c.w.u>0.97)h.push('U(5): حد اهتزازي كروي، R₄/₂ = 2 في الحد المثالي.');
+    if(c.w.o>0.97)h.push('O(6): حد مشوه γ-مرن، R₄/₂ = 2.5 في الحد المثالي.');
+    if(c.w.s>0.97)h.push('SU(3): حد دوراني محوري، R₄/₂ = 10/3 ≈ 3.333 في الحد المثالي.');
+    h.push('ℹ️ الطيف ونسب B(E2) خارج رؤوس التناظر معروضة كاستيفاء تعليمي بين الحدود التحليلية؛ ليست بديلاً عن القطر العددي الكامل لهاملتونيان IBM-1.');
+    return h;
+  },
+  equations:[
+    String.raw`N_B=N_\pi+N_\nu`,
+    String.raw`U(6)\supset U(5)\supset O(5)\supset O(3)`,
+    String.raw`U(6)\supset SU(3)\supset O(3)`,
+    String.raw`U(6)\supset O(6)\supset O(5)\supset O(3)`,
+    String.raw`\hat H_{ECQF}=c\left[(1-\zeta)\hat n_d-\frac{\zeta}{4N_B}\hat Q^{\chi}\cdot\hat Q^{\chi}\right]`,
+    String.raw`\hat Q^{\chi}=(s^\dagger\tilde d+d^\dagger s)^{(2)}+\chi(d^\dagger\times\tilde d)^{(2)}`,
+    String.raw`\hat T(E2)=e_B\hat Q^{\chi}`,
+    String.raw`\frac{E(\beta,\gamma)}{N_Bc}=(1-\zeta)\frac{\beta^2}{1+\beta^2}-\frac{\zeta}{4}\frac{4\beta^2-4\sqrt{\frac27}\chi\beta^3\cos3\gamma+\frac27\chi^2\beta^4}{(1+\beta^2)^2}`,
+    String.raw`R_{4/2}=\frac{E(4_1^+)}{E(2_1^+)}`,
+    String.raw`\left. R_{4/2}\right|_{U(5),O(6),SU(3)}=2,\;2.5,\;\frac{10}{3}`
+  ],
+  theory:`<b>ما هو IBM-1؟</b><br>
+  يصف النموذج الحالات الجماعية منخفضة الطاقة في النوى الزوجية–الزوجية باستبدال أزواج النيوكليونات التكافؤية ببوزونات فعالة: <b>s</b> بعزم زاوي 0 و<b>d</b> بعزم زاوي 2. في IBM-1 لا نميز في فضاء الهاملتونيان بين بوزونات البروتون والنيوترون؛ نستعمل العدد الكلي <b>N<sub>B</sub></b>، مع إمكان إظهار Nπ وNν عند بناء النواة فقط.<br><br>
+  <b>البنية الجبرية:</b> الجبر الطيفي هو U(6)، وتظهر ثلاثة حدود ديناميكية أساسية: U(5) (مهتز كروي)، SU(3) (دوار محوري)، O(6) (مشوه γ-مرن). في صيغة ECQF يستعمل الهاملتونيان معاملين بنيويين ζ وχ؛ الرؤوس القياسية هي ζ=0 لـU(5)، وζ=1, χ=0 لـO(6)، وζ=1, χ=−√7/2 لـSU(3).<br><br>
+  <b>كيف تُحسب البوزونات هنا؟</b> يحدد التطبيق أقرب إغلاق قشري لكل من Z وN ويأخذ نصف عدد الجسيمات أو الثقوب التكافؤية، أي المسار الأقصر إلى غلاف مغلق. هذه قاعدة عملية شائعة، لكنها لا تغني عن اختيار فضاء التكافؤ بعناية عند معالجة نواة بحثية محددة أو وجود intruder configurations.<br><br>
+  <b>سطح الطاقة:</b> الخريطة الملونة هي القيمة المتوقعة للهاملتونيان في حالة متماسكة في الحد الكلاسيكي (large-N، normal-ordered). β وγ هنا معاملا تشوه داخل IBM وليسا بالضرورة مساويين عدديًا لمعاملي Bohr الهندسيين من دون عملية mapping.<br><br>
+  <b>الأعداد الكمية في الحدود الثلاثة:</b><br>
+  في U(5) تستعمل عادةً السلسلة U(6)⊃U(5)⊃O(5)⊃O(3) وحالات من نمط |N,n<sub>d</sub>,τ,n<sub>Δ</sub>,L⟩. في SU(3) تظهر تسميات (λ,μ),K,L، وفي O(6) تظهر σ,τ,n<sub>Δ</sub>,L. هذه التسميات تفسر لماذا تكون الحلول التحليلية ممكنة عند الرؤوس الديناميكية.<br><br>
+  <b>الطيف وR₄/₂:</b> في أبسط حدود الحزمة الأرضية يعطي U(5) نمطًا اهتزازيًا مع R₄/₂=2، ويعطي O(6) القيمة 2.5، بينما يعطي SU(3) الدوراني R₄/₂=10/3≈3.333. الحد الأقصى للعزم في فضاء sd محدود بعدد البوزونات، J<sub>max</sub>=2N<sub>B</sub>، وهي خاصية finite-N لا توجد في النماذج الهندسية ذات N→∞.<br><br>
+  <b>انتقالات E2:</b> في صيغة consistent-Q يُؤخذ T(E2)=e<sub>B</sub>Q<sup>χ</sup>. تعرض المنصة النسبة B(E2;4→2)/B(E2;2→0)، وتراعي تأثير N<sub>B</sub> في صيغ U(5) وO(6) ونسبة Alaga الدورانية في حد SU(3). الشحنة البوزونية الفعالة e<sub>B</sub> تلزم للقيم المطلقة ولا تؤثر في النسب المطبعة عندما تستخدم نفسها في البسط والمقام.<br><br>
+  <b>ما الذي لا يصفه IBM-1 البسيط؟</b> فضاء s,d يعطي أساسًا حالات موجبة التكافؤ في النوى الزوجية–الزوجية. التمييز الصريح بين بوزونات البروتون والنيوترون يقود إلى IBM-2؛ النوى الفردية إلى IBFM؛ والفردية–الفردية إلى IBFFM. حالات التكافؤ السالب تحتاج توسيع فضاء البوزونات مثل p/f أو معالجة تكوينات أخرى، كما أن shape coexistence وintruder configurations قد تحتاج configuration mixing.<br><br>
+  <b>الطيف وB(E2) بين الرؤوس:</b> عند رؤوس U(5)، O(6)، SU(3) تُستخدم علاقات الحدود الديناميكية المعروفة. بين الرؤوس تعرض هذه النسخة مرشدًا بصريًا مستمرًا يجمع تلك الحدود؛ لذلك لا ينبغي استعمال قيمه الوسطية كحساب IBM-1 نهائي للنشر. المرحلة البحثية التالية هي إضافة القطر العددي الكامل للمصفوفة واستخراج الدوال الموجية وB(E2) من reduced matrix elements ومقارنتها ببيانات ENSDF.<br><br>
+  <b>استخدم المختبر:</b> اسحب النقطة داخل مثلث Casten نفسه. لاحظ كيف ينهار الحد الأدنى نحو β≈0 في المنطقة الكروية، وكيف ينتقل إلى β&gt;0 عند التشوه. عند χ≈0 يصبح السطح مستقلاً تقريبًا عن γ فتظهر «وادي» γ-soft كامل بدل حد أدنى وحيد، ثم قارن ذلك مع R₄/₂ وB(E2) والطيف في اللحظة نفسها.`,
+  _syncCtrl(id,val){
+    const el=document.getElementById('ctrl-'+id),lab=document.getElementById('val-'+id);
+    if(el)el.value=val;if(lab)lab.innerHTML=`${val} <span class="text-slate-500 text-xs"></span>`;
+  },
+  _setFromPoint(s,x,y){
+    const g=s._ibmGeom;if(!g)return false;
+    const z=Math.max(0,Math.min(1,(y-g.U.y)/(g.baseY-g.U.y)));
+    const xl=g.U.x+z*(g.S.x-g.U.x),xr=g.U.x+z*(g.O.x-g.U.x);
+    const q=(xr-xl)<1?0.5:Math.max(0,Math.min(1,(x-xl)/(xr-xl)));
+    const cm=Math.sqrt(7)/2;
+    s.ctrl.zeta=Math.round(z*100)/100;
+    s.ctrl.chi=Math.round((-cm*(1-q))*1000)/1000;
+    s._ibmKey='';s._ibmCache=null;
+    this._syncCtrl('zeta',s.ctrl.zeta.toFixed(2));
+    this._syncCtrl('chi',s.ctrl.chi.toFixed(3));
+    updateHintBox();
+    return true;
+  },
+  pointerDown(s,p){
+    const g=s._ibmGeom;if(!g)return false;
+    if(p.x>=g.box.x-15&&p.x<=g.box.x+g.box.w+15&&p.y>=g.box.y-15&&p.y<=g.box.y+g.box.h+15){s.dragIBM=true;return this._setFromPoint(s,p.x,p.y);}
+    return false;
+  },
+  pointerMove(s,p){if(!s.dragIBM)return false;return this._setFromPoint(s,p.x,p.y);},
+  pointerUp(s,p){if(!s.dragIBM)return false;s.dragIBM=false;return this._setFromPoint(s,p.x,p.y);},
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);
+    const c=this.calc(s),pad=12;
+    const compact=W<560;
+    const tri={x:pad,y:38,w:compact?W*0.43:W*0.30,h:compact?H*0.52:H*0.50};
+    const lev={x:compact?W*0.49:W*0.34,y:38,w:compact?W*0.48:W*0.25,h:tri.h};
+    const pes={x:pad,y:compact?H*0.63:38,w:compact?W-2*pad:W*0.36-pad,h:compact?H*0.33:H-58};
+    if(!compact){pes.x=W*0.63;pes.y=38;pes.w=W*0.37-pad;pes.h=H-58;}
+    [[tri,'مثلث Casten — اسحب النقطة'],[lev,'الطيف النسبي'],[pes,'سطح الطاقة E(β,γ)']].forEach(([r,t])=>{
+      ctx.fillStyle='rgba(7,11,20,.80)';ctx.fillRect(r.x,r.y,r.w,r.h);
+      ctx.strokeStyle='#334155';ctx.lineWidth=1.2;ctx.strokeRect(r.x,r.y,r.w,r.h);
+      label(ctx,t,r.x+r.w/2,r.y+15,'#cbd5e1','center',compact?10:12,true);
+    });
+    const mx=tri.x+18,my=tri.y+32,tw=tri.w-36,th=tri.h-48;
+    const U={x:mx+tw/2,y:my+2},S={x:mx+2,y:my+th},O={x:mx+tw-2,y:my+th};
+    ctx.beginPath();ctx.moveTo(U.x,U.y);ctx.lineTo(S.x,S.y);ctx.lineTo(O.x,O.y);ctx.closePath();
+    const tg=ctx.createLinearGradient(S.x,S.y,O.x,O.y);tg.addColorStop(0,'rgba(248,113,113,.18)');tg.addColorStop(1,'rgba(34,211,238,.16)');
+    ctx.fillStyle=tg;ctx.fill();ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.stroke();
+    label(ctx,'U(5)',U.x,U.y-7,'#fbbf24','center',compact?11:13,true);
+    label(ctx,'SU(3)',S.x,S.y+15,'#f87171','left',compact?10:12,true);
+    label(ctx,'O(6)',O.x,O.y+15,'#22d3ee','right',compact?10:12,true);
+    const baseQ=c.w.q;
+    const bx=S.x+baseQ*(O.x-S.x);
+    const ptx=U.x+s.ctrl.zeta*(bx-U.x),pty=U.y+s.ctrl.zeta*(S.y-U.y);
+    ctx.strokeStyle='rgba(251,191,36,.35)';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(U.x,U.y);ctx.lineTo(ptx,pty);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(ptx,pty,compact?6:8,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    label(ctx,`ζ=${Number(s.ctrl.zeta).toFixed(2)}`,tri.x+8,tri.y+tri.h-12,'#fbbf24','left',compact?9:11,true);
+    label(ctx,`χ=${Number(s.ctrl.chi).toFixed(2)}`,tri.x+tri.w-8,tri.y+tri.h-12,'#22d3ee','right',compact?9:11,true);
+    s._ibmGeom={U,S,O,baseY:S.y,box:tri};
+    const lleft=lev.x+28,lright=lev.x+lev.w-18,ltop=lev.y+36,lbottom=lev.y+lev.h-18;
+    const emax=Math.max(1,...c.spectrum.map(q=>q.E));
+    c.spectrum.forEach((st,idx)=>{
+      const y=lbottom-(st.E/emax)*(lbottom-ltop);
+      ctx.strokeStyle=idx===0?'#94a3b8':'#fbbf24';ctx.lineWidth=idx===0?1.5:2.5;
+      ctx.beginPath();ctx.moveTo(lleft,y);ctx.lineTo(lright,y);ctx.stroke();
+      label(ctx,`${st.L}⁺`,lleft-5,y,idx===0?'#94a3b8':'#22d3ee','right',compact?9:11,true);
+      if(st.L>0)label(ctx,st.E.toFixed(2),lright+3,y,'#e2e8f0','left',compact?8:9,false);
+    });
+    if(c.spectrum.length>2){label(ctx,`R₄/₂=${c.r42.toFixed(3)}`,lev.x+lev.w/2,lev.y+lev.h-6,'#fbbf24','center',compact?9:11,true);}
+    const hx=pes.x+34,hy=pes.y+34,hw=pes.w-48,hh=pes.h-52;
+    const rows=c.grid.length,cols=c.grid[0].length,range=Math.max(1e-6,c.maxE-c.minE);
+    for(let ig=0;ig<rows;ig++)for(let ib=0;ib<cols;ib++){
+      const v=(c.grid[ig][ib]-c.minE)/range;
+      const hue=210-190*Math.max(0,Math.min(1,v));
+      ctx.fillStyle=`hsl(${hue},70%,${22+26*(1-v)}%)`;
+      ctx.fillRect(hx+ib*hw/cols,hy+(rows-1-ig)*hh/rows,hw/cols+1,hh/rows+1);
+    }
+    ctx.strokeStyle='#64748b';ctx.lineWidth=1;ctx.strokeRect(hx,hy,hw,hh);
+    const minx=hx+(c.betaEq/2.4)*hw,miny=hy+(1-c.gammaEq/60)*hh;
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;
+    if(c.betaEq>=0.12&&Math.abs(Number(s.ctrl.chi))<0.06){ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(minx,hy);ctx.lineTo(minx,hy+hh);ctx.stroke();ctx.setLineDash([]);}
+    else{ctx.beginPath();ctx.arc(minx,miny,5,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(minx,miny,2.5,0,Math.PI*2);ctx.fill();}
+    label(ctx,'β →',hx+hw,hy+hh+13,'#cbd5e1','right',compact?8:10,true);
+    label(ctx,'γ=60°',hx-4,hy,'#cbd5e1','right',compact?7:9,false);
+    label(ctx,'γ=0°',hx-4,hy+hh,'#cbd5e1','right',compact?7:9,false);
+    if(!compact){label(ctx,`βmin=${c.betaEq.toFixed(2)}   γmin=${c.gammaEq.toFixed(1)}°`,pes.x+pes.w/2,pes.y+pes.h-7,'#fbbf24','center',10,true);}
+    ctx.fillStyle='rgba(14,20,36,.88)';ctx.fillRect(0,0,W,28);
+    label(ctx,`Z=${c.Z}  N=${c.N}  A=${c.A}   |   Nπ=${c.vp.count}  Nν=${c.vn.count}  N_B=${c.NB}`,W/2,18,'#e2e8f0','center',compact?9:12,true);
   }
 },
 
@@ -4634,6 +4861,13 @@ function initMobilePanelTabs(){
 
 
 function resourceEscape(v){return String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+RESOURCE_CATALOG.ibm1 = [
+  {type:'مرجع',title:'The Interacting Boson Model',source:'Arima & Iachello · Annual Review of Nuclear and Particle Science (1981)',url:'https://www.annualreviews.org/content/journals/10.1146/annurev.ns.31.120181.000451',note:'مراجعة كلاسيكية أصلية لـ IBM وبنيته الجبرية وحدوده الديناميكية.'},
+  {type:'PDF',title:'IBA Lectures — CQF, symmetry triangle and finite-N effects',source:'CERN Indico lecture material',url:'https://indico.cern.ch/event/21572/attachments/343764/479471/IBA-lecture45.pdf',note:'محاضرات متقدمة تتناول U(5)، O(6)، SU(3)، CQF، R4/2، B(E2) ومثلث التناظرات.'},
+  {type:'مرجع',title:'Nuclear Shape-Phase Transition in IBM-1',source:'Brazilian Journal of Physics / Springer (2023)',url:'https://link.springer.com/article/10.1007/s13538-023-01357-y',note:'تطبيق IBM-1 والحالة المتماسكة وسطح الطاقة والتحول U(5)–O(6) مع طاقات وB(E2).'},
+  {type:'مرجع',title:'Shell-model foundations of the interacting boson model',source:'Iachello & Talmi · Reviews of Modern Physics',url:'https://journals.aps.org/rmp/abstract/10.1103/RevModPhys.59.339',note:'مرجع عن الأسس المجهرية، الاقتران، seniority والعلاقة مع نموذج القشرة.'}
+];
+
 function renderResources(){
   const box=document.getElementById('resources-box');
   if(!box)return;
@@ -5386,7 +5620,7 @@ window.addEventListener('load',()=>{
         <h1 class="text-xl font-bold mb-2 text-slate-300">أهلًا وسهلًا بك في</h1>
         <h2 class="text-3xl md:text-4xl font-black mb-4 text-gold leading-tight">مختبر الفيزياء التفاعلي</h2>
         <p class="text-slate-400 text-sm mb-6 leading-relaxed">
-          منصة تعليمية تضم <b class="text-cyan">108 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">17 فرعًا فيزيائيًا</b>:
+          منصة تعليمية تضم <b class="text-cyan">109 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">17 فرعًا فيزيائيًا</b>:
           الميكانيكا، الكهرباء، البصريات، الموجات، ميكانيكا الكم، الفيزياء الذرية والجزيئية،
           فيزياء الصلبة، النانوتكنولوجي، الأطياف، النماذج النووية، الفيزياء النووية،
           الإلكترونيات التماثلية، الإلكترونيات الرقمية، الموائع والحرارة، والنسبية.
@@ -5412,7 +5646,7 @@ window.addEventListener('load',()=>{
   `;
   document.getElementById('welcome-start').onclick=()=>{
     overlay.innerHTML='';
-    toast('استمتع بـ <b>108 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
+    toast('استمتع بـ <b>109 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
   };
   renderFilterTabs();
 });
