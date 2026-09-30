@@ -151,7 +151,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
   #view-sim > .mb-5{margin-bottom:10px!important;gap:8px!important}
   #sim-title{font-size:1.25rem!important;line-height:1.35!important}
   #sim-desc{font-size:10.5px!important;line-height:1.55!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  #view-sim > .mb-5 .flex.gap-2{width:100%;display:grid!important;grid-template-columns:1.1fr .9fr .9fr;gap:6px!important}
+  #view-sim > .mb-5 .flex.gap-2{width:100%;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px!important}
   #view-sim > .mb-5 .btn{padding:8px 5px!important;font-size:10px!important;white-space:nowrap}
 
   /* The entire visual stage stays visible while the student reads/controls below. */
@@ -300,6 +300,68 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
 .resource-disclaimer{font-size:10px;color:#64748b;line-height:1.7;margin-top:10px}
 @media(max-width:1023px){.resource-grid{grid-template-columns:1fr}.resource-card{min-height:auto}#mobile-panel-tabs{grid-template-columns:repeat(6,minmax(0,1fr))!important}.mobile-panel-btn{font-size:9px!important;padding:6px 1px!important}}
 
+
+/* ============================================================
+   PEDAGOGY V3 — GLOBAL LAB LEARNING LAYER
+   Applies to all 120 experiments without drawing over the canvas.
+   ============================================================ */
+#experiment-learning-shell{margin:0 0 18px;padding:14px 16px;border:1px solid #25304a;border-radius:18px;background:linear-gradient(135deg,rgba(14,20,36,.96),rgba(9,14,27,.94));box-shadow:0 14px 40px -34px rgba(34,211,238,.55)}
+.learning-shell-top{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr);gap:14px;align-items:stretch}
+.learning-goal-card,.learning-challenge-card{border:1px solid #25304a;border-radius:14px;padding:12px 14px;background:rgba(7,11,20,.70)}
+.learning-kicker{font-size:10px;font-weight:900;color:#22d3ee;letter-spacing:.02em;margin-bottom:5px}
+.learning-goal-text{font-size:13px;line-height:1.75;color:#e2e8f0;font-weight:700}
+.learning-challenge-card{border-color:rgba(251,191,36,.28);background:rgba(251,191,36,.045)}
+.learning-challenge-card .learning-kicker{color:#fbbf24}
+#learning-challenge{font-size:12px;line-height:1.7;color:#cbd5e1}
+.learning-path{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.learning-step{min-width:0;border:1px solid #25304a;border-radius:12px;padding:9px 10px;background:rgba(8,13,24,.78)}
+.learning-step-num{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:999px;background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.35);color:#22d3ee;font-size:10px;font-weight:900;margin-left:5px}
+.learning-step-title{font-size:10px;font-weight:900;color:#f8fafc}
+.learning-step-text{display:block;margin-top:4px;font-size:9px;line-height:1.55;color:#94a3b8;white-space:normal;overflow-wrap:anywhere}
+#pedagogy-tools{display:grid;grid-template-columns:1fr;gap:7px;margin-bottom:10px}
+.ped-tool{border:1px solid #25304a;border-radius:11px;padding:9px 10px;background:rgba(7,11,20,.64)}
+.ped-tool-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ped-tool-name{font-size:11px;font-weight:900;color:#e2e8f0}
+.ped-tool-unit{font-size:9px;font-family:monospace;color:#fbbf24;white-space:nowrap}
+.ped-tool-help{font-size:9.5px;line-height:1.55;color:#94a3b8;margin-top:4px}
+.control-help{font-size:9px;line-height:1.5;color:#64748b;margin-top:4px}
+.control-label-wrap{display:flex;align-items:center;gap:5px;min-width:0}
+.control-info-dot{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:999px;border:1px solid #334155;color:#94a3b8;font-size:9px;flex:none}
+#cause-effect-box{margin-top:10px;border:1px solid rgba(34,211,238,.24);border-radius:12px;padding:10px 11px;background:rgba(34,211,238,.055)}
+.effect-title{font-size:10px;font-weight:900;color:#22d3ee;margin-bottom:5px}
+.effect-main{font-size:11px;line-height:1.65;color:#e2e8f0}
+.effect-reason{font-size:9.5px;line-height:1.55;color:#94a3b8;margin-top:5px}
+.effect-arrow{color:#fbbf24;font-weight:900}
+#btn-professor.active{border-color:#22d3ee!important;color:#22d3ee!important;box-shadow:0 0 0 1px rgba(34,211,238,.14) inset}
+#view-sim.professor-mode #experiment-learning-shell,
+#view-sim.professor-mode #sim-side,
+#view-sim.professor-mode #explain-grid,
+#view-sim.professor-mode #quiz-panel,
+#view-sim.professor-mode #resources-panel,
+#view-sim.professor-mode .social-follow-card,
+#view-sim.professor-mode #mobile-live-summary,
+#view-sim.professor-mode #mobile-panel-tabs{display:none!important}
+#view-sim.professor-mode #lab-grid{display:block!important}
+#view-sim.professor-mode #sim-stage-wrap{position:relative!important;top:auto!important;z-index:auto!important;max-width:1280px;margin:0 auto!important}
+#view-sim.professor-mode #sim-canvas-wrap{height:min(72vh,760px)!important;aspect-ratio:auto!important}
+#view-sim.professor-mode #sim-stage-card{padding:8px!important}
+.professor-note{font-size:9px;color:#64748b;margin-top:4px}
+@media(max-width:767px){
+  #experiment-learning-shell{padding:10px 11px;margin-bottom:10px;border-radius:14px}
+  .learning-shell-top{grid-template-columns:1fr;gap:7px}
+  .learning-goal-card,.learning-challenge-card{padding:9px 10px}
+  .learning-goal-text{font-size:10.5px;line-height:1.6}
+  #learning-challenge{font-size:9.5px;line-height:1.55}
+  .learning-path{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  .learning-step{padding:7px 8px}
+  .learning-step-text{font-size:8.5px}
+  #pedagogy-tools{gap:5px}
+  .ped-tool{padding:7px 8px}
+  .ped-tool-help{font-size:8.5px}
+  #cause-effect-box{padding:8px 9px}
+  .effect-main{font-size:9.5px}
+  #view-sim.professor-mode #sim-canvas-wrap{height:58vh!important}
+}
 </style>
 </head>
 <body class="grid-bg">
@@ -377,9 +439,23 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
       </div>
       <div class="flex gap-2">
         <button id="btn-guide" class="btn px-4 py-2.5 rounded-xl border border-gold/50 bg-panel font-bold text-sm text-gold">📘 دليل التجربة</button>
+        <button id="btn-professor" class="btn px-4 py-2.5 rounded-xl border border-edge bg-panel font-bold text-sm">👨‍🏫 وضع الأستاذ</button>
         <button id="btn-play" class="btn px-5 py-2.5 rounded-xl bg-gold text-ink font-bold text-sm glow-gold">⏸ إيقاف</button>
         <button id="btn-reset" class="btn px-5 py-2.5 rounded-xl border border-edge bg-panel font-bold text-sm">↺ إعادة</button>
       </div>
+    </div>
+    <div id="experiment-learning-shell" aria-live="polite">
+      <div class="learning-shell-top">
+        <div class="learning-goal-card">
+          <div class="learning-kicker">🎯 ما الذي يجب أن أفهمه من هذه التجربة؟</div>
+          <div id="learning-goal" class="learning-goal-text">—</div>
+        </div>
+        <div class="learning-challenge-card">
+          <div class="learning-kicker">🧪 مهمة سريعة قبل قراءة القانون</div>
+          <div id="learning-challenge">—</div>
+        </div>
+      </div>
+      <div id="learning-path" class="learning-path"></div>
     </div>
     <div id="lab-grid" class="grid lg:grid-cols-[1fr_340px] gap-5">
       <div id="sim-stage-wrap">
@@ -409,6 +485,10 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
             <h3 class="font-bold text-sm text-slate-300">🎛️ المتغيرات</h3>
             <span class="text-[10px] text-slate-500">اسحب وراقب</span>
           </div>
+          <div class="mb-3">
+            <div class="text-[10px] font-black text-cyan mb-2">🧰 ماذا تمثل أدوات التحكم؟</div>
+            <div id="pedagogy-tools"></div>
+          </div>
           <div id="controls" class="space-y-4"></div>
         </div>
         <div class="glass rounded-2xl p-5 glow-cyan" data-mobile-panel="guide">
@@ -417,6 +497,11 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
             <h3 class="font-bold text-sm text-cyan">ماذا يحدث الآن؟</h3>
           </div>
           <div id="hint-box" class="space-y-2"></div>
+          <div id="cause-effect-box">
+            <div class="effect-title">🔎 أثر التغيير</div>
+            <div class="effect-main">غيّر متغيرًا واحدًا فقط، وسأوضح لك ماذا تغير في النتائج.</div>
+            <div class="effect-reason">الهدف: ربط ما تفعله بيدك بما يحدث فيزيائيًا، بدل مشاهدة الحركة فقط.</div>
+          </div>
         </div>
         <div class="glass rounded-2xl p-5" data-mobile-panel="results">
           <h3 class="font-bold mb-4 text-sm text-slate-300">📊 النتائج الآن</h3>
@@ -5446,6 +5531,143 @@ function renderResources(){
   }).join('');
 }
 
+
+/* ============================================================
+   PEDAGOGY V3 ENGINE — shared by every experiment
+   ============================================================ */
+let professorMode=false;
+let pedagogyLastChange=null;
+
+function pedagogyEsc(v){
+  return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function pedagogyPlain(v){
+  return String(v==null?'':v).replace(/<br\s*\/?>/gi,' ').replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
+}
+function pedagogyControlHelp(c){
+  const raw=pedagogyPlain(c&&c.help);
+  if(raw)return raw;
+  const unit=c&&c.unit?('، وتقاس هنا بوحدة '+c.unit):'';
+  if(c&&c.type==='buttons')return 'اختر إحدى الحالات المتاحة لترى كيف يتغير سلوك التجربة والنتائج.';
+  if(c&&c.type==='number')return 'أدخل قيمة هذا المتغير ثم راقب أثرها في القياسات والرسم'+unit+'.';
+  return 'هذا متغير تتحكم به أنت. غيّره تدريجيًا ثم راقب ما يتغير في الرسم والقياسات'+unit+'.';
+}
+function pedagogyBuildChallenge(sim){
+  const controls=(sim&&sim.controls)||[];
+  const c=controls.find(x=>x&&x.type!=='number'&&x.type!=='buttons'&&Number.isFinite(Number(x.min))&&Number.isFinite(Number(x.max))) || controls[0];
+  let readout='';
+  try{
+    const rr=sim&&sim.readouts?sim.readouts(currentState):[];
+    if(rr&&rr.length)readout=pedagogyPlain(rr[0].l);
+  }catch(e){}
+  if(!c)return 'ابدأ بالتفاعل مع الرسم نفسه، ثم راقب ماذا يخبرك المرشد عن النتيجة.';
+  const target=readout?(' ثم راقب «'+readout+'»'):' ثم راقب النتيجة على الرسم';
+  return 'غيّر «'+pedagogyPlain(c.label)+'» وحده أولًا'+target+'. قبل أن تغيّره، حاول أن تتوقع: هل ستزداد النتيجة أم تقل أم تبقى ثابتة؟';
+}
+function renderPedagogyShell(){
+  if(!currentSim)return;
+  const goal=document.getElementById('learning-goal');
+  if(goal)goal.textContent=pedagogyPlain(currentSim.desc)||'اكتشف العلاقة الفيزيائية بين المتغيرات والقياسات في هذه التجربة.';
+  const challenge=document.getElementById('learning-challenge');
+  if(challenge)challenge.textContent=pedagogyBuildChallenge(currentSim);
+
+  const sourceSteps=(currentSim.welcome&&Array.isArray(currentSim.welcome.steps))?currentSim.welcome.steps.map(pedagogyPlain).filter(Boolean):[];
+  const generic=[
+    ['1','افهم الهدف',sourceSteps[0]||'اقرأ السؤال الفيزيائي الذي تحاول التجربة الإجابة عنه.'],
+    ['2','تعرّف إلى الأدوات',sourceSteps[1]||'اعرف معنى كل أداة أو متغير قبل تغييره.'],
+    ['3','غيّر وقِس',sourceSteps[2]||'غيّر متغيرًا واحدًا فقط وراقب القياسات والرسم.'],
+    ['4','استنتج',sourceSteps[3]||'اربط النتيجة بالقانون ثم اشرحها بكلماتك.']
+  ];
+  const path=document.getElementById('learning-path');
+  if(path)path.innerHTML=generic.map(x=>'<div class="learning-step"><span class="learning-step-num">'+x[0]+'</span><span class="learning-step-title">'+pedagogyEsc(x[1])+'</span><span class="learning-step-text">'+pedagogyEsc(x[2])+'</span></div>').join('');
+
+  const tools=document.getElementById('pedagogy-tools');
+  if(tools){
+    const cs=(currentSim.controls||[]);
+    tools.innerHTML=cs.length?cs.map(c=>'<div class="ped-tool"><div class="ped-tool-head"><span class="ped-tool-name">'+pedagogyEsc(c.label)+'</span><span class="ped-tool-unit">'+pedagogyEsc(c.unit||'')+'</span></div><div class="ped-tool-help">'+pedagogyEsc(pedagogyControlHelp(c))+'</div></div>').join(''):'<div class="ped-tool"><div class="ped-tool-help">هذه التجربة تعتمد على التفاعل المباشر مع الرسم أو الأدوات داخل ساحة المختبر.</div></div>';
+  }
+  const box=document.getElementById('cause-effect-box');
+  if(box)box.innerHTML='<div class="effect-title">🔎 أثر التغيير</div><div class="effect-main">غيّر متغيرًا واحدًا فقط، وسأوضح لك ماذا تغير في النتائج.</div><div class="effect-reason">ابدأ بالتوقع، ثم جرّب، ثم قارن توقعك بالقياس.</div>';
+  pedagogyLastChange=null;
+}
+function pedagogySnapshot(){
+  const out={};
+  if(!currentSim||!currentSim.readouts)return out;
+  try{
+    (currentSim.readouts(currentState)||[]).forEach(r=>{out[pedagogyPlain(r.l)]={v:r.v,u:r.u||''};});
+  }catch(e){}
+  return out;
+}
+function pedagogyExplainChange(c,oldValue,newValue,before){
+  if(!currentSim)return;
+  setTimeout(()=>{
+    const after=pedagogySnapshot();
+    let best=null;
+    Object.keys(after).forEach(k=>{
+      if(!before||!before[k])return;
+      const av=parseFloat(String(after[k].v).replace(/,/g,'')),bv=parseFloat(String(before[k].v).replace(/,/g,''));
+      if(!Number.isFinite(av)||!Number.isFinite(bv)||av===bv)return;
+      const scale=Math.max(Math.abs(bv),1e-12);
+      const score=Math.abs(av-bv)/scale;
+      if(!best||score>best.score)best={k,bv,av,u:after[k].u,score};
+    });
+    let reason='';
+    try{
+      const hs=currentSim.hints?currentSim.hints(currentState):[];
+      if(hs&&hs.length)reason=pedagogyPlain(hs[0]);
+    }catch(e){}
+    const label=pedagogyPlain(c.label);
+    const unit=c.unit||'';
+    const main=best
+      ? 'غيّرت <b>'+pedagogyEsc(label)+'</b> من <b>'+pedagogyEsc(oldValue)+'</b> إلى <b>'+pedagogyEsc(newValue)+'</b> '+pedagogyEsc(unit)+'؛ وأوضح تغير ظهر في <b>'+pedagogyEsc(best.k)+'</b>: <span class="effect-arrow">'+pedagogyEsc(before[best.k].v)+' → '+pedagogyEsc(after[best.k].v)+' '+pedagogyEsc(best.u)+'</span>.'
+      : 'غيّرت <b>'+pedagogyEsc(label)+'</b> من <b>'+pedagogyEsc(oldValue)+'</b> إلى <b>'+pedagogyEsc(newValue)+'</b> '+pedagogyEsc(unit)+'. راقب الرسم والقياسات لترى أثر التغيير.';
+    const box=document.getElementById('cause-effect-box');
+    if(box)box.innerHTML='<div class="effect-title">🔎 ماذا فعلت؟ وماذا حدث؟</div><div class="effect-main">'+main+'</div><div class="effect-reason">'+(reason?('لماذا؟ '+pedagogyEsc(reason)):'غيّر قيمة واحدة في كل مرة لتفصل السبب عن بقية المتغيرات.')+'</div>';
+    const challenge=document.getElementById('learning-challenge');
+    if(challenge)challenge.textContent='الآن أعد '+label+' في الاتجاه المعاكس. هل تتغير النتيجة بالعكس أيضًا؟ ثم حاول تفسير ذلك قبل فتح القانون.';
+    pedagogyLastChange={id:c.id,oldValue,newValue};
+  },60);
+}
+function setProfessorMode(on){
+  professorMode=!!on;
+  const view=document.getElementById('view-sim');
+  const btn=document.getElementById('btn-professor');
+  if(view)view.classList.toggle('professor-mode',professorMode);
+  if(btn){btn.classList.toggle('active',professorMode);btn.textContent=professorMode?'↩ العودة لوضع الطالب':'👨‍🏫 وضع الأستاذ';}
+  requestAnimationFrame(()=>{if(currentSim)fitCanvas();});
+}
+window.runFullLabAudit=function(){
+  const failures=[],warnings=[];
+  const canvas=document.createElement('canvas');canvas.width=900;canvas.height=560;
+  const cctx=canvas.getContext('2d');
+  Object.entries(SIMS).forEach(([key,sim])=>{
+    try{
+      if(!sim.title||!sim.category||!sim.desc)warnings.push(key+': metadata incomplete');
+      if(!Array.isArray(sim.controls))throw new Error('controls is not an array');
+      const ids=new Set();
+      const ctrl={};
+      sim.controls.forEach(c=>{
+        if(!c.id)throw new Error('control without id');
+        if(ids.has(c.id))throw new Error('duplicate control '+c.id);
+        ids.add(c.id);ctrl[c.id]=c.value;
+        if(c.type!=='buttons'&&c.type!=='number'&&Number.isFinite(Number(c.min))&&Number(c.value)<Number(c.min))throw new Error(c.id+' default < min');
+        if(c.type!=='buttons'&&c.type!=='number'&&Number.isFinite(Number(c.max))&&Number(c.value)>Number(c.max))throw new Error(c.id+' default > max');
+      });
+      const st={ctrl};
+      if(typeof sim.reset==='function')sim.reset(st);
+      if(typeof sim.update==='function')sim.update(st,0);
+      if(typeof sim.readouts!=='function')throw new Error('missing readouts');
+      const rr=sim.readouts(st);if(!Array.isArray(rr))throw new Error('readouts not array');
+      rr.forEach(x=>{if(x==null||x.l==null||x.v==null)warnings.push(key+': incomplete readout');});
+      if(typeof sim.hints==='function'){const hh=sim.hints(st);if(!Array.isArray(hh))warnings.push(key+': hints not array');}
+      if(typeof sim.draw!=='function')throw new Error('missing draw');
+      sim.draw(cctx,900,560,st);
+    }catch(e){failures.push({key,error:String(e&&e.message||e)});}
+  });
+  const result={total:Object.keys(SIMS).length,passed:Object.keys(SIMS).length-failures.length,failures,warnings};
+  console.table(failures);console.log('Full Lab Audit',result);return result;
+};
+
 function openSim(key){
   document.getElementById('view-home').classList.add('hidden');
   document.getElementById('view-sim').classList.remove('hidden');
@@ -5461,6 +5683,8 @@ function openSim(key){
   document.getElementById('sim-category').textContent=currentSim.category;
   document.getElementById('sim-desc').textContent=currentSim.desc;
   renderControls();
+  renderPedagogyShell();
+  setProfessorMode(false);
   renderEquations();
   document.getElementById('theory').innerHTML=currentSim.theory;
   renderResources();
@@ -5513,70 +5737,59 @@ function renderControls(){
       const op=(c.options||[]).find(o=>Number(o.value)===Number(currentSim.ctrl[c.id]));
       return op?op.label:currentSim.ctrl[c.id];
     }
-    return `${currentSim.ctrl[c.id]} <span class="text-slate-500 text-xs">${c.unit||''}</span>`;
+    return currentSim.ctrl[c.id]+' <span class="text-slate-500 text-xs">'+(c.unit||'')+'</span>';
   };
+  const labelHtml=c=>'<span class="control-label-wrap"><span>'+pedagogyEsc(c.label)+'</span><span class="control-info-dot" title="'+pedagogyEsc(pedagogyControlHelp(c))+'">i</span></span>';
   wrap.innerHTML=currentSim.controls.map(c=>{
+    const help='<div class="control-help">'+pedagogyEsc(pedagogyControlHelp(c))+'</div>';
     if(c.type==='buttons'){
-      return `<div>
-        <div class="flex items-center justify-between mb-2 text-sm">
-          <label class="text-slate-300">${c.label}</label>
-          <span class="text-gold font-bold" id="val-${c.id}">${valueText(c)}</span>
-        </div>
-        <div class="choice-grid" id="ctrl-${c.id}">
-          ${(c.options||[]).map(o=>`<button type="button" class="choice-btn ${Number(o.value)===Number(currentSim.ctrl[c.id])?'active':''}" data-value="${o.value}">${o.label}</button>`).join('')}
-        </div>
-      </div>`;
+      return '<div><div class="flex items-center justify-between mb-1 text-sm"><label class="text-slate-300">'+labelHtml(c)+'</label><span class="text-gold font-bold" id="val-'+c.id+'">'+valueText(c)+'</span></div>'+help+
+        '<div class="choice-grid" id="ctrl-'+c.id+'">'+(c.options||[]).map(o=>'<button type="button" class="choice-btn '+(Number(o.value)===Number(currentSim.ctrl[c.id])?'active':'')+'" data-value="'+o.value+'">'+o.label+'</button>').join('')+'</div></div>';
     }
     if(c.type==='number'){
-      return `<div>
-        <div class="flex items-center justify-between mb-2 text-sm">
-          <label class="text-slate-300">${c.label}</label>
-          <span class="text-gold text-xs">${c.unit||''}</span>
-        </div>
-        <input type="number" inputmode="decimal" id="ctrl-${c.id}" value="${currentSim.ctrl[c.id]??''}" placeholder="${c.placeholder||''}" class="w-full bg-ink border border-edge rounded-xl px-3 py-2.5 text-slate-100 font-mono" />
-        <div id="val-${c.id}" class="text-xs text-slate-500 mt-1"></div>
-      </div>`;
+      return '<div><div class="flex items-center justify-between mb-1 text-sm"><label class="text-slate-300">'+labelHtml(c)+'</label><span class="text-gold text-xs">'+(c.unit||'')+'</span></div>'+help+
+        '<input type="number" inputmode="decimal" id="ctrl-'+c.id+'" value="'+(currentSim.ctrl[c.id]??'')+'" placeholder="'+(c.placeholder||'')+'" class="w-full bg-ink border border-edge rounded-xl px-3 py-2.5 text-slate-100 font-mono" /><div id="val-'+c.id+'" class="text-xs text-slate-500 mt-1"></div></div>';
     }
-    return `<div>
-      <div class="flex items-center justify-between mb-2 text-sm">
-        <label class="text-slate-300 cursor-help">${c.label}</label>
-        <span class="text-gold font-bold font-mono" id="val-${c.id}">
-          ${valueText(c)}
-        </span>
-      </div>
-      <input type="range" id="ctrl-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${currentSim.ctrl[c.id]}" class="w-full" />
-    </div>`;
+    return '<div><div class="flex items-center justify-between mb-1 text-sm"><label class="text-slate-300 cursor-help">'+labelHtml(c)+'</label><span class="text-gold font-bold font-mono" id="val-'+c.id+'">'+valueText(c)+'</span></div>'+help+
+      '<input type="range" id="ctrl-'+c.id+'" min="'+c.min+'" max="'+c.max+'" step="'+c.step+'" value="'+currentSim.ctrl[c.id]+'" class="w-full" /></div>';
   }).join('');
+
   currentSim.controls.forEach(c=>{
     const input=document.getElementById('ctrl-'+c.id);
     if(!input)return;
     if(c.type==='buttons'){
       input.querySelectorAll('.choice-btn').forEach(btn=>btn.addEventListener('click',()=>{
-        currentSim.ctrl[c.id]=parseFloat(btn.dataset.value);
+        const before=pedagogySnapshot(),oldValue=currentSim.ctrl[c.id],newValue=parseFloat(btn.dataset.value);
+        currentSim.ctrl[c.id]=newValue;
         input.querySelectorAll('.choice-btn').forEach(b=>b.classList.toggle('active',b===btn));
         document.getElementById('val-'+c.id).textContent=btn.textContent;
         currentSim.reset(currentState);
         if(c.help)showTip(btn,c.help,2600);
         updateHintBox();
+        pedagogyExplainChange(c,oldValue,btn.textContent,before);
       }));
       return;
     }
     if(c.type==='number'){
       input.addEventListener('input',(e)=>{
-        currentSim.ctrl[c.id]=e.target.value;
+        const before=pedagogySnapshot(),oldValue=currentSim.ctrl[c.id],newValue=e.target.value;
+        currentSim.ctrl[c.id]=newValue;
         updateHintBox();
+        pedagogyExplainChange(c,oldValue,newValue,before);
       });
       return;
     }
     input.addEventListener('input',(e)=>{
-      currentSim.ctrl[c.id]=parseFloat(e.target.value);
-      document.getElementById('val-'+c.id).innerHTML=`${currentSim.ctrl[c.id]} <span class="text-slate-500 text-xs">${c.unit||''}</span>`;
+      const before=pedagogySnapshot(),oldValue=currentSim.ctrl[c.id],newValue=parseFloat(e.target.value);
+      currentSim.ctrl[c.id]=newValue;
+      document.getElementById('val-'+c.id).innerHTML=currentSim.ctrl[c.id]+' <span class="text-slate-500 text-xs">'+(c.unit||'')+'</span>';
       currentSim.reset(currentState);
       if(!sliderTipTimers[c.id]||Date.now()-sliderTipTimers[c.id]>4000){
         sliderTipTimers[c.id]=Date.now();
         if(c.help)showTip(input,c.help,3000);
       }
       updateHintBox();
+      pedagogyExplainChange(c,oldValue,newValue,before);
     });
   });
 }
@@ -6026,6 +6239,11 @@ document.getElementById('btn-reset').addEventListener('click',()=>{
 document.getElementById('btn-guide').addEventListener('click',()=>{
   if(!currentSim)return;
   showWelcome(currentSim);
+});
+document.getElementById('btn-professor').addEventListener('click',()=>{
+  if(!currentSim)return;
+  setProfessorMode(!professorMode);
+  toast(professorMode?'👨‍🏫 وضع الأستاذ: تم تكبير ساحة التجربة وإخفاء اللوحات المساعدة.':'🎓 عدت إلى وضع الطالب الكامل.','learn',2600);
 });
 
 document.getElementById('search-box').addEventListener('input',(e)=>{
