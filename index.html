@@ -1938,7 +1938,7 @@ nano: {
 },
 
 ibm1: {
-  title:'IBM-1 — نموذج البوزونات المتفاعلة', icon:'🔷', category:'النماذج النووية',
+  title:'IBM-1 — نموذج البوزونات المتفاعلة', icon:'🔷', category:'النماذج النووية', labV4:true,
   desc:'مختبر تفاعلي لبناء النواة البوزونية، مثلث Casten، التناظرات U(5) وSU(3) وO(6)، سطح طاقة IBM، ونسب الطيف وB(E2).',
   welcome:{title:'🔷 مختبر IBM-1',steps:[
     'اختر Z وN لنواة زوجية–زوجية؛ يحسب البرنامج عدد بوزونات البروتون والنيوترون ثم N_B.',
@@ -1948,6 +1948,10 @@ ibm1: {
     'السطح محسوب من الحد الكلاسيكي لـ ECQF؛ الطيف بين الرؤوس مرشد تعليمي، أما الرؤوس الديناميكية نفسها فتعرض العلاقات التحليلية المعروفة.'
   ]},
   controls:[
+    {id:'level',label:'مستوى العرض',type:'buttons',value:0,options:[
+      {value:0,label:'🎓 طالب — بصري ومفهومي'},
+      {value:1,label:'🔬 بحثي — كل التفاصيل'}
+    ],help:'في وضع الطالب نعرض أهم المعاني الفيزيائية فقط. في الوضع البحثي تظهر تفاصيل Nπ وNν و⟨n_d⟩ وسطح الطاقة كاملًا.'},
     {id:'Z',label:'عدد البروتونات Z (زوجي)',min:2,max:118,step:2,value:62,unit:'',help:'يستخدم لحساب بوزونات البروتون من أقرب غلاف مغلق.'},
     {id:'N',label:'عدد النيوترونات N (زوجي)',min:2,max:184,step:2,value:90,unit:'',help:'يستخدم لحساب بوزونات النيوترون من أقرب غلاف مغلق.'},
     {id:'zeta',label:'معامل البنية ζ',min:0,max:1,step:0.01,value:0.62,unit:'',help:'ζ=0 يعطي U(5)، وζ=1 يضعك على قاعدة مثلث Casten.'},
@@ -2028,6 +2032,15 @@ ibm1: {
   },
   readouts(s){
     const c=this.calc(s);
+    const student=[
+      {l:'النواة',v:'A='+c.A,u:'',c:'gold'},
+      {l:'عدد البوزونات الكلي N_B',v:c.NB,u:'',c:'cyan'},
+      {l:'أقرب سلوك بنيوي',v:c.nearest,u:''},
+      {l:'شكل النواة المتوقع',v:c.shape,u:''},
+      {l:'R₄/₂',v:Number.isFinite(c.r42)?c.r42.toFixed(3):'—',u:'',c:'gold'},
+      {l:'B(E2;4→2)/B(E2;2→0)',v:Number.isFinite(c.b42)?c.b42.toFixed(3):'—',u:'نسبي'}
+    ];
+    if(Number(s.ctrl.level||0)===0)return student;
     return[
       {l:'A = Z + N',v:c.A,u:'',c:'gold'},
       {l:'Nπ (بوزونات البروتون)',v:c.vp.count,u:'',c:'cyan'},
@@ -2043,6 +2056,10 @@ ibm1: {
   },
   hints(s){
     const c=this.calc(s),h=[];
+    if(Number(s.ctrl.level||0)===0){
+      h.push('ابدأ من <b>مثلث Casten</b>: اسحب النقطة نحو أحد الأركان ولاحظ كيف يتغير شكل النواة والطيف وR₄/₂ معًا.');
+      h.push('اقرأ التجربة من اليسار إلى اليمين: <b>الموقع في المثلث → شكل النواة → ترتيب المستويات → قوة الانتقالات</b>.');
+    }
     if(c.NB===0){h.push('⚠️ النواة المختارة تقع عند إغلاقات قشرية في حساب البوزونات؛ لا توجد بوزونات تكافؤية في فضاء IBM-1 البسيط.');return h;}
     h.push(`🧮 Nπ = <span class="hl">${c.vp.count}</span> (${c.vp.mode} بالنسبة إلى Z=${c.vp.closure})، Nν = <span class="hl">${c.vn.count}</span> (${c.vn.mode} بالنسبة إلى N=${c.vn.closure})، لذلك N_B=${c.NB}.`);
     h.push(`📍 أوزان موقعك في مثلث Casten: U(5) ${(100*c.w.u).toFixed(0)}%، SU(3) ${(100*c.w.s).toFixed(0)}%، O(6) ${(100*c.w.o).toFixed(0)}%.`);
@@ -2159,6 +2176,22 @@ ibm1: {
     label(ctx,'γ=60°',hx-4,hy,'#cbd5e1','right',compact?7:9,false);
     label(ctx,'γ=0°',hx-4,hy+hh,'#cbd5e1','right',compact?7:9,false);
     if(!compact){label(ctx,`βmin=${c.betaEq.toFixed(2)}   γmin=${c.gammaEq.toFixed(1)}°`,pes.x+pes.w/2,pes.y+pes.h-7,'#fbbf24','center',10,true);}
+    // مخطط شكلي تعليمي: يربط β وγ بصورة بصرية بدل أن تبقى أرقامًا مجردة.
+    const sh={x:pes.x+pes.w-104,y:pes.y+28,w:88,h:78};
+    ctx.fillStyle='rgba(3,7,18,.88)';ctx.strokeStyle='rgba(251,191,36,.45)';ctx.fillRect(sh.x,sh.y,sh.w,sh.h);ctx.strokeRect(sh.x,sh.y,sh.w,sh.h);
+    label(ctx,'شكل النواة',sh.x+sh.w/2,sh.y+12,'#fbbf24','center',8,true);
+    const d=Math.min(.68,c.betaEq*.34);
+    let rx=20,ry=20,rot=0;
+    if(c.betaEq>=.12){
+      if(c.gammaEq<20){rx=20*(1-d*.35);ry=20*(1+d);}
+      else if(c.gammaEq>40){rx=20*(1+d);ry=20*(1-d*.35);}
+      else{rx=20*(1+d*.45);ry=20*(1+d*.25);rot=Math.PI/6;}
+    }
+    ctx.save();ctx.translate(sh.x+sh.w/2,sh.y+43);ctx.rotate(rot);
+    const ng=ctx.createRadialGradient(-rx*.3,-ry*.3,2,0,0,Math.max(rx,ry));
+    ng.addColorStop(0,'#a5f3fc');ng.addColorStop(.55,'#22d3ee');ng.addColorStop(1,'#155e75');
+    ctx.fillStyle=ng;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#67e8f9';ctx.stroke();ctx.restore();
+    label(ctx,c.shape,sh.x+sh.w/2,sh.y+68,'#cbd5e1','center',7,true);
     ctx.fillStyle='rgba(14,20,36,.88)';ctx.fillRect(0,0,W,28);
     label(ctx,`Z=${c.Z}  N=${c.N}  A=${c.A}   |   Nπ=${c.vp.count}  Nν=${c.vn.count}  N_B=${c.NB}`,W/2,18,'#e2e8f0','center',compact?9:12,true);
   }
@@ -3081,7 +3114,7 @@ foucault: {
 
 
 michelson_morley: {
-  title:'تجربة مايكلسون–مورلي — مختبر الأثير التفاعلي', icon:'🔬', category:'النسبية',
+  title:'تجربة مايكلسون–مورلي — مختبر الأثير التفاعلي', icon:'🔬', category:'النسبية', labV4:true,
   desc:'لا تشاهد حركة فقط: ابنِ الجهاز بيدك، تعرّف إلى كل أداة، أرسل الضوء، قِس الزمنين، توقّع النتيجة، ثم دوّر الجهاز وقارن التنبؤ الكلاسيكي بالنتيجة التاريخية.',
   welcome:{title:'🔬 مختبر مايكلسون–مورلي الجديد',steps:[
     '<b>أولًا:</b> ابنِ مقياس التداخل بنفسك بسحب الأدوات إلى أماكنها.',
@@ -5661,7 +5694,10 @@ function cardHTML(key,s,meta){
       <div class="relative">
         <div class="flex items-start justify-between mb-3">
           <div class="text-4xl">${s.icon}</div>
-          <span class="cat-tag" style="background:${meta.color}22;border-color:${meta.color}55;color:${meta.color}">${s.category}</span>
+          <div class="flex flex-col items-end gap-1">
+            <span class="cat-tag" style="background:${meta.color}22;border-color:${meta.color}55;color:${meta.color}">${s.category}</span>
+            ${s.labV4?'<span class="cat-tag" style="background:rgba(34,211,238,.10);border-color:rgba(34,211,238,.45);color:#22d3ee">✨ مختبر استقصائي V4</span>':''}
+          </div>
         </div>
         <h3 class="font-bold text-lg mb-1">${s.title}</h3>
         <p class="text-sm text-slate-400 leading-relaxed">${s.desc}</p>
