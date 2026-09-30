@@ -326,7 +326,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
       <div class="sub">فكرة وإعداد وتصميم وتنفيذ: م.د موسى محمد مهدي</div>
     </div>
     <div class="text-center mb-8">
-      <div class="badge text-gold border-gold/40 mb-3">109 تجربة تفاعلية مصنّفة في 17 فرعًا</div>
+      <div class="badge text-gold border-gold/40 mb-3">120 تجربة تفاعلية مصنّفة في 17 فرعًا</div>
       <h1 class="text-4xl md:text-5xl font-black mb-3 leading-tight">
         جرّب، <span class="text-gold">شاهد</span>، وافهم الفيزياء
       </h1>
@@ -603,7 +603,7 @@ const CATEGORIES = {
   'الإلكترونيات التماثلية': { icon:'📻', color:'#f59e0b', desc:'الثنائيات، الترانزستورات، والمكبرات' },
   'الإلكترونيات الرقمية':   { icon:'🔢', color:'#8b5cf6', desc:'البوابات المنطقية والدوائر الرقمية' },
   'الموائع والحرارة':        { icon:'🌡️', color:'#14b8a6', desc:'الضغط، الموائع، والظواهر الحرارية' },
-  'النسبية':                 { icon:'🛰️', color:'#e879f9', desc:'الزمكان، الجاذبية، والاختبارات النسبية' }
+  'النسبية':                 { icon:'🛰️', color:'#e879f9', desc:'المحاور القصورية، غاليليو، مايكلسون–مورلي، لورنتز، انكماش الطول وتمدد الزمن وجمع السرعات' }
 };
 const CATEGORY_ORDER = Object.keys(CATEGORIES);
 
@@ -2898,18 +2898,49 @@ foucault: {
   draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2+20;const a=((360/23.9344696)*Math.sin(s.ctrl.lat*Math.PI/180))*(s.t/3600)*Math.PI/180;ctx.strokeStyle='#475569';ctx.beginPath();ctx.arc(cx,cy,120,0,Math.PI*2);ctx.stroke();ctx.save();ctx.translate(cx,cy);ctx.rotate(a);ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-120,0);ctx.lineTo(120,0);ctx.stroke();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(90*Math.sin(s.t*.05),0,13,0,Math.PI*2);ctx.fill();ctx.restore();label(ctx,'مستوى الاهتزاز',cx,55,'#cbd5e1','center',14,true);}
 },
 
+
 michelson_morley: {
-  title:'تجربة ميكلسون–مورلي', icon:'🔬', category:'بصريات',
-  desc:'مقياس تداخل يوضح حساسية الأهداب لاختلاف المسار الضوئي.',
-  welcome:{title:'🔬 ميكلسون–مورلي',steps:['غيّر فرق المسار.','راقب انتقال أهداب التداخل.','إزاحة هدب واحد تقابل فرق مسار λ.']},
-  controls:[{id:'dl',label:'تغيّر طول أحد الذراعين ΔL',min:-1000,max:1000,step:10,value:0,unit:'nm'},{id:'lam',label:'الطول الموجي λ',min:400,max:700,step:5,value:550,unit:'nm'}],
-  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
-  readouts(s){return[{l:'عدد الأهداب المزاحة',v:(2*s.ctrl.dl/s.ctrl.lam).toFixed(2),u:'هدب',c:'gold'},{l:'فرق الطور',v:(4*Math.PI*s.ctrl.dl/s.ctrl.lam).toFixed(2),u:'rad',c:'cyan'}];},
-  equations:['N=\\frac{2\\Delta L}{\\lambda}','\\Delta\\phi=\\frac{4\\pi\\Delta L}{\\lambda}'],
-  theory:'لأن الضوء يقطع الذراع ذهابًا وإيابًا، فإن تغير طول ذراع واحد ΔL يغير فرق المسار البصري 2ΔL، لذا N=2ΔL/λ وΔφ=4πΔL/λ.',
-  hints(s){return[`الإزاحة الحالية ≈ <b>${(2*s.ctrl.dl/s.ctrl.lam).toFixed(2)}</b> هدب.`,`كل تغير في المسار ينعكس مباشرة على نمط التداخل.`];},
-  draw(ctx,W,H,s){const cx=W/2,cy=H/2;drawGrid(ctx,W,H);ctx.strokeStyle='#cbd5e1';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx-180,cy);ctx.lineTo(cx+150,cy);ctx.moveTo(cx,cy);ctx.lineTo(cx,cy-150);ctx.stroke();ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.PI/4);ctx.fillStyle='rgba(34,211,238,.5)';ctx.fillRect(-30,-4,60,8);ctx.restore();ctx.fillStyle='#fbbf24';ctx.fillRect(cx+145,cy-35,8,70);ctx.fillRect(cx-35,cy-155,70,8);for(let i=0;i<10;i++){const y=50+i*(H-100)/10;const ph=2*Math.PI*i/3+4*Math.PI*s.ctrl.dl/s.ctrl.lam;const I=.5+.5*Math.cos(ph);ctx.fillStyle=`rgba(251,191,36,${.12+.75*I})`;ctx.fillRect(W-80,y,45,(H-100)/10);}label(ctx,'مقياس ميكلسون',cx,35,'#cbd5e1','center',14,true);}
+  title:'تجربة مايكلسون–مورلي — مطاردة الأثير', icon:'🔬', category:'النسبية',
+  desc:'مقياس التداخل التاريخي الذي اختبر هل تتغير رحلة الضوء باختلاف اتجاه حركة الأرض المفترضة خلال الأثير.',
+  welcome:{title:'🔬 تجربة مايكلسون–مورلي',steps:['قسّم الشعاع إلى ذراعين متعامدين.','افترض تاريخيًا ريح أثير بسرعة v.','قارن زمن الرحلة في الذراع الموازية والعمودية.','دوّر الجهاز ذهنيًا 90° وشاهد إزاحة الأهداب المتوقعة ثم قارنها بالنتيجة السالبة.']},
+  controls:[
+    {id:'v',label:'سرعة ريح الأثير المفترضة',min:0,max:60,step:1,value:30,unit:'km/s'},
+    {id:'L',label:'طول الذراع L',min:1,max:20,step:.5,value:11,unit:'m'},
+    {id:'lam',label:'الطول الموجي λ',min:400,max:700,step:5,value:550,unit:'nm'}
+  ],
+  reset(s){s.t=0;}, update(s,dt){s.t=(s.t||0)+dt;},
+  calc(s){const c=CONST.c,v=s.ctrl.v*1000,L=s.ctrl.L,lam=s.ctrl.lam*1e-9,tp=2*L*c/(c*c-v*v),tn=2*L/Math.sqrt(c*c-v*v),dt=tp-tn,n=c*dt/lam;return{tp,tn,dt,n,rot:2*n};},
+  readouts(s){const q=this.calc(s);return[
+    {l:'t∥',v:(q.tp*1e9).toFixed(6),u:'ns'},
+    {l:'t⊥',v:(q.tn*1e9).toFixed(6),u:'ns'},
+    {l:'Δt الكلاسيكي',v:(q.dt*1e15).toFixed(4),u:'fs',c:'gold'},
+    {l:'إزاحة هدب متوقعة',v:q.n.toFixed(5),u:'fringe'},
+    {l:'بعد تدوير 90°',v:q.rot.toFixed(5),u:'fringe',c:'cyan'},
+    {l:'النتيجة المرصودة تاريخيًا',v:'≈ صفر',u:''}
+  ];},
+  hints(s){const q=this.calc(s);return[
+    'في نموذج الأثير الكلاسيكي تكون رحلة الذهاب والعودة في الذراع الموازية مختلفة عن العمودية.',
+    'لهذه القيم يتوقع النموذج التعليمي تغيرًا بعد التدوير ≈ <span class="hl">'+q.rot.toFixed(5)+' هدب</span>.',
+    'النتيجة السالبة لم تكن وحدها اشتقاقًا للنسبية، لكنها أضعفت بشدة فكرة الأثير الساكن القابل للكشف.',
+    'الحساب هنا نموذج أحادي المرور؛ جهاز مايكلسون–مورلي الحقيقي زاد طول المسار البصري بالانعكاسات.'
+  ];},
+  equations:[
+    't_{\\parallel}=\\frac{L}{c-v}+\\frac{L}{c+v}',
+    't_{\\perp}=\\frac{2L}{\\sqrt{c^2-v^2}}',
+    '\\Delta N\\approx\\frac{c\\Delta t}{\\lambda}'
+  ],
+  theory:'<b>الفكرة:</b><br>كان الاعتقاد أن الضوء موجة تنتشر في وسط يسمى الأثير. إذا كانت الأرض تتحرك خلاله فيفترض أن تظهر «ريح أثير» تجعل سرعة الضوء بالنسبة للجهاز مختلفة باختلاف الاتجاه.<br><br><b>الجهاز:</b><br>يقسم نصف المرآة الشعاع إلى ذراعين متعامدين ثم يعيد جمعهما. في الذراع الموازية يدخل c−v وc+v في زمن الرحلة، بينما في الذراع العمودية يكون المسار مائلًا كي يعود الشعاع إلى المرآة المتحركة مع الجهاز. ينتج فرق زمن صغير يتحول إلى فرق طور وإزاحة أهداب.<br><br><b>لماذا كانت النتيجة مهمة؟</b><br>لم يظهر الانزياح المتوقع بالمقدار الكلاسيكي. هذا مهّد للتخلي عن الأثير الساكن البسيط، وجعل فكرة ثبات سرعة الضوء وتحولات لورنتز أكثر إلحاحًا.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const q=this.calc(s),cx=W*.50,cy=H*.55,Lx=Math.min(180,W*.30),Ly=Math.min(145,H*.30),p=(1+Math.sin((s.t||0)*2.3))/2;
+    ctx.strokeStyle='#475569';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx-Lx,cy);ctx.lineTo(cx+Lx,cy);ctx.moveTo(cx,cy-Ly);ctx.lineTo(cx,cy+Ly);ctx.stroke();
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.PI/4);ctx.fillStyle='#94a3b8';ctx.fillRect(-4,-28,8,56);ctx.restore();
+    ctx.fillStyle='#e2e8f0';ctx.fillRect(cx+Lx-5,cy-28,10,56);ctx.fillRect(cx-28,cy-Ly-5,56,10);
+    ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(cx-Lx,cy);ctx.lineTo(cx,cy);ctx.lineTo(cx+p*Lx,cy);ctx.stroke();
+    ctx.strokeStyle='#22d3ee';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy-p*Ly);ctx.stroke();
+    arrow(ctx,45,H*.18,160,H*.18,'#f472b6',3,9);label(ctx,'ريح أثير مفترضة',170,H*.18,'#f472b6','left',11,true);
+    label(ctx,'Δt='+(q.dt*1e15).toFixed(3)+' fs',W-30,H-30,'#fbbf24','right',11,true);
+  }
 },
+
 
 thomson_em: {
   title:'تجربة طومسون للإلكترون', icon:'🧲', category:'الفيزياء الذرية',
@@ -2987,6 +3018,173 @@ compton: {
   theory:'في تبعثر كومبتون يتصرف الفوتون كجسيم يحمل زخمًا، فينقل جزءًا من طاقته وزخمه إلى الإلكترون ويزداد طوله الموجي.',
   hints(s){const dl=CONST.lambdaC_pm*(1-Math.cos(s.ctrl.th*Math.PI/180));return[`الإزاحة الحالية <b>${dl.toFixed(3)} pm</b>.`,`أكبر إزاحة تحدث قرب 180°.`];},
   draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;arrow(ctx,55,cy,cx-15,cy,'#fbbf24',4,10);ctx.fillStyle='#60a5fa';ctx.beginPath();ctx.arc(cx,cy,12,0,Math.PI*2);ctx.fill();const a=-s.ctrl.th*Math.PI/180;arrow(ctx,cx+10,cy,cx+170*Math.cos(a),cy+170*Math.sin(a),'#22d3ee',4,10);arrow(ctx,cx,cy,cx-80*Math.cos(a/2),cy+80*Math.sin(a/2),'#f472b6',3,9);label(ctx,'γ',90,cy-20,'#fbbf24','center',17,true);label(ctx,'γ′',cx+130*Math.cos(a),cy+130*Math.sin(a)-18,'#22d3ee','center',17,true);}
+},
+
+
+inertial_frames: {
+  title:'المحاور القصورية — راقب الحدث من مرجعين', icon:'🧭', category:'النسبية',
+  desc:'افهم معنى المرجع القصوري عمليًا: نفس الجسم له موضع وسرعة مختلفان عند راصدين، لكن الجسم الحر يبقى بلا تسارع في المرجعين.',
+  welcome:{title:'🧭 المحاور القصورية',steps:['راقب جسيمًا حرًا في S.','اجعل S′ يتحرك بسرعة ثابتة v.','قارن x وx′ ثم u وu′.','لاحظ أن a=a′=0 ما دام المرجعان غير متسارعين.']},
+  controls:[{id:'u',label:'سرعة الجسم u',min:-20,max:20,step:1,value:12,unit:'m/s'},{id:'v',label:'سرعة S′',min:-15,max:15,step:1,value:5,unit:'m/s'}],
+  reset(s){s.t=0;},update(s,dt){s.t=(s.t||0)+dt;},
+  readouts(s){const t=(s.t||0)%8;return[
+    {l:'t',v:t.toFixed(2),u:'s',c:'gold'},
+    {l:'x في S',v:(s.ctrl.u*t).toFixed(1),u:'m'},
+    {l:'x′ في S′',v:((s.ctrl.u-s.ctrl.v)*t).toFixed(1),u:'m',c:'cyan'},
+    {l:'u′=u−v',v:(s.ctrl.u-s.ctrl.v).toFixed(1),u:'m/s'},
+    {l:'a=a′',v:'0',u:'m/s²'}];},
+  hints(s){const up=s.ctrl.u-s.ctrl.v,h=[];h.push('لا توجد سرعة مطلقة هنا؛ السرعة تُنسب دائمًا إلى مرجع.');h.push('u′=<span class="hl">'+up.toFixed(1)+' m/s</span>.');if(Math.abs(up)<.2)h.push('🎯 الجسم ساكن تقريبًا في S′ مع أنه متحرك في S.');return h;},
+  equations:['x′=x-vt','t′=t','u′=u-v','a′=a'],
+  theory:'<b>المرجع القصوري</b> مرجع لا يتسارع. إذا كانت محصلة القوى صفرًا يبقى الجسم ساكنًا أو يتحرك بسرعة ثابتة فيه. لذلك راكب قطار يتحرك بسرعة ثابتة لا يستطيع من تجربة ميكانيكية محلية فقط أن يعرف «سرعة مطلقة» للقطار.<br><br>غاليليًا نكتب x′=x−vt وt′=t، ولذلك تختلف السرعة لكن يبقى التسارع نفسه. افتراض t′=t هو النقطة التي ستتغير لاحقًا في النسبية الخاصة.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const t=(s.t||0)%8,up=s.ctrl.u-s.ctrl.v,y1=H*.35,y2=H*.72;
+    ctx.strokeStyle='#475569';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(35,y1);ctx.lineTo(W-35,y1);ctx.moveTo(35,y2);ctx.lineTo(W-35,y2);ctx.stroke();
+    const scale=(W-100)/120,x1=W/2+clamp(s.ctrl.u*t,-60,60)*scale,x2=W/2+clamp(up*t,-60,60)*scale;
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x1,y1,10,0,7);ctx.fill();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(x2,y2,10,0,7);ctx.fill();
+    label(ctx,'S',45,y1-28,'#fbbf24','left',13,true);label(ctx,'S′',45,y2-28,'#22d3ee','left',13,true);
+    label(ctx,'x='+ (s.ctrl.u*t).toFixed(1)+' m',x1,y1+28,'#fbbf24','center',10,true);label(ctx,'x′='+ (up*t).toFixed(1)+' m',x2,y2+28,'#22d3ee','center',10,true);
+  }
+},
+
+galilean_train_ball: {
+  title:'تحويلات غاليليو — القطار والكرة', icon:'🚆', category:'النسبية',
+  desc:'اجعل القطار يتحرك ثم أطلق كرة داخله، واستنتج كيف يجمع الراصد الأرضي السرعتين.',
+  welcome:{title:'🚆 القطار والكرة',steps:['حدد سرعة القطار v.','حدد سرعة الكرة u′ بالنسبة للقطار.','اقرأ u بالنسبة للأرض.','جرّب 60 و40 km/h كما في المثال الدراسي.']},
+  controls:[{id:'v',label:'سرعة القطار v',min:-120,max:120,step:5,value:60,unit:'km/h'},{id:'up',label:'سرعة الكرة u′',min:-120,max:120,step:5,value:40,unit:'km/h'}],
+  reset(s){s.t=0;},update(s,dt){s.t=(s.t||0)+dt;},
+  readouts(s){const u=s.ctrl.v+s.ctrl.up;return[{l:'v',v:s.ctrl.v,u:'km/h'},{l:'u′',v:s.ctrl.up,u:'km/h'},{l:'u=v+u′',v:u,u:'km/h',c:'gold'}];},
+  hints(s){const u=s.ctrl.v+s.ctrl.up,h=['جمع غاليليو يعطي <span class="hl">'+u+' km/h</span>.'];if(s.ctrl.v===60&&s.ctrl.up===40)h.push('🎯 60+40=100 km/h كما في المثال.');h.push('القاعدة تنهار قرب سرعة الضوء لأن الزمن لم يعد مطلقًا.');return h;},
+  equations:['x′=x-vt','u=u′+v'],
+  theory:'في التحويل الغاليلي الزمن نفسه عند الجميع، لذلك مشتقة x=x′+vt تعطي u=u′+v. هذه قاعدة يومية ممتازة. لكن لو كانت u′=c فسوف تتنبأ بـc+v، بينما تجارب الضوء والنسبية الخاصة تعطي c نفسها. هذا التعارض هو بوابة الانتقال من غاليليو إلى لورنتز.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const t=(s.t||0)%6,y=H*.72,x=((t*s.ctrl.v*.6)%(W+220))-170;
+    ctx.strokeStyle='#475569';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(25,y);ctx.lineTo(W-25,y);ctx.stroke();ctx.fillStyle='#334155';ctx.fillRect(x,y-82,180,66);ctx.strokeStyle='#22d3ee';ctx.strokeRect(x,y-82,180,66);
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x+90+((t*s.ctrl.up*.35)%70)-35,y-48,8,0,7);ctx.fill();label(ctx,'v='+s.ctrl.v+' km/h',x+90,y-98,'#22d3ee','center',11,true);
+    label(ctx,'راصد الأرض يرى u='+(s.ctrl.v+s.ctrl.up)+' km/h',W/2,50,'#fbbf24','center',13,true);
+  }
+},
+
+newtonian_relativity: {
+  title:'مبدأ نسبية نيوتن — ثبات F=ma', icon:'⚙️', category:'النسبية',
+  desc:'اختبر أن التسارع وقانون نيوتن الثاني لا يتغيران بين مرجعين قصوريين يتحرك أحدهما بسرعة ثابتة.',
+  welcome:{title:'⚙️ نسبية نيوتن',steps:['طبّق قوة F على كتلة m.','غيّر سرعة المرجع S′.','قارن السرعتين.','لاحظ أن a وa′ متساويان.']},
+  controls:[{id:'F',label:'القوة F',min:-20,max:20,step:1,value:8,unit:'N'},{id:'m',label:'الكتلة m',min:1,max:10,step:.5,value:4,unit:'kg'},{id:'v',label:'سرعة المرجع S′',min:-15,max:15,step:1,value:6,unit:'m/s'}],
+  reset(s){s.t=0;},update(s,dt){s.t=(s.t||0)+dt;},
+  readouts(s){const a=s.ctrl.F/s.ctrl.m,t=(s.t||0)%5;return[{l:'a في S',v:a.toFixed(2),u:'m/s²',c:'gold'},{l:'a′ في S′',v:a.toFixed(2),u:'m/s²',c:'cyan'},{l:'u',v:(a*t).toFixed(2),u:'m/s'},{l:'u′',v:(a*t-s.ctrl.v).toFixed(2),u:'m/s'}];},
+  hints(s){return['لأن v ثابتة فإن مشتقتها الثانية صفر، ومن ثم a′=a.','قانون ΣF=ma يحتفظ بالشكل نفسه في كل مرجع قصوري كلاسيكي.'];},
+  equations:['\\sum F=ma','a′=a'],
+  theory:'في ميكانيك نيوتن تتغير السرعة من مرجع إلى آخر، لكن التسارع لا يتغير إذا كانت سرعة المرجعين النسبية ثابتة. لذلك يكتب الراصدان القانون نفسه ΣF=ma. هذه هي «نسبية نيوتن»: لا يوجد مرجع قصوري مميز من ناحية قوانين الميكانيك.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const a=s.ctrl.F/s.ctrl.m,t=(s.t||0)%5,y1=H*.35,y2=H*.72,x1=W*.25+clamp(.5*a*t*t,-8,8)*20,x2=W*.25+clamp(.5*a*t*t-s.ctrl.v*t,-8,8)*20;
+    ctx.fillStyle='#fbbf24';ctx.fillRect(x1-18,y1-18,36,36);ctx.fillStyle='#22d3ee';ctx.fillRect(x2-18,y2-18,36,36);label(ctx,'S: a='+a.toFixed(2),45,y1,'#fbbf24','left',12,true);label(ctx,'S′: a′='+a.toFixed(2),45,y2,'#22d3ee','left',12,true);
+  }
+},
+
+sr_postulates: {
+  title:'فرضيتا النسبية الخاصة — ثبات سرعة الضوء', icon:'💡', category:'النسبية',
+  desc:'قارن توقع غاليليو c±v مع فرضية آينشتاين التي تجعل جميع المراقبين القصوريين يقيسون c نفسها.',
+  welcome:{title:'💡 فرضيتا آينشتاين',steps:['غيّر سرعة الراصد.','قارن c−v وc+v مع القياس النسبي.','راقب شعاعي الضوء.','استنتج لماذا لا يمكن أن يبقى الزمن مطلقًا.']},
+  controls:[{id:'beta',label:'β=v/c',min:-.9,max:.9,step:.05,value:.5,unit:''}],
+  reset(s){s.t=0;},update(s,dt){s.t=(s.t||0)+dt;},
+  readouts(s){const b=s.ctrl.beta;return[{l:'β',v:b.toFixed(2),u:''},{l:'غاليلي يمينًا',v:(1-b).toFixed(2),u:'c'},{l:'غاليلي يسارًا',v:(1+b).toFixed(2),u:'c'},{l:'نسبيًا |c′|',v:'1.000',u:'c',c:'gold'},{l:'γ',v:(1/Math.sqrt(1-b*b)).toFixed(3),u:'',c:'cyan'}];},
+  hints(s){return['الفرضية الأولى: قوانين الفيزياء لها الشكل نفسه في كل المراجع القصورية.','الفرضية الثانية: سرعة الضوء في الفراغ c لكل راصد قصوري.','ثبات c يجبر المكان والزمن على التحول معًا.'];},
+  equations:['c′=c','\\gamma=\\frac{1}{\\sqrt{1-\\beta^2}}'],
+  theory:'الفرضية الأولى ترفض وجود مرجع قصوري مطلق يمكن لقوانين الطبيعة أن تميزه. والفرضية الثانية تثبت سرعة الضوء c بصرف النظر عن حركة المصدر أو الراصد القصوري. الجمع بينهما لا ينسجم مع t′=t الغاليلي، لذلك تظهر تحولات لورنتز، ونسبية التزامن، وتمدد الزمن وانكماش الطول كمنظومة واحدة.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const p=((s.t||0)%4)/4,cx=W/2,cy=H*.62,span=Math.min(W*.4,230),obs=cx+s.ctrl.beta*span*(2*p-1),r=cx+span*(2*p-1),l=cx-span*(2*p-1);
+    ctx.strokeStyle='#475569';ctx.beginPath();ctx.moveTo(30,cy);ctx.lineTo(W-30,cy);ctx.stroke();ctx.fillStyle='#e2e8f0';ctx.fillRect(obs-8,cy-34,16,34);ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(r,cy,7,0,7);ctx.fill();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(l,cy,7,0,7);ctx.fill();label(ctx,'الضوء يبقى ±c',W/2,55,'#fbbf24','center',14,true);
+  }
+},
+
+lorentz_transform: {
+  title:'تحويلات لورنتز — حوّل حدثًا بين S وS′', icon:'📐', category:'النسبية',
+  desc:'حدد حدثًا في S′ وشاهد كيف يختلط المكان بالزمن عند تحويله إلى S.',
+  welcome:{title:'📐 تحويلات لورنتز',steps:['اختر β.','حدد x′ بوحدة light-second وt′ بالثانية.','اقرأ x وt في S.','راقب محوري x′ وct′ في مخطط الزمكان.']},
+  controls:[{id:'beta',label:'β=v/c',min:-.95,max:.95,step:.05,value:.6,unit:''},{id:'xp',label:'x′',min:-5,max:5,step:.25,value:2,unit:'light-s'},{id:'tp',label:'t′',min:-5,max:5,step:.25,value:1,unit:'s'}],
+  reset(s){},update(s,dt){},
+  calc(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b);return{b,g,x:g*(s.ctrl.xp+b*s.ctrl.tp),t:g*(s.ctrl.tp+b*s.ctrl.xp)};},
+  readouts(s){const q=this.calc(s);return[{l:'γ',v:q.g.toFixed(4),u:'',c:'gold'},{l:'x′',v:s.ctrl.xp.toFixed(2),u:'light-s'},{l:'t′',v:s.ctrl.tp.toFixed(2),u:'s'},{l:'x في S',v:q.x.toFixed(3),u:'light-s',c:'cyan'},{l:'t في S',v:q.t.toFixed(3),u:'s'}];},
+  hints(s){return['في وحدات light-second يمكن أخذ c=1 عدديًا.','لاحظ أن t يعتمد على x′ أيضًا؛ هذه هي بذرة نسبية التزامن.','عندما β→0 تصبح γ→1 ونعود تقريبًا إلى غاليليو.'];},
+  equations:['x′=\\gamma(x-vt)','t′=\\gamma\\left(t-\\frac{vx}{c^2}\\right)','x=\\gamma(x′+vt′)','t=\\gamma\\left(t′+\\frac{vx′}{c^2}\\right)'],
+  theory:'تحويلات لورنتز تربط إحداثيات الحدث نفسه في مرجعين قصوريين. الحدث لا يتغير، لكن قيم x وt المنسوبة إليه تتغير. اختلاط المكان والزمن ليس خيارًا حسابيًا؛ إنه ما يحافظ على ثبات مخروط الضوء x=±ct في جميع المراجع. في حد السرعات الصغيرة يعود السلوك إلى غاليليو تقريبًا.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const q=this.calc(s),cx=W/2,cy=H*.78,scale=Math.min(W,H)*.065,b=q.b;arrow(ctx,45,cy,W-45,cy,'#94a3b8',2,8);arrow(ctx,cx,H-25,cx,35,'#94a3b8',2,8);
+    ctx.strokeStyle='#22d3ee';ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(cx-b*scale*6,cy+scale*6);ctx.lineTo(cx+b*scale*6,cy-scale*6);ctx.stroke();ctx.strokeStyle='#f472b6';ctx.beginPath();ctx.moveTo(cx-scale*6,cy+b*scale*6);ctx.lineTo(cx+scale*6,cy-b*scale*6);ctx.stroke();
+    const ex=cx+q.x*scale,ey=cy-q.t*scale;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(ex,ey,8,0,7);ctx.fill();label(ctx,'حدث',ex+12,ey-12,'#fbbf24','left',11,true);label(ctx,'x='+q.x.toFixed(2)+' ls , t='+q.t.toFixed(2)+' s',W/2,H-18,'#fbbf24','center',11,true);
+  }
+},
+
+relativity_simultaneity: {
+  title:'نسبية التزامن — هل الحدثان يحدثان معًا؟', icon:'⏱️', category:'النسبية',
+  desc:'اجعل حدثين متزامنين في S ثم شاهد كيف يظهر فرق زمني بينهما في S′.',
+  welcome:{title:'⏱️ نسبية التزامن',steps:['اختر Δx.','اجعل Δt=0 في S.','غيّر β.','راقب Δt′.']},
+  controls:[{id:'beta',label:'β=v/c',min:-.9,max:.9,step:.05,value:.6,unit:''},{id:'dx',label:'Δx',min:-5,max:5,step:.25,value:3,unit:'light-s'},{id:'dt',label:'Δt في S',min:-3,max:3,step:.25,value:0,unit:'s'}],
+  reset(s){},update(s,dt){},
+  readouts(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),dtp=g*(s.ctrl.dt-b*s.ctrl.dx),dxp=g*(s.ctrl.dx-b*s.ctrl.dt);return[{l:'Δt',v:s.ctrl.dt.toFixed(2),u:'s'},{l:'Δt′',v:dtp.toFixed(3),u:'s',c:'gold'},{l:'Δx′',v:dxp.toFixed(3),u:'light-s',c:'cyan'},{l:'متزامنان في S؟',v:Math.abs(s.ctrl.dt)<.001?'نعم':'لا',u:''},{l:'متزامنان في S′؟',v:Math.abs(dtp)<.02?'تقريبًا نعم':'لا',u:''}];},
+  hints(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),dtp=g*(s.ctrl.dt-b*s.ctrl.dx),h=[];if(Math.abs(s.ctrl.dt)<.001&&Math.abs(s.ctrl.dx)>.01)h.push('في S الحدثان متزامنان، بينما S′ يقيس Δt′=<span class="hl">'+dtp.toFixed(3)+' s</span>.');h.push('التزامن المطلق يختفي لأن تحويل الزمن يحتوي على −vΔx/c².');return h;},
+  equations:['\\Delta t′=\\gamma\\left(\\Delta t-\\frac{v\\Delta x}{c^2}\\right)'],
+  theory:'إذا كان حدثان متباعدان مكانيًا ومتزامنان في S، فليس من الضروري أن يكونا متزامنين في S′. عند Δt=0 نحصل على Δt′=−γvΔx/c². هذه النتيجة تفسر لماذا لا يمكن تعريف «الآن» نفسه لجميع المراقبين على امتداد الفضاء. أما ترتيب السبب والنتيجة للأحداث المتصلة سببيًا فلا ينقلب.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),dtp=g*(s.ctrl.dt-b*s.ctrl.dx),x1=W*.28,x2=W*.72,y=H*.58;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x1,y,10,0,7);ctx.fill();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(x2,y-s.ctrl.dt*28,10,0,7);ctx.fill();label(ctx,'A',x1,y+24,'#fbbf24','center',11,true);label(ctx,'B',x2,y-s.ctrl.dt*28+24,'#22d3ee','center',11,true);label(ctx,'S: Δt='+s.ctrl.dt.toFixed(2)+' s',W/2,55,'#cbd5e1','center',13,true);label(ctx,'S′: Δt′='+dtp.toFixed(3)+' s',W/2,85,'#f472b6','center',13,true);}
+},
+
+length_contraction: {
+  title:'نسبية الطول — انكماش الطول', icon:'📏', category:'النسبية',
+  desc:'قارن الطول السكوني L₀ بطول الجسم المتحرك وافهم لماذا يجب قياس طرفيه في اللحظة نفسها.',
+  welcome:{title:'📏 انكماش الطول',steps:['حدد L₀.','زد β.','راقب L=L₀/γ.','تذكر أن الانكماش في اتجاه الحركة فقط.']},
+  controls:[{id:'L0',label:'الطول السكوني L₀',min:1,max:100,step:1,value:20,unit:'m'},{id:'beta',label:'β=v/c',min:0,max:.99,step:.01,value:.6,unit:''}],
+  reset(s){},update(s,dt){},
+  readouts(s){const g=1/Math.sqrt(1-s.ctrl.beta*s.ctrl.beta),L=s.ctrl.L0/g;return[{l:'L₀',v:s.ctrl.L0.toFixed(2),u:'m',c:'cyan'},{l:'γ',v:g.toFixed(4),u:''},{l:'L',v:L.toFixed(3),u:'m',c:'gold'},{l:'L/L₀',v:(L/s.ctrl.L0).toFixed(3),u:''}];},
+  hints(s){const L=s.ctrl.L0*Math.sqrt(1-s.ctrl.beta*s.ctrl.beta),h=['الطول السكوني يقاس في مرجع الجسم نفسه.','الطول المتحرك الآن <span class="hl">'+L.toFixed(3)+' m</span>.','الأبعاد العمودية على الحركة لا تنكمش.'];if(Math.abs(s.ctrl.beta-.2)<.015&&Math.abs(s.ctrl.L0-20)<.6)h.push('🎯 L₀=20 m وβ=0.2 يعطي L≈19.6 m، حالة المثال.');return h;},
+  equations:['L=L_0\\sqrt{1-\\frac{v^2}{c^2}}=\\frac{L_0}{\\gamma}'],
+  theory:'الطول السكوني L₀ يقاس عندما يكون الجسم ساكنًا. الراصد الذي يراه متحركًا يجب أن يقيس موضعي الطرفين في اللحظة نفسها في مرجعه. لأن «اللحظة نفسها» تختلف بين المراجع، تظهر L=L₀/γ. لذلك انكماش الطول ونسبية التزامن وجهان لنفس بنية لورنتز، وليس ضغطًا ميكانيكيًا للجسم.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const g=1/Math.sqrt(1-s.ctrl.beta*s.ctrl.beta),ratio=1/g,left=65,w=W-130,y1=H*.34,y2=H*.67;ctx.fillStyle='rgba(34,211,238,.18)';ctx.strokeStyle='#22d3ee';ctx.fillRect(left,y1,w,48);ctx.strokeRect(left,y1,w,48);ctx.fillStyle='rgba(251,191,36,.18)';ctx.strokeStyle='#fbbf24';ctx.fillRect(left,y2,w*ratio,48);ctx.strokeRect(left,y2,w*ratio,48);label(ctx,'L₀',left+w/2,y1+24,'#22d3ee','center',13,true);label(ctx,'L=L₀/γ',left+w*ratio/2,y2+24,'#fbbf24','center',13,true);}
+},
+
+time_dilation: {
+  title:'نسبية الزمن — ساعة الضوء وتمدد الزمن', icon:'🕰️', category:'النسبية',
+  desc:'راقب ساعة ضوئية ساكنة ومتحركة لترى لماذا يؤدي ثبات c إلى Δt=γΔτ.',
+  welcome:{title:'🕰️ تمدد الزمن',steps:['في مرجع الساعة يسير الضوء عموديًا.','في المرجع الآخر يسلك مسارًا قطريًا أطول.','لأن c ثابتة يحتاج المسار الأطول زمنًا أكبر.','قارن Δτ وΔt.']},
+  controls:[{id:'beta',label:'β=v/c',min:0,max:.99,step:.01,value:.6,unit:''},{id:'tau',label:'الزمن الخاص Δτ',min:.1,max:60,step:.1,value:2.2,unit:'µs'}],
+  reset(s){},update(s,dt){},
+  readouts(s){const g=1/Math.sqrt(1-s.ctrl.beta*s.ctrl.beta),T=g*s.ctrl.tau;return[{l:'γ',v:g.toFixed(4),u:'',c:'gold'},{l:'Δτ',v:s.ctrl.tau.toFixed(2),u:'µs',c:'cyan'},{l:'Δt',v:T.toFixed(3),u:'µs'},{l:'Δt/Δτ',v:g.toFixed(3),u:''}];},
+  hints(s){const g=1/Math.sqrt(1-s.ctrl.beta*s.ctrl.beta),T=g*s.ctrl.tau;return['الزمن الخاص تقيسه الساعة التي ترافق الحدثين.','عند هذه السرعة Δt=<span class="hl">'+T.toFixed(3)+' µs</span>.','تمدد الزمن خاصية للزمكان لا بطء ميكانيكي للساعة.'];},
+  equations:['\\Delta t=\\gamma\\Delta\\tau','\\gamma=\\frac{1}{\\sqrt{1-v^2/c^2}}'],
+  theory:'ساعة الضوء تفسر النتيجة هندسيًا. النبضة في مرجع الساعة تسلك طريقًا عموديًا قصيرًا، لكن الراصد الذي يرى الساعة متحركة يراها تسلك قطرًا أطول. بما أن سرعة الضوء c لا تتغير، يلزم زمن أطول. من فيثاغورس ينتج Δt=γΔτ. التأثير ينطبق على جميع العمليات الفيزيائية، لا على الضوء فقط.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const g=1/Math.sqrt(1-s.ctrl.beta*s.ctrl.beta),x1=W*.25,x2=W*.72,yt=H*.25,yb=H*.72;ctx.strokeStyle='#22d3ee';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x1-50,yt);ctx.lineTo(x1+50,yt);ctx.moveTo(x1-50,yb);ctx.lineTo(x1+50,yb);ctx.stroke();ctx.strokeStyle='#fbbf24';ctx.beginPath();ctx.moveTo(x1,yb);ctx.lineTo(x1,yt);ctx.stroke();ctx.strokeStyle='#f472b6';ctx.beginPath();ctx.moveTo(x2-55,yt);ctx.lineTo(x2+20,yt);ctx.moveTo(x2+20,yb);ctx.lineTo(x2+95,yb);ctx.stroke();ctx.strokeStyle='#fbbf24';ctx.beginPath();ctx.moveTo(x2+58,yb);ctx.lineTo(x2-18,yt);ctx.stroke();label(ctx,'γ='+g.toFixed(3),W/2,45,'#fbbf24','center',14,true);}
+},
+
+muon_lifetime: {
+  title:'الميونات — دليل طبيعي على تمدد الزمن', icon:'☄️', category:'النسبية',
+  desc:'غيّر سرعة الميون واحسب عمره في المختبر والمسافة المتوسطة التي يقطعها واحتمال وصوله إلى الكاشف.',
+  welcome:{title:'☄️ عمر الميون',steps:['خذ τ₀≈2.2 µs.','غيّر β.','احسب γτ₀.','قارن المسافة النسبية بالمسافة دون تمدد الزمن.']},
+  controls:[{id:'beta',label:'β=v/c',min:.1,max:.999,step:.001,value:.6,unit:''},{id:'tau0',label:'العمر الخاص τ₀',min:1,max:4,step:.05,value:2.2,unit:'µs'},{id:'height',label:'المسافة إلى الكاشف',min:50,max:5000,step:50,value:495,unit:'m'}],
+  reset(s){},update(s,dt){},
+  readouts(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),tau=g*s.ctrl.tau0,d=b*CONST.c*tau*1e-6,d0=b*CONST.c*s.ctrl.tau0*1e-6;return[{l:'γ',v:g.toFixed(3),u:'',c:'gold'},{l:'τ في المختبر',v:tau.toFixed(3),u:'µs',c:'cyan'},{l:'d̄ النسبي',v:d.toFixed(1),u:'m'},{l:'d̄ دون تمدد',v:d0.toFixed(1),u:'m'},{l:'P الوصول',v:(100*Math.exp(-s.ctrl.height/Math.max(1,d))).toFixed(2),u:'%'}];},
+  hints(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),tau=g*s.ctrl.tau0,d=b*CONST.c*tau*1e-6,h=['العمر المختبري γτ₀=<span class="hl">'+tau.toFixed(3)+' µs</span>.','المسافة المتوسطة βcγτ₀=<span class="hl">'+d.toFixed(1)+' m</span>.'];if(Math.abs(b-.6)<.002&&Math.abs(s.ctrl.tau0-2.2)<.06)h.push('🎯 β=0.6 يعطي 2.75 µs ومسافة ≈495 m، كما في المثال الدراسي.');return h;},
+  equations:['\\tau_{lab}=\\gamma\\tau_0','\\bar d=\\beta c\\gamma\\tau_0','P(d)=e^{-d/\\bar d}'],
+  theory:'الميون غير مستقر، لذلك عمره يعمل كساعة طبيعية. في مرجع الميون العمر الخاص τ₀، بينما المختبر يقيس γτ₀. لذلك تستطيع الميونات السريعة قطع مسافات أكبر من الحساب الكلاسيكي. الاحتمال الأسي يوضح أيضًا أن العمر قيمة إحصائية متوسطة لا زمن اضمحلال ثابت لكل جسيم.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),d=b*CONST.c*g*s.ctrl.tau0*1e-6,x=W*.52,top=55,bottom=H-55,frac=clamp(d/s.ctrl.height,0,1),y=bottom-frac*(bottom-top);ctx.strokeStyle='#334155';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke();ctx.fillStyle='#a78bfa';ctx.beginPath();ctx.arc(x,y,10,0,7);ctx.fill();ctx.fillStyle='#22d3ee';ctx.fillRect(x-70,bottom-8,140,16);label(ctx,'الكاشف',x,bottom+24,'#22d3ee','center',11,true);label(ctx,'d̄='+d.toFixed(0)+' m',W-35,H/2,'#fbbf24','right',12,true);}
+},
+
+sirius_trip: {
+  title:'رحلة إلى سيريوس — كيف يتفق الراصدان؟', icon:'🚀', category:'النسبية',
+  desc:'استخدم انكماش الطول وتمدد الزمن معًا في رحلة نجمية واحدة.',
+  welcome:{title:'🚀 رحلة إلى سيريوس',steps:['حدد مسافة النجم D.','غيّر β.','اقرأ زمن الأرض.','اقرأ المسافة والزمن في مرجع المسافر.']},
+  controls:[{id:'D',label:'المسافة D',min:1,max:20,step:.5,value:8,unit:'ly'},{id:'beta',label:'β=v/c',min:.1,max:.99,step:.01,value:.8,unit:''}],
+  reset(s){s.t=0;},update(s,dt){s.t=(s.t||0)+dt;},
+  readouts(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),Dp=s.ctrl.D/g,tE=s.ctrl.D/b,tS=Dp/b;return[{l:'γ',v:g.toFixed(3),u:''},{l:'D الأرض',v:s.ctrl.D.toFixed(2),u:'ly',c:'cyan'},{l:'D′ المسافر',v:Dp.toFixed(2),u:'ly',c:'gold'},{l:'زمن الأرض',v:tE.toFixed(2),u:'yr'},{l:'زمن المسافر',v:tS.toFixed(2),u:'yr'}];},
+  hints(s){const b=s.ctrl.beta,g=1/Math.sqrt(1-b*b),Dp=s.ctrl.D/g,tE=s.ctrl.D/b,tS=Dp/b,h=['المسافر يرى D′=D/γ=<span class="hl">'+Dp.toFixed(2)+' ly</span>.','زمن الأرض '+tE.toFixed(2)+' yr وزمن المسافر '+tS.toFixed(2)+' yr.'];if(Math.abs(s.ctrl.D-8)<.1&&Math.abs(b-.8)<.015)h.push('🎯 D=8 ly وβ=0.8 ⇒ D′=4.8 ly، 10 سنوات للأرض و6 للمسافر.');return h;},
+  equations:['D′=\\frac{D}{\\gamma}','t_E=\\frac{D}{\\beta c}','\\tau=\\frac{t_E}{\\gamma}'],
+  theory:'في مرجع الأرض المسافة D والزمن D/v. في مرجع المركبة تكون المركبة ساكنة، بينما الأرض والنجم يتحركان والمسافة بينهما D/γ؛ لذلك زمن المسافر D/(γv). هذان الوصفان متوافقان تمامًا لأنهما يستخدمان مقاييس مكان وزمن مختلفة لنفس زوج الأحداث.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const g=1/Math.sqrt(1-s.ctrl.beta*s.ctrl.beta),Dp=s.ctrl.D/g,xe=70,xs=W-70,y=H*.58,p=xe+(((s.t||0)*s.ctrl.beta*.1)%1)*(xs-xe);ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(xe,y,17,0,7);ctx.fill();ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(xs,y,10,0,7);ctx.fill();ctx.fillStyle='#f472b6';ctx.fillRect(p-16,y-45,32,18);label(ctx,'الأرض',xe,y+30,'#22d3ee','center',11,true);label(ctx,'سيريوس',xs,y+30,'#fbbf24','center',11,true);label(ctx,'D='+s.ctrl.D+' ly   |   D′='+Dp.toFixed(2)+' ly',W/2,55,'#fbbf24','center',13,true);}
+},
+
+velocity_addition: {
+  title:'نسبية السرعة — جمع السرعات دون تجاوز c', icon:'🛸', category:'النسبية',
+  desc:'قارن جمع غاليليو بجمع السرعات النسبي وشاهد كيف تبقى سرعة الضوء حدًا ثابتًا.',
+  welcome:{title:'🛸 جمع السرعات النسبي',steps:['حدد v.','حدد u′.','قارن u′+v بالقيمة النسبية.','ضع u′=1 لترى أن الضوء يبقى c.']},
+  controls:[{id:'v',label:'v/c',min:-.95,max:.95,step:.05,value:.8,unit:''},{id:'up',label:'u′/c',min:-1,max:1,step:.05,value:.3,unit:''}],
+  reset(s){},update(s,dt){},
+  readouts(s){const v=s.ctrl.v,up=s.ctrl.up,u=(up+v)/(1+v*up),ug=up+v;return[{l:'v',v:v.toFixed(2),u:'c'},{l:'u′',v:up.toFixed(2),u:'c'},{l:'غاليلي',v:ug.toFixed(3),u:'c'},{l:'نسبيًا u',v:u.toFixed(3),u:'c',c:'gold'}];},
+  hints(s){const v=s.ctrl.v,up=s.ctrl.up,u=(up+v)/(1+v*up),h=['u النسبي=<span class="hl">'+u.toFixed(3)+'c</span>.'];if(Math.abs(up)>=.999)h.push('💡 عندما u′=c يبقى u=c.');if(Math.abs(v-.8)<.03&&Math.abs(up-.3)<.03)h.push('🎯 0.8c مع 0.3c يعطي ≈0.887c بدل 1.1c.');h.push('عند السرعات الصغيرة يعود القانون تقريبًا إلى غاليليو.');return h;},
+  equations:['u=\\frac{u′+v}{1+\\frac{u′v}{c^2}}','u′=\\frac{u-v}{1-\\frac{uv}{c^2}}'],
+  theory:'يشتق القانون من dx/dt بعد تطبيق لورنتز على المكان والزمن معًا. الحد u′v/c² في المقام صغير جدًا في حياتنا اليومية لكنه حاسم قرب c. النتيجة تمنع أن يصبح جسم دون ضوئي أسرع من الضوء بمجرد تغيير المرجع، وتحافظ على c إذا كان الجسم فوتونًا.',
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const v=s.ctrl.v,up=s.ctrl.up,u=(up+v)/(1+v*up),ug=up+v,x=W*.18,w=W*.68,y1=H*.38,y2=H*.70;ctx.strokeStyle='#334155';ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x+w,y1);ctx.moveTo(x,y2);ctx.lineTo(x+w,y2);ctx.stroke();ctx.strokeStyle='#fbbf24';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x+clamp(Math.abs(ug),0,1.5)/1.5*w,y1);ctx.stroke();ctx.strokeStyle='#22d3ee';ctx.beginPath();ctx.moveTo(x,y2);ctx.lineTo(x+Math.abs(u)/1.5*w,y2);ctx.stroke();const xc=x+w/1.5;ctx.strokeStyle='#ef4444';ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(xc,y1-30);ctx.lineTo(xc,y2+30);ctx.stroke();ctx.setLineDash([]);label(ctx,'c',xc,y1-44,'#ef4444','center',11,true);label(ctx,'غاليلي '+ug.toFixed(2)+'c',x,y1-24,'#fbbf24','left',11,true);label(ctx,'نسبي '+u.toFixed(3)+'c',x,y2-24,'#22d3ee','left',11,true);}
 },
 
 pound_rebka: {
@@ -5620,7 +5818,7 @@ window.addEventListener('load',()=>{
         <h1 class="text-xl font-bold mb-2 text-slate-300">أهلًا وسهلًا بك في</h1>
         <h2 class="text-3xl md:text-4xl font-black mb-4 text-gold leading-tight">مختبر الفيزياء التفاعلي</h2>
         <p class="text-slate-400 text-sm mb-6 leading-relaxed">
-          منصة تعليمية تضم <b class="text-cyan">109 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">17 فرعًا فيزيائيًا</b>:
+          منصة تعليمية تضم <b class="text-cyan">120 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">17 فرعًا فيزيائيًا</b>:
           الميكانيكا، الكهرباء، البصريات، الموجات، ميكانيكا الكم، الفيزياء الذرية والجزيئية،
           فيزياء الصلبة، النانوتكنولوجي، الأطياف، النماذج النووية، الفيزياء النووية،
           الإلكترونيات التماثلية، الإلكترونيات الرقمية، الموائع والحرارة، والنسبية.
@@ -5646,7 +5844,7 @@ window.addEventListener('load',()=>{
   `;
   document.getElementById('welcome-start').onclick=()=>{
     overlay.innerHTML='';
-    toast('استمتع بـ <b>109 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
+    toast('استمتع بـ <b>120 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
   };
   renderFilterTabs();
 });
