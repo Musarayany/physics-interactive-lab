@@ -693,15 +693,19 @@ function drawScope(ctx, x, y, w, h, title, color, func, Vpeak){
   for (let i=0;i<=8;i++){ const gx=x+i*(w/8); ctx.beginPath(); ctx.moveTo(gx,y); ctx.lineTo(gx,y+h); ctx.stroke(); }
   const cx=x+w/2, cy=y+h/2;
   ctx.strokeStyle='rgba(148,163,184,.3)'; ctx.beginPath(); ctx.moveTo(x,cy); ctx.lineTo(x+w,cy); ctx.stroke();
+  ctx.save();
+  ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
   ctx.strokeStyle=color; ctx.lineWidth=2.5;
   ctx.beginPath();
+  const safePeak=Math.max(1e-12,Math.abs(Vpeak));
   for (let i=0;i<=w;i++){
     const t=(i/w)*1;
     const v=func(t);
-    const py=cy-(v/Vpeak)*(h/2-10);
+    const py=cy-(v/safePeak)*(h/2-10);
     i===0?ctx.moveTo(x+i,py):ctx.lineTo(x+i,py);
   }
   ctx.stroke();
+  ctx.restore();
   label(ctx,title,x+w/2,y-12,color,'center',13,true);
 }
 
@@ -1343,7 +1347,7 @@ work_energy: {
     {id:'F',label:'القوة المؤثرة F',min:0,max:100,step:2,value:30,unit:'N',help:'قوة أفقية ثابتة.'},
     {id:'d',label:'المسافة d',min:1,max:15,step:0.5,value:5,unit:'m',help:'نهاية المسار.'},
     {id:'m',label:'الكتلة m',min:0.5,max:15,step:0.5,value:4,unit:'kg'},
-    {id:'mus',label:'معامل الاحتكاك السكوني μs',min:0,max:0.6,step:0.05,value:0.15,unit:'',help:'يحدد شرط بدء الحركة.'},
+    {id:'mus',label:'معامل الاحتكاك السكوني μs',min:0,max:1.2,step:0.05,value:0.15,unit:'',help:'يحدد شرط بدء الحركة. ارفعه حتى تصبح μs mg أكبر من القوة المؤثرة فتتوقف البداية.'},
     {id:'muk',label:'معامل الاحتكاك الحركي μk',min:0,max:0.5,step:0.05,value:0.10,unit:'',help:'يحدد الاحتكاك بعد بدء الحركة.'}
   ],
   reset(s){s.t=0;s.x=0;s.v=0;},
@@ -1362,7 +1366,9 @@ work_energy: {
     const Wnet=Fnet*s.x,KE=0.5*s.ctrl.m*s.v*s.v;
     return[
       {l:'الحركة تبدأ؟',v:starts?'نعم':'لا',u:'',c:'gold'},
-      {l:'القوة الصافية F_net',v:Fnet.toFixed(2),u:'N',c:'cyan'},
+      {l:'حد الاحتكاك السكوني fs,max',v:fsMax.toFixed(2),u:'N'},
+      {l:'هامش بدء الحركة F−fs,max',v:(s.ctrl.F-fsMax).toFixed(2),u:'N',c:starts?'cyan':'gold'},
+      {l:'القوة الصافية بعد الحركة F_net',v:Fnet.toFixed(2),u:'N',c:'cyan'},
       {l:'W_net حتى الموضع الحالي',v:Wnet.toFixed(2),u:'J',c:'gold'},
       {l:'الطاقة الحركية KE',v:KE.toFixed(2),u:'J',c:'cyan'}
     ];
@@ -1480,7 +1486,7 @@ photoelectric: {
   },
   readouts(s){const h=CONST.h_eVs,Ephot=h*s.ctrl.nu*1e14;const KE=Math.max(0,Ephot-s.ctrl.phi);return[
     {l:'hν',v:Ephot.toFixed(2),u:'eV',c:'gold'},{l:'KE_max',v:KE.toFixed(2),u:'eV',c:'cyan'},
-    {l:'ν_th',v:(s.ctrl.phi/h/1e14).toFixed(2),u:'×10¹⁴ Hz'},{l:'الإلكترونات',v:s.electrons.length,u:''}];},
+    {l:'ν_th',v:(s.ctrl.phi/h/1e14).toFixed(2),u:'×10¹⁴ Hz'},{l:'شدة/فيض نسبي',v:s.ctrl.int.toFixed(0),u:'×'},{l:'الإلكترونات المرئية',v:s.electrons.length,u:''}];},
   hints(s){const h=CONST.h_eVs,Ephot=h*s.ctrl.nu*1e14;const hh=[];
     if(Ephot<s.ctrl.phi)hh.push(`🚫 hν = ${Ephot.toFixed(2)} eV < φ ⇒ <b>لا انبعاث</b>.`);
     else hh.push(`✅ KE_max = <span class="hl">${(Ephot-s.ctrl.phi).toFixed(2)} eV</span>.`);
@@ -1495,8 +1501,9 @@ photoelectric: {
     label(ctx,'معدن',plateX+10,H/2+120,'#fbbf24','center',13,true);
     const h=CONST.h_eVs;const Ephot=h*s.ctrl.nu*1e14;
     const col=Ephot<2.2?'#ef4444':Ephot<3?'#f59e0b':Ephot<3.8?'#a3e635':'#60a5fa';
-    for(let i=0;i<8;i++){
-      const x=(s.t*80+i*40)%(plateX-20);const y=H/2-80+i*20;
+    const rays=2+s.ctrl.int;
+    for(let i=0;i<rays;i++){
+      const x=(s.t*(45+7*s.ctrl.int)+i*36)%(plateX-20);const y=H/2-90+(i%10)*20;
       ctx.strokeStyle=col;ctx.lineWidth=3;
       ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+20,y);ctx.stroke();
       arrow(ctx,x+20,y,x+30,y,col,2.5,8);
@@ -2546,10 +2553,11 @@ fusion: {
   ],
   reset(s){s.t=0;s.protons=[];for(let i=0;i<20;i++)s.protons.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*80,vy:(Math.random()-0.5)*80});s.heliums=[];s.fusions=0;s.flashes=[];},
   update(s,dt){
-    s.t+=dt*s.ctrl.speed;
+    const dte=dt*s.ctrl.speed;
+    s.t+=dte;
     const sF=s.ctrl.T/14;
     s.protons.forEach(p=>{
-      p.x+=p.vx*dt*sF;p.y+=p.vy*dt*sF;
+      p.x+=p.vx*dte*sF;p.y+=p.vy*dte*sF;
       if(p.x<10||p.x>W-10)p.vx*=-1;
       if(p.y<10||p.y>H-10)p.vy*=-1;
       p.x=clamp(p.x,10,W-10);p.y=clamp(p.y,10,H-10);
@@ -2577,13 +2585,13 @@ fusion: {
     while(s.protons.length<target&&s.protons.length<30){
       s.protons.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*80,vy:(Math.random()-0.5)*80});
     }
-    s.heliums.forEach(h=>h.life+=dt);
+    s.heliums.forEach(h=>h.life+=dte);
     s.heliums=s.heliums.filter(h=>h.life<5);
-    s.flashes=s.flashes.filter(f=>{f.t+=dt;return f.t<0.8;});
+    s.flashes=s.flashes.filter(f=>{f.t+=dte;return f.t<0.8;});
   },
   readouts(s){return[
     {l:'البروتونات',v:s.protons.length,u:'',c:'gold'},{l:'نوى He',v:s.heliums.length,u:''},
-    {l:'اندماجات',v:s.fusions,u:'',c:'cyan'},{l:'T',v:s.ctrl.T+'M K',u:''}];},
+    {l:'اندماجات',v:s.fusions,u:'',c:'cyan'},{l:'T',v:s.ctrl.T+'M K',u:''},{l:'سرعة المحاكاة',v:s.ctrl.speed.toFixed(1),u:'×'}];},
   hints(s){const h=[];
     if(s.ctrl.T<10)h.push('🌡️ الحرارة منخفضة — الاندماج نادر.');
     else if(s.ctrl.T<20)h.push('☀️ حرارة شمسية — اندماج نشط.');
@@ -2627,11 +2635,11 @@ force_equilibrium: {
   welcome:{title:'⚖️ توازن القوى',steps:['شرط الاتزان: محصلة القوى = صفر.','ΣFx = 0 و ΣFy = 0.','غيّر مقدار وزاوية كل قوة.','حاول الوصول إلى حالة اتزان تام.']},
   controls:[
     {id:'F1',label:'القوة 1',min:1,max:20,step:0.5,value:10,unit:'N',help:'<b>F₁</b>'},
-    {id:'a1',label:'زاوية F₁',min:0,max:360,step:5,value:0,unit:'°',help:'<b>θ₁</b>'},
+    {id:'a1',label:'زاوية F₁',min:0,max:355,step:5,value:0,unit:'°',help:'<b>θ₁</b> — 360° يساوي 0°، لذلك ينتهي المنزلق عند 355° لتجنب تكرار الوضع نفسه.'},
     {id:'F2',label:'القوة 2',min:1,max:20,step:0.5,value:10,unit:'N',help:'<b>F₂</b>'},
-    {id:'a2',label:'زاوية F₂',min:0,max:360,step:5,value:120,unit:'°',help:'<b>θ₂</b>'},
+    {id:'a2',label:'زاوية F₂',min:0,max:355,step:5,value:120,unit:'°',help:'<b>θ₂</b>'},
     {id:'F3',label:'القوة 3',min:1,max:20,step:0.5,value:10,unit:'N',help:'<b>F₃</b>'},
-    {id:'a3',label:'زاوية F₃',min:0,max:360,step:5,value:240,unit:'°',help:'<b>θ₃</b>'}
+    {id:'a3',label:'زاوية F₃',min:0,max:355,step:5,value:240,unit:'°',help:'<b>θ₃</b>'}
   ],
   reset(s){s.t=0;},update(s,dt){s.t+=dt;},
   readouts(s){
@@ -2722,8 +2730,10 @@ friction: {
     const N=s.ctrl.m*g*Math.cos(rad);
     const fmax=s.ctrl.mu*N;
     const critical=Math.atan(s.ctrl.mu)*180/Math.PI;
+    const ak=g*(Math.sin(rad)-s.ctrl.muk*Math.cos(rad));
     return[{l:'mg sinθ',v:Fp.toFixed(2),u:'N',c:'gold'},{l:'N',v:N.toFixed(2),u:'N'},
       {l:'fs,max',v:fmax.toFixed(2),u:'N',c:'cyan'},{l:'الزاوية الحرجة',v:critical.toFixed(1),u:'°'},
+      {l:'a بعد بدء الانزلاق',v:ak.toFixed(2),u:'m/s²',c:'gold'},
       {l:'الحالة',v:Fp>fmax?'🏃 ينزلق':'✋ ثابت',u:''}];
   },
   hints(s){
@@ -2734,7 +2744,8 @@ friction: {
     if(s.ctrl.th<critical)h.push('θ < θc ⇒ الجسم ثابت.');
     else if(Math.abs(s.ctrl.th-critical)<1)h.push('🎯 على الحد الفاصل!');
     else h.push('θ > θc ⇒ ينزلق.');
-    h.push('ملاحظة: الكتلة لا تؤثر.');
+    h.push('μs يقرر <b>متى يبدأ</b> الانزلاق، أما μk فيقرر <b>تسارع الجسم بعد أن يبدأ</b>. لذلك قد تغيّر μk والجسم ما زال ثابتًا، لكن قيمة a المتوقعة بعد الانزلاق تتغير فورًا.');
+    h.push('ملاحظة: الكتلة لا تؤثر في الزاوية الحرجة في هذا النموذج.');
     return h;
   },
   equations:['f_s\\leq\\mu_sN','\\tan\\theta_c=\\mu_s','a=g(\\sin\\theta-\\mu_k\\cos\\theta)\\quad(\\text{بعد الانزلاق})'],
@@ -3125,11 +3136,11 @@ cavendish: {
     {id:'k',label:'ثابت الالتواء κ',min:0.000001,max:0.00002,step:0.000001,value:0.000005,unit:'N·m/rad'}
   ],
   reset(s){s.t=0;}, update(s,dt){s.t+=dt;},
-  readouts(s){const G=CONST.G,F=G*s.ctrl.M*s.ctrl.m/(s.ctrl.r*s.ctrl.r),th=F*.1/s.ctrl.k;return[{l:'قوة الجذب',v:F.toExponential(2),u:'N',c:'gold'},{l:'زاوية الالتواء',v:(th*180/Math.PI).toFixed(4),u:'°',c:'cyan'}];},
+  readouts(s){const G=CONST.G,F=G*s.ctrl.M*s.ctrl.m/(s.ctrl.r*s.ctrl.r),tau=F*s.ctrl.ell,th=tau/s.ctrl.k;return[{l:'قوة الجذب',v:F.toExponential(2),u:'N',c:'gold'},{l:'عزم الجذب τ=Fℓ',v:tau.toExponential(2),u:'N·m'},{l:'زاوية الالتواء θ=τ/κ',v:(th*180/Math.PI).toFixed(4),u:'°',c:'cyan'}];},
   equations:['F=G\\frac{Mm}{r^2}','\\tau=\\kappa\\theta'],
   theory:'استخدم كافنديش ميزان التواء شديد الحساسية لقياس التجاذب بين كتل مختبرية، ومنه أمكن تحديد ثابت الجاذبية.',
   hints(s){const F=CONST.G*s.ctrl.M*s.ctrl.m/(s.ctrl.r*s.ctrl.r);return[`القوة صغيرة جدًا: <b>${F.toExponential(2)} N</b>.`,`تقليل المسافة إلى النصف يزيد القوة أربع مرات.`];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;const F=CONST.G*s.ctrl.M*s.ctrl.m/(s.ctrl.r*s.ctrl.r);const ang=Math.min(.45,F*2e7);ctx.save();ctx.translate(cx,cy);ctx.rotate(ang);ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-110,0);ctx.lineTo(110,0);ctx.stroke();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(-110,0,16,0,Math.PI*2);ctx.arc(110,0,16,0,Math.PI*2);ctx.fill();ctx.restore();ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(cx,55);ctx.lineTo(cx,cy);ctx.stroke();ctx.fillStyle='#f87171';ctx.beginPath();ctx.arc(cx-165,cy-35,30,0,Math.PI*2);ctx.arc(cx+165,cy+35,30,0,Math.PI*2);ctx.fill();label(ctx,'ميزان الالتواء',cx,H-35,'#cbd5e1','center',14,true);}
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;const F=CONST.G*s.ctrl.M*s.ctrl.m/(s.ctrl.r*s.ctrl.r),tau=F*s.ctrl.ell,th=tau/s.ctrl.k;const arm=clamp(110*s.ctrl.ell/.10,60,210),ang=clamp(th*18,-.45,.45);ctx.save();ctx.translate(cx,cy);ctx.rotate(ang);ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-arm,0);ctx.lineTo(arm,0);ctx.stroke();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(-arm,0,16,0,Math.PI*2);ctx.arc(arm,0,16,0,Math.PI*2);ctx.fill();ctx.restore();ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(cx,55);ctx.lineTo(cx,cy);ctx.stroke();ctx.fillStyle='#f87171';ctx.beginPath();ctx.arc(cx-165,cy-35,30,0,Math.PI*2);ctx.arc(cx+165,cy+35,30,0,Math.PI*2);ctx.fill();label(ctx,'ذراع الميزان ℓ = '+s.ctrl.ell.toFixed(2)+' m',cx,H-52,'#22d3ee','center',11,true);label(ctx,'الدوران مكبّر بصريًا ×18',cx,H-32,'#64748b','center',9,false);}
 },
 
 foucault: {
@@ -3186,6 +3197,12 @@ michelson_morley: {
         reveal:false,
         pulse:0
       };
+    }
+  },
+  onControlChange(s,id){
+    if(id==='mode'){
+      s.mm=null;
+      this.reset(s);
     }
   },
   update(s,dt){
@@ -3352,7 +3369,10 @@ michelson_morley: {
     const phase=2*Math.PI*q.rot;
     const rows=[
       {l:'مرحلة المختبر',v:(s.mm.stage+1)+'/7',u:'',c:'gold'},
-      {l:'الأدوات المركبة',v:built,u:'/ 5',c:'cyan'}
+      {l:'الأدوات المركبة',v:built,u:'/ 5',c:'cyan'},
+      {l:'ريح الأثير المفترضة v',v:s.ctrl.v.toFixed(0),u:'km/s'},
+      {l:'طول الذراع L',v:s.ctrl.L.toFixed(1),u:'m'},
+      {l:'الطول الموجي λ',v:s.ctrl.lam.toFixed(0),u:'nm'}
     ];
     if(s.mm.stage>=2){
       rows.push({l:'زمن الذراع الموازي t∥',v:(q.tp*1e9).toFixed(6),u:'ns'});
@@ -3851,7 +3871,7 @@ kelvin_dropper: {
   welcome:{title:'💧 قطّارة كلفن',steps:['غيّر معدل القطرات.','راقب تراكم الجهد على الوعائين.','شاهد التغذية الراجعة الكهروستاتيكية وهي تضخّم فصل الشحنة.']},
   controls:[{id:'rate',label:'معدل القطرات',min:1,max:12,step:1,value:6,unit:'قطرة/s'},{id:'leak',label:'تسرب الشحنة',min:0,max:1,step:0.05,value:0.15,unit:''}],
   reset(s){s.t=0;s.V=0;},update(s,dt){s.t+=dt;s.V+=((s.ctrl.rate*180)*(1+Math.min(4,s.V/5000))-s.ctrl.leak*s.V)*dt;s.V=Math.min(s.V,30000);},
-  readouts(s){return[{l:'فرق الجهد',v:(s.V/1000).toFixed(1),u:'kV',c:'gold'},{l:'معدل القطرات',v:s.ctrl.rate.toFixed(0),u:'s⁻¹',c:'cyan'}];},
+  readouts(s){const gain=(s.ctrl.rate*180)*(1+Math.min(4,s.V/5000)),loss=s.ctrl.leak*s.V;return[{l:'فرق الجهد',v:(s.V/1000).toFixed(2),u:'kV',c:'gold'},{l:'معدل القطرات',v:s.ctrl.rate.toFixed(0),u:'s⁻¹',c:'cyan'},{l:'معدل الشحن اللحظي',v:gain.toFixed(0),u:'V/s'},{l:'فقد التسرب',v:loss.toFixed(0),u:'V/s'}];},
   equations:['\\frac{dQ}{dt}\\propto \\dot N','V=Q/C'],
   theory:'قطّارة كلفن مثال أنيق على الحث الكهروستاتيكي والتغذية الراجعة الموجبة: قطرات الماء تنقل شحنة إلى أوعية متقابلة فيزداد فرق الجهد تدريجيًا.',
   hints(s){return[`فرق الجهد الحالي <b>${(s.V/1000).toFixed(1)} kV</b>.`,'زيادة تسرب الشحنة تحد من نمو الجهد.'];},
@@ -4033,11 +4053,11 @@ eotvos: {
   welcome:{title:'⚖️ تجربة إيتفوش',steps:['غيّر فرق نسبة الكتلة الثقالية إلى القصورية.','راقب عزم ميزان اللي.','في التكافؤ المثالي يجب أن يقترب العزم من الصفر.']},
   controls:[{id:'eta',label:'فرق نسبة mᵍ/mᵢ',min:-10,max:10,step:.5,value:0,unit:'×10⁻⁹'},{id:'m',label:'كتلة الاختبار',min:.1,max:2,step:.1,value:1,unit:'kg'}],
   reset(s){},update(s,dt){},
-  readouts(s){const a=9.81*s.ctrl.eta*1e-9,t=s.ctrl.m*a*.2;return[{l:'فرق التسارع',v:(a*1e9).toFixed(2),u:'nm/s²',c:'gold'},{l:'العزم',v:(t*1e9).toFixed(3),u:'nN·m',c:'cyan'}];},
+  readouts(s){const a=9.81*s.ctrl.eta*1e-9,t=s.ctrl.m*a*.2;return[{l:'كتلة الاختبار',v:s.ctrl.m.toFixed(2),u:'kg'},{l:'الوزن mg',v:(s.ctrl.m*9.81).toFixed(3),u:'N'},{l:'فرق التسارع',v:(a*1e9).toFixed(2),u:'nm/s²',c:'gold'},{l:'العزم التفاضلي',v:(t*1e9).toFixed(3),u:'nN·m',c:'cyan'}];},
   equations:['\\eta=2\\frac{a_1-a_2}{a_1+a_2}'],
   theory:'اختبارات إيتفوش تقارن استجابة مواد مختلفة للجاذبية، وتختبر مبدأ التكافؤ الذي يشكل أساس النسبية العامة.',
-  hints(s){return[Math.abs(s.ctrl.eta)<.5?'التكافؤ هنا شبه مثالي؛ العزم قريب جدًا من الصفر.':'ظهر انحراف افتراضي عن التكافؤ في المحاكاة.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(cx,40);ctx.lineTo(cx,cy);ctx.stroke();ctx.save();ctx.translate(cx,cy);ctx.rotate(s.ctrl.eta*.01);ctx.strokeStyle='#fbbf24';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-150,0);ctx.lineTo(150,0);ctx.stroke();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(-150,0,22,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f472b6';ctx.beginPath();ctx.arc(150,0,22,0,Math.PI*2);ctx.fill();ctx.restore();}
+  hints(s){const h=[Math.abs(s.ctrl.eta)<.5?'التكافؤ هنا شبه مثالي؛ العزم التفاضلي قريب جدًا من الصفر.':'ظهر انحراف افتراضي عن التكافؤ في المحاكاة.'];if(Math.abs(s.ctrl.eta)<.5)h.push('عند η≈0 ستغيّر الكتلة قيمة mg، لكن <b>لن تولّد عزماً تفاضلياً</b>؛ وهذه ليست مشكلة في المحاكاة بل معنى مبدأ التكافؤ نفسه.');return h;},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(cx,40);ctx.lineTo(cx,cy);ctx.stroke();ctx.save();ctx.translate(cx,cy);ctx.rotate(s.ctrl.eta*.01);ctx.strokeStyle='#fbbf24';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-150,0);ctx.lineTo(150,0);ctx.stroke();const rr=16+5*Math.sqrt(s.ctrl.m);ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(-150,0,rr,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f472b6';ctx.beginPath();ctx.arc(150,0,rr,0,Math.PI*2);ctx.fill();ctx.restore();}
 },
 
 hertz_em: {
@@ -4167,6 +4187,10 @@ resistor_network_lab: {
     if(!Array.isArray(s.wires))s.wires=[];
     if(s.lastGoal!==s.ctrl.goal){s.wires=[];s.selectedNode=null;s.dragFrom=null;s.lastGoal=s.ctrl.goal;s.ctrl.answer='';}
   },
+  onControlChange(s,id){
+    if(id==='goal')this.reset(s);
+    // V و R تغير القراءات فقط ولا تمسح الأسلاك التي بناها الطالب.
+  },
   hardReset(s){s.wires=[];s.selectedNode=null;s.dragFrom=null;s.dragCurrent=null;s.ctrl.answer='';this.syncAnswerField();},
   syncAnswerField(){const el=document.getElementById('ctrl-answer');if(el)el.value=this.ctrl.answer||'';},
   update(s,dt){s.t=(s.t||0)+dt;},
@@ -4195,6 +4219,7 @@ resistor_network_lab: {
     const st=this.check(s),c=this.calc(s);
     if(!st.ok)return [
       {l:'حالة الدائرة',v:st.extra.length?'توصيل غير صحيح':'قيد البناء',u:'',c:st.extra.length?'gold':'cyan'},
+      {l:'جهد البطارية المضبوط',v:s.ctrl.V.toFixed(2),u:'V',c:'gold'},
       {l:'الوصلات الصحيحة',v:`${st.done} / ${st.total}`,u:''},
       {l:'الأميتر A',v:'—',u:'A'},{l:'الفولتميتر V على R₂',v:'—',u:'V'}
     ];
@@ -4647,7 +4672,7 @@ measurement_graph_lab: {
   ],
   reset(s){},update(s,dt){},
   calc(s){const V=s.ctrl.R*s.ctrl.I;const Vm=Math.round(V/s.ctrl.dV)*s.ctrl.dV;const Im=Math.max(s.ctrl.dI,Math.round(s.ctrl.I/s.ctrl.dI)*s.ctrl.dI);const Rm=Vm/Im;const err=Math.abs(Rm-s.ctrl.R)/s.ctrl.R*100;return{V,Vm,Im,Rm,err};},
-  readouts(s){const c=this.calc(s);return[{l:'قراءة الفولتميتر',v:c.Vm.toFixed(2),u:'V',c:'gold'},{l:'قراءة الأميتر',v:c.Im.toFixed(3),u:'A',c:'cyan'},{l:'R من V/I',v:c.Rm.toFixed(2),u:'Ω'},{l:'الخطأ النسبي',v:c.err.toFixed(2),u:'%'}];},
+  readouts(s){const c=this.calc(s);return[{l:'قراءة الفولتميتر',v:c.Vm.toFixed(2),u:'V',c:'gold'},{l:'أقل تدريج للفولتميتر',v:s.ctrl.dV.toFixed(2),u:'V'},{l:'قراءة الأميتر',v:c.Im.toFixed(3),u:'A',c:'cyan'},{l:'أقل تدريج للأميتر',v:s.ctrl.dI.toFixed(3),u:'A'},{l:'R من V/I',v:c.Rm.toFixed(2),u:'Ω'},{l:'الخطأ النسبي',v:c.err.toFixed(2),u:'%'}];},
   equations:['V=IR','R_{\\rm meas}=\\frac{V_{\\rm meas}}{I_{\\rm meas}}','\\%\\,error=\\frac{|R_{\\rm meas}-R|}{R}\\times100'],
   theory:'يعطي كل جهاز قراءة محدودة بأقل تدريج. في علاقة أومية مثالية يكون منحنى V مقابل I خطيًا وميله يساوي المقاومة R. الوحدات القياسية المستخدمة هنا هي الفولت V والأمبير A والأوم Ω.',
   hints(s){const c=this.calc(s);return[`ميل منحنى V–I النظري يساوي <span class="hl">${s.ctrl.R.toFixed(0)} Ω</span>.`,`تقليل أقل تدريج يحسن دقة القراءة غالبًا؛ الخطأ الحالي في R يساوي <span class="hl">${c.err.toFixed(2)}%</span>.`];},
@@ -4832,12 +4857,12 @@ oscilloscope_ac_voltage_lab: {
   welcome:{title:'〰️ قياس تيار AC بالأوسلسكوب',steps:['مرّر التيار الجيبي في مقاومة شنت معلومة.','قِس Vpp للشنت من الأقسام الرأسية.','استنتج V_peak=Vpp/2 ثم I_peak=V_peak/R_sh.','للتيار الجيبي I_rms=I_peak/√2.']},
   controls:[{id:'Ipk',label:'I_peak الحقيقي',min:.01,max:1,step:.01,value:.20,unit:'A'},{id:'Rsh',label:'مقاومة الشنت R_sh',min:1,max:100,step:1,value:20,unit:'Ω'},{id:'vdiv',label:'V/div',min:.1,max:10,step:.1,value:2,unit:'V/div'},{id:'f',label:'التردد',min:1,max:1000,step:1,value:100,unit:'Hz'}],
   reset(s){s.t=0;},update(s,dt){s.t+=dt;},
-  calc(s){const Vpk=s.ctrl.Ipk*s.ctrl.Rsh,Vpp=2*Vpk,npp=Vpp/s.ctrl.vdiv,Irms=s.ctrl.Ipk/Math.SQRT2;return{Vpk,Vpp,npp,Irms};},
-  readouts(s){const c=this.calc(s);return[{l:'V_sh,pp',v:c.Vpp.toFixed(3),u:'V',c:'cyan'},{l:'قمة–قمة على الشاشة',v:c.npp.toFixed(2),u:'div'},{l:'I_peak المقاس',v:(c.Vpk/s.ctrl.Rsh).toFixed(4),u:'A'},{l:'I_rms (جيب)',v:c.Irms.toFixed(4),u:'A',c:'gold'}];},
+  calc(s){const Vpk=s.ctrl.Ipk*s.ctrl.Rsh,Vpp=2*Vpk,npp=Vpp/s.ctrl.vdiv,Irms=s.ctrl.Ipk/Math.SQRT2,screenTime=.020,cycles=s.ctrl.f*screenTime;return{Vpk,Vpp,npp,Irms,screenTime,cycles};},
+  readouts(s){const c=this.calc(s);return[{l:'V_sh,pp',v:c.Vpp.toFixed(3),u:'V',c:'cyan'},{l:'قمة–قمة على الشاشة',v:c.npp.toFixed(2),u:'div'},{l:'عدد الدورات خلال 20 ms',v:c.cycles.toFixed(2),u:'cycle'},{l:'I_peak المقاس',v:(c.Vpk/s.ctrl.Rsh).toFixed(4),u:'A'},{l:'I_rms (جيب)',v:c.Irms.toFixed(4),u:'A',c:'gold'}];},
   equations:['V_{sh,peak}=I_{peak}R_{sh}','I_{peak}=\\frac{V_{pp}}{2R_{sh}}','I_{rms}=\\frac{I_{peak}}{\\sqrt2}\\quad(\\text{جيب})'],
   theory:'الأوسلسكوب يعرض جهد الشنت المتناسب لحظيًا مع التيار. لتيار جيبي مثالي يمكن تحويل Vpp إلى Ipeak ثم إلى Irms. هذه الطريقة تتطلب شنتًا مناسبًا من حيث المقاومة والقدرة وعرض الحزمة في المختبر الحقيقي.',
   hints(s){const c=this.calc(s);return[c.npp>4?'موجة الشنت قد تتجاوز ارتفاع الشاشة؛ زد V/div أو استخدم شنتًا أصغر.':'المدى الرأسي مناسب.','علاقة I_rms=I_peak/√2 خاصة بالموجة الجيبية.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),vp=Math.max(c.Vpk,2*s.ctrl.vdiv);drawScope(ctx,55,60,W-110,H-120,'V_sh(t) على الأوسلسكوب','#a3e635',t=>c.Vpk*Math.sin(4*Math.PI*t),vp);label(ctx,`I_rms=${c.Irms.toFixed(3)} A`,W/2,H-28,'#fbbf24','center',12,true);}
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),fullScale=2*s.ctrl.vdiv;drawScope(ctx,55,60,W-110,H-120,'V_sh(t) — نافذة زمنية 20 ms','#a3e635',t=>c.Vpk*Math.sin(2*Math.PI*c.cycles*t),fullScale);label(ctx,`I_rms=${c.Irms.toFixed(3)} A  |  f=${s.ctrl.f.toFixed(0)} Hz  |  ${c.cycles.toFixed(2)} دورة/الشاشة`,W/2,H-28,'#fbbf24','center',11,true);}
 },
 
 
@@ -4845,14 +4870,14 @@ oscilloscope_frequency_lab: {
   title:'قياس تردد التيار المتناوب بواسطة الأوسلسكوب', icon:'⏱️', category:'كهرباء',
   desc:'استخرج زمن الدورة T من الأقسام الأفقية ثم احسب f=1/T.',
   welcome:{title:'⏱️ قياس التردد',steps:['غيّر التردد الحقيقي.','غيّر Time/div.','قِس عدد الأقسام لدورة كاملة.','احسب T ثم f.']},
-  controls:[{id:'f',label:'التردد الحقيقي',min:1,max:5000,step:1,value:250,unit:'Hz'},{id:'tdiv',label:'Time/div',min:.00002,max:.02,step:.00002,value:.001,unit:'s/div'},{id:'Vpk',label:'V_peak',min:.5,max:10,step:.5,value:3,unit:'V'}],
+  controls:[{id:'f',label:'التردد الحقيقي',min:1,max:5000,step:1,value:250,unit:'Hz'},{id:'tdiv',label:'Time/div',min:.00002,max:.02,step:.00002,value:.001,unit:'s/div'},{id:'Vpk',label:'V_peak',min:.5,max:10,step:.5,value:3,unit:'V'},{id:'vdiv',label:'V/div',min:.5,max:5,step:.5,value:2,unit:'V/div'}],
   reset(s){},update(s,dt){},
-  calc(s){const T=1/s.ctrl.f,n=T/s.ctrl.tdiv,fm=1/(n*s.ctrl.tdiv),cycles=8*s.ctrl.tdiv*s.ctrl.f;return{T,n,fm,cycles};},
-  readouts(s){const c=this.calc(s);return[{l:'الدورة أفقيًا',v:c.n.toFixed(3),u:'div',c:'cyan'},{l:'T',v:(c.T*1000).toFixed(4),u:'ms'},{l:'f المقاس',v:c.fm.toFixed(2),u:'Hz',c:'gold'},{l:'دورات على الشاشة',v:c.cycles.toFixed(2),u:''}];},
+  calc(s){const T=1/s.ctrl.f,n=T/s.ctrl.tdiv,fm=1/(n*s.ctrl.tdiv),cycles=8*s.ctrl.tdiv*s.ctrl.f,vpkDiv=s.ctrl.Vpk/s.ctrl.vdiv;return{T,n,fm,cycles,vpkDiv};},
+  readouts(s){const c=this.calc(s);return[{l:'الدورة أفقيًا',v:c.n.toFixed(3),u:'div',c:'cyan'},{l:'T',v:(c.T*1000).toFixed(4),u:'ms'},{l:'f المقاس',v:c.fm.toFixed(2),u:'Hz',c:'gold'},{l:'دورات على الشاشة',v:c.cycles.toFixed(2),u:''},{l:'V_peak رأسيًا',v:c.vpkDiv.toFixed(2),u:'div'}];},
   equations:['T=n_t(Time/div)','f=\\frac1T'],
   theory:'المسافة الأفقية بين نقطتين متماثلتين متتاليتين، مثل قمتين، تعطي زمن دورة واحدة بعد ضرب عدد الأقسام في Time/div. مقلوب الزمن هو التردد.',
-  hints(s){const c=this.calc(s);return[c.n<.5?'الدورة أصغر من نصف قسم؛ قلّل Time/div لزيادة دقة القراءة.':c.n>8?'الدورة أكبر من عرض الشاشة؛ زد Time/div.':'الدورة قابلة للقياس بوضوح على الشاشة.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s);drawScope(ctx,55,60,W-110,H-120,'Frequency measurement','#22d3ee',t=>s.ctrl.Vpk*Math.sin(2*Math.PI*c.cycles*t),s.ctrl.Vpk);}
+  hints(s){const c=this.calc(s),h=[c.n<.5?'الدورة أصغر من نصف قسم؛ قلّل Time/div لزيادة دقة القراءة.':c.n>8?'الدورة أكبر من عرض الشاشة؛ زد Time/div.':'الدورة قابلة للقياس بوضوح على الشاشة.'];h.push(c.vpkDiv>2?'⚠️ القمة تتجاوز النصف العلوي للشاشة؛ زد V/div.':'المدى الرأسي مناسب: V_peak='+c.vpkDiv.toFixed(2)+' div.');return h;},
+  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s);drawScope(ctx,55,60,W-110,H-120,'Frequency measurement','#22d3ee',t=>s.ctrl.Vpk*Math.sin(2*Math.PI*c.cycles*t),2*s.ctrl.vdiv);label(ctx,`f=${s.ctrl.f.toFixed(0)} Hz  |  T=${(c.T*1000).toFixed(3)} ms  |  Vpk=${c.vpkDiv.toFixed(2)} div`,W/2,H-28,'#fbbf24','center',11,true);}
 },
 
 rc_phase_lab: {
@@ -5942,6 +5967,19 @@ window.runFullLabAudit=function(){
    Direct on-canvas manipulation + measurement recorder.
    Bespoke direct-manipulation labs keep their own controls.
    ============================================================ */
+
+const CONTROL_RESET_KEYS=new Set(['projectile','spring','collision','freefall','radioactive_decay']);
+function applySimControlChange(sim,state,id,oldValue,newValue){
+  if(!sim||!state)return;
+  if(typeof sim.onControlChange==='function'){
+    sim.onControlChange(state,id,oldValue,newValue);
+    return;
+  }
+  // Only simulations whose initial conditions are defined by their controls are restarted.
+  // Stateful experiments otherwise keep their accumulated state so a change can be observed immediately.
+  if(CONTROL_RESET_KEYS.has(currentSimKey)&&typeof sim.reset==='function')sim.reset(state);
+}
+
 const LabWorkbench={
   init(sim,state){
     state._workbench={open:false,page:0,drag:null,hits:[],toggle:null,prev:null};
@@ -5962,8 +6000,7 @@ const LabWorkbench={
   },
   _apply(sim,state,c,val,old){
     state.ctrl[c.id]=val;sim.ctrl[c.id]=val;this._sync(c,val);
-    if(typeof sim.onControlChange==='function')sim.onControlChange(state,c.id,old,val);
-    else if(typeof sim.reset==='function')sim.reset(state);
+    applySimControlChange(sim,state,c.id,old,val);
     updateHintBox();
   },
   _round(v,step,min){
@@ -6056,7 +6093,10 @@ const MeasurementLab={
   records:[],simKey:null,fitShown:false,
   init(){
     this.records=[];this.simKey=currentSimKey;this.fitShown=false;
+    const shell=document.getElementById('measurement-lab');
+    if(shell)shell.style.display=currentSim&&currentSim.labV4?'none':'block';
     const xs=document.getElementById('measurement-x'),ys=document.getElementById('measurement-y');
+    if(currentSim&&currentSim.labV4)return;
     if(!xs||!ys||!currentSim)return;
     const controls=(currentSim.controls||[]).filter(c=>c&&c.id&&Number.isFinite(Number(currentState.ctrl[c.id])));
     xs.innerHTML=controls.map(c=>'<option value="'+pedagogyEsc(c.id)+'">'+pedagogyEsc(c.label)+' ('+pedagogyEsc(c.unit||'')+')</option>').join('');
@@ -6206,7 +6246,7 @@ function renderControls(){
         currentSim.ctrl[c.id]=newValue;
         input.querySelectorAll('.choice-btn').forEach(b=>b.classList.toggle('active',b===btn));
         document.getElementById('val-'+c.id).textContent=btn.textContent;
-        if(typeof currentSim.onControlChange==='function')currentSim.onControlChange(currentState,c.id,oldValue,newValue);else currentSim.reset(currentState);
+        applySimControlChange(currentSim,currentState,c.id,oldValue,newValue);
         if(c.help)showTip(btn,c.help,2600);
         updateHintBox();
         pedagogyExplainChange(c,oldValue,btn.textContent,before);
@@ -6217,7 +6257,7 @@ function renderControls(){
       input.addEventListener('input',(e)=>{
         const before=pedagogySnapshot(),oldValue=currentSim.ctrl[c.id],newValue=e.target.value;
         currentSim.ctrl[c.id]=newValue;
-        if(typeof currentSim.onControlChange==='function')currentSim.onControlChange(currentState,c.id,oldValue,newValue);
+        applySimControlChange(currentSim,currentState,c.id,oldValue,newValue);
         updateHintBox();
         pedagogyExplainChange(c,oldValue,newValue,before);
       });
@@ -6227,7 +6267,7 @@ function renderControls(){
       const before=pedagogySnapshot(),oldValue=currentSim.ctrl[c.id],newValue=parseFloat(e.target.value);
       currentSim.ctrl[c.id]=newValue;
       document.getElementById('val-'+c.id).innerHTML=currentSim.ctrl[c.id]+' <span class="text-slate-500 text-xs">'+(c.unit||'')+'</span>';
-      if(typeof currentSim.onControlChange==='function')currentSim.onControlChange(currentState,c.id,oldValue,newValue);else currentSim.reset(currentState);
+      applySimControlChange(currentSim,currentState,c.id,oldValue,newValue);
       if(!sliderTipTimers[c.id]||Date.now()-sliderTipTimers[c.id]>4000){
         sliderTipTimers[c.id]=Date.now();
         if(c.help)showTip(input,c.help,3000);
