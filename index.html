@@ -362,6 +362,22 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
   .effect-main{font-size:9.5px}
   #view-sim.professor-mode #sim-canvas-wrap{height:58vh!important}
 }
+
+/* Universal measurement lab — available to every experiment */
+#measurement-lab{margin-top:14px;padding-top:12px;border-top:1px solid #25304a}
+.measurement-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.measurement-title{font-size:11px;font-weight:900;color:#fbbf24}
+.measurement-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.measurement-grid select{width:100%;background:#070b14;border:1px solid #25304a;border-radius:9px;padding:7px 8px;color:#e2e8f0;font-size:9px}
+.measurement-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:7px}
+.measurement-actions button{border:1px solid #334155;background:#0b1220;border-radius:9px;padding:7px 4px;font-size:9px;font-weight:900;color:#cbd5e1}
+.measurement-actions button:hover{border-color:#22d3ee;color:#22d3ee}
+#measurement-chart-wrap{margin-top:8px;border:1px solid #25304a;border-radius:10px;background:rgba(7,11,20,.72);padding:5px}
+#measurement-chart{display:block;width:100%;height:145px}
+#measurement-table{font-size:8.5px;color:#94a3b8;line-height:1.55;margin-top:6px;max-height:82px;overflow:auto}
+.measurement-row{display:grid;grid-template-columns:24px 1fr 1fr;gap:5px;padding:3px 0;border-bottom:1px solid rgba(37,48,74,.55)}
+.measurement-note{font-size:8.5px;color:#64748b;line-height:1.45;margin-top:6px}
+@media(max-width:767px){#measurement-chart{height:120px}.measurement-grid{grid-template-columns:1fr}.measurement-actions button{font-size:8px;padding:6px 3px}}
 </style>
 </head>
 <body class="grid-bg">
@@ -506,6 +522,24 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
         <div class="glass rounded-2xl p-5" data-mobile-panel="results">
           <h3 class="font-bold mb-4 text-sm text-slate-300">📊 النتائج الآن</h3>
           <div id="readouts" class="space-y-2 text-sm"></div>
+          <div id="measurement-lab">
+            <div class="measurement-head">
+              <div class="measurement-title">📍 مختبر القياس — ابنِ علاقتك بنفسك</div>
+              <div id="measurement-count" class="text-[9px] text-slate-500">0 نقطة</div>
+            </div>
+            <div class="measurement-grid">
+              <select id="measurement-x" title="المتغير الذي ستغيره"></select>
+              <select id="measurement-y" title="الكمية التي ستقيسها"></select>
+            </div>
+            <div class="measurement-actions">
+              <button id="measurement-record" type="button">📍 سجّل نقطة</button>
+              <button id="measurement-fit" type="button">📈 استخرج الاتجاه</button>
+              <button id="measurement-clear" type="button">🗑 مسح القياسات</button>
+            </div>
+            <div id="measurement-chart-wrap"><canvas id="measurement-chart" width="320" height="145"></canvas></div>
+            <div id="measurement-table"></div>
+            <div id="measurement-note" class="measurement-note">غيّر متغيرًا واحدًا، سجّل نقطة، ثم كرر. الهدف أن تستنتج العلاقة من بياناتك لا من المعادلة الجاهزة.</div>
+          </div>
         </div>
       </div>
     <div id="explain-grid" class="grid lg:grid-cols-2 gap-5 mt-5">
@@ -5696,7 +5730,6 @@ function cardHTML(key,s,meta){
           <div class="text-4xl">${s.icon}</div>
           <div class="flex flex-col items-end gap-1">
             <span class="cat-tag" style="background:${meta.color}22;border-color:${meta.color}55;color:${meta.color}">${s.category}</span>
-            ${s.labV4?'<span class="cat-tag" style="background:rgba(34,211,238,.10);border-color:rgba(34,211,238,.45);color:#22d3ee">✨ مختبر استقصائي V4</span>':''}
           </div>
         </div>
         <h3 class="font-bold text-lg mb-1">${s.title}</h3>
@@ -5903,6 +5936,179 @@ window.runFullLabAudit=function(){
   console.table(failures);console.log('Full Lab Audit',result);return result;
 };
 
+
+/* ============================================================
+   UNIVERSAL HANDS-ON WORKBENCH
+   Direct on-canvas manipulation + measurement recorder.
+   Bespoke direct-manipulation labs keep their own controls.
+   ============================================================ */
+const LabWorkbench={
+  init(sim,state){
+    state._workbench={open:false,page:0,drag:null,hits:[],toggle:null,prev:null};
+  },
+  _controls(sim){
+    return (sim.controls||[]).filter(c=>c&&c.id&&(c.type==='buttons'||(Number.isFinite(Number(c.min))&&Number.isFinite(Number(c.max)))));
+  },
+  _sync(c,val){
+    const input=document.getElementById('ctrl-'+c.id),v=document.getElementById('val-'+c.id);
+    if(c.type==='buttons'){
+      if(input)input.querySelectorAll('.choice-btn').forEach(b=>b.classList.toggle('active',Number(b.dataset.value)===Number(val)));
+      const op=(c.options||[]).find(o=>Number(o.value)===Number(val));
+      if(v)v.textContent=op?op.label:String(val);
+      return;
+    }
+    if(input)input.value=val;
+    if(v)v.innerHTML=val+' <span class="text-slate-500 text-xs">'+(c.unit||'')+'</span>';
+  },
+  _apply(sim,state,c,val,old){
+    state.ctrl[c.id]=val;sim.ctrl[c.id]=val;this._sync(c,val);
+    if(typeof sim.onControlChange==='function')sim.onControlChange(state,c.id,old,val);
+    else if(typeof sim.reset==='function')sim.reset(state);
+    updateHintBox();
+  },
+  _round(v,step,min){
+    const st=Number(step)||1,lo=Number(min)||0;
+    const n=Math.round((v-lo)/st)*st+lo;
+    const dec=(String(st).split('.')[1]||'').length;
+    return Number(n.toFixed(Math.min(6,dec)));
+  },
+  draw(ctx,W,H,sim,state){
+    if(!state||!state._workbench||sim.labV4)return;
+    const wb=state._workbench,cs=this._controls(sim);
+    const toggle={x:W-145,y:H-42,w:132,h:30};wb.toggle=toggle;
+    ctx.save();
+    ctx.fillStyle=wb.open?'rgba(34,211,238,.15)':'rgba(7,11,20,.90)';
+    ctx.strokeStyle=wb.open?'#22d3ee':'#475569';ctx.lineWidth=1.4;ctx.fillRect(toggle.x,toggle.y,toggle.w,toggle.h);ctx.strokeRect(toggle.x,toggle.y,toggle.w,toggle.h);
+    label(ctx,wb.open?'✕ أغلق الأدوات':'🧰 أدوات مباشرة',toggle.x+toggle.w/2,toggle.y+toggle.h/2,wb.open?'#22d3ee':'#cbd5e1','center',9,true);
+    if(!wb.open||!cs.length){ctx.restore();return;}
+    const panelH=Math.min(126,Math.max(104,H*.24)),panel={x:12,y:H-panelH-48,w:W-24,h:panelH};
+    ctx.fillStyle='rgba(5,9,18,.96)';ctx.strokeStyle='#334155';ctx.fillRect(panel.x,panel.y,panel.w,panel.h);ctx.strokeRect(panel.x,panel.y,panel.w,panel.h);
+    label(ctx,'اسحب المقبض أفقيًا — أنت تتحكم بالتجربة من داخل المشهد',panel.x+12,panel.y+14,'#94a3b8','left',8,true);
+    const perPage=W<600?2:4,pages=Math.max(1,Math.ceil(cs.length/perPage));wb.page=Math.min(wb.page,pages-1);
+    const shown=cs.slice(wb.page*perPage,wb.page*perPage+perPage),gap=8,cardW=(panel.w-24-gap*(shown.length-1))/Math.max(1,shown.length);
+    wb.hits=[];
+    shown.forEach((c,i)=>{
+      const x=panel.x+12+i*(cardW+gap),y=panel.y+28,w=cardW,h=panel.h-38;
+      ctx.fillStyle='rgba(12,18,32,.90)';ctx.strokeStyle='#25304a';ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h);
+      const val=state.ctrl[c.id];
+      label(ctx,pedagogyPlain(c.label),x+w/2,y+13,'#e2e8f0','center',Math.min(9,W<600?7:9),true);
+      if(c.type==='buttons'){
+        const op=(c.options||[]).find(o=>Number(o.value)===Number(val));
+        label(ctx,op?op.label:String(val),x+w/2,y+37,'#fbbf24','center',W<600?7:9,true);
+        label(ctx,'المس للتبديل',x+w/2,y+h-12,'#64748b','center',7,false);
+        wb.hits.push({kind:'button',c,rect:{x,y,w,h}});
+      }else{
+        const bx=x+12,bw=w-24,by=y+h*.62;
+        ctx.strokeStyle='#475569';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+bw,by);ctx.stroke();
+        const min=Number(c.min),max=Number(c.max),t=(Number(val)-min)/(max-min||1),kx=bx+clamp(t,0,1)*bw;
+        ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(kx,by,9,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#cffafe';ctx.lineWidth=1;ctx.stroke();
+        label(ctx,String(val)+' '+(c.unit||''),x+w/2,y+37,'#fbbf24','center',W<600?8:10,true);
+        label(ctx,String(c.min),bx,by+19,'#64748b','center',7,false);label(ctx,String(c.max),bx+bw,by+19,'#64748b','center',7,false);
+        wb.hits.push({kind:'range',c,bar:{x:bx,y:by,w:bw,h:26},rect:{x,y,w,h}});
+      }
+    });
+    if(pages>1){
+      const py=panel.y+10;
+      const left={x:panel.x+panel.w-63,y:py,w:24,h:18},right={x:panel.x+panel.w-33,y:py,w:24,h:18};
+      [left,right].forEach(r=>{ctx.fillStyle='rgba(15,23,42,.95)';ctx.strokeStyle='#475569';ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeRect(r.x,r.y,r.w,r.h);});
+      label(ctx,'‹',left.x+12,left.y+9,'#cbd5e1','center',12,true);label(ctx,'›',right.x+12,right.y+9,'#cbd5e1','center',12,true);
+      wb.hits.push({kind:'prev',rect:left,pages});wb.hits.push({kind:'next',rect:right,pages});
+      label(ctx,(wb.page+1)+'/'+pages,panel.x+panel.w-88,py+9,'#64748b','center',7,true);
+    }
+    ctx.restore();
+  },
+  _inside(r,x,y){return r&&x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h;},
+  pointerDown(sim,state,p){
+    if(!state||!state._workbench||sim.labV4)return false;
+    const wb=state._workbench;
+    if(this._inside(wb.toggle,p.x,p.y)){wb.open=!wb.open;wb.drag=null;return true;}
+    if(!wb.open)return false;
+    const hit=(wb.hits||[]).find(h=>this._inside(h.rect||h.bar,p.x,p.y));
+    if(!hit)return false;
+    if(hit.kind==='prev'){wb.page=(wb.page-1+hit.pages)%hit.pages;return true;}
+    if(hit.kind==='next'){wb.page=(wb.page+1)%hit.pages;return true;}
+    if(hit.kind==='button'){
+      const opts=hit.c.options||[];if(!opts.length)return true;
+      const idx=Math.max(0,opts.findIndex(o=>Number(o.value)===Number(state.ctrl[hit.c.id])));
+      const op=opts[(idx+1)%opts.length],old=state.ctrl[hit.c.id];
+      this._apply(sim,state,hit.c,Number(op.value),old);return true;
+    }
+    if(hit.kind==='range'){
+      wb.drag={c:hit.c,bar:hit.bar,old:state.ctrl[hit.c.id]};
+      return this.pointerMove(sim,state,p)||true;
+    }
+    return false;
+  },
+  pointerMove(sim,state,p){
+    const wb=state&&state._workbench;if(!wb||!wb.drag||sim.labV4)return false;
+    const {c,bar}=wb.drag,min=Number(c.min),max=Number(c.max),old=state.ctrl[c.id],t=clamp((p.x-bar.x)/bar.w,0,1);
+    const val=this._round(min+t*(max-min),c.step,min);
+    if(Number(val)!==Number(old))this._apply(sim,state,c,val,old);
+    return true;
+  },
+  pointerUp(sim,state,p){
+    const wb=state&&state._workbench;if(!wb||!wb.drag||sim.labV4)return false;
+    wb.drag=null;return true;
+  }
+};
+
+const MeasurementLab={
+  records:[],simKey:null,fitShown:false,
+  init(){
+    this.records=[];this.simKey=currentSimKey;this.fitShown=false;
+    const xs=document.getElementById('measurement-x'),ys=document.getElementById('measurement-y');
+    if(!xs||!ys||!currentSim)return;
+    const controls=(currentSim.controls||[]).filter(c=>c&&c.id&&Number.isFinite(Number(currentState.ctrl[c.id])));
+    xs.innerHTML=controls.map(c=>'<option value="'+pedagogyEsc(c.id)+'">'+pedagogyEsc(c.label)+' ('+pedagogyEsc(c.unit||'')+')</option>').join('');
+    let reads=[];try{reads=currentSim.readouts(currentState)||[];}catch(e){}
+    ys.innerHTML=reads.map((r,i)=>'<option value="'+i+'">'+pedagogyEsc(pedagogyPlain(r.l))+' ('+pedagogyEsc(r.u||'')+')</option>').join('');
+    this.render();
+  },
+  record(){
+    if(!currentSim||!currentState)return;
+    const xs=document.getElementById('measurement-x'),ys=document.getElementById('measurement-y');
+    if(!xs||!ys||!xs.value)return toast('لا يوجد متغير رقمي صالح للتسجيل في هذه التجربة.','err',2300);
+    let reads=[];try{reads=currentSim.readouts(currentState)||[];}catch(e){}
+    const xi=xs.value,yi=Number(ys.value),r=reads[yi],x=Number(currentState.ctrl[xi]),y=r?parseFloat(String(r.v).replace(/,/g,'')):NaN;
+    if(!Number.isFinite(x)||!Number.isFinite(y))return toast('القراءة الحالية ليست رقمية؛ اختر كمية أخرى من Y.','err',2600);
+    this.records.push({x,y,xid:xi,yi,xt:xs.options[xs.selectedIndex].text,yt:ys.options[ys.selectedIndex]?ys.options[ys.selectedIndex].text:'Y'});
+    if(this.records.length>40)this.records.shift();
+    this.fitShown=false;this.render();toast('📍 تم تسجيل النقطة رقم '+this.records.length+'.','ok',1800);
+  },
+  clear(){this.records=[];this.fitShown=false;this.render();},
+  fit(){
+    if(this.records.length<2)return toast('سجّل نقطتين على الأقل أولًا.','err',2200);
+    this.fitShown=true;this.render();
+  },
+  _linear(){
+    const a=this.records;if(a.length<2)return null;let sx=0,sy=0,sxx=0,sxy=0;
+    a.forEach(p=>{sx+=p.x;sy+=p.y;sxx+=p.x*p.x;sxy+=p.x*p.y;});
+    const n=a.length,den=n*sxx-sx*sx;if(Math.abs(den)<1e-12)return null;
+    const m=(n*sxy-sx*sy)/den,b=(sy-m*sx)/n;
+    let ss=0,st=0,mean=sy/n;a.forEach(p=>{ss+=(p.y-(m*p.x+b))**2;st+=(p.y-mean)**2;});
+    return{m,b,r2:st>1e-12?1-ss/st:1};
+  },
+  render(){
+    const count=document.getElementById('measurement-count'),tab=document.getElementById('measurement-table'),note=document.getElementById('measurement-note'),canvas=document.getElementById('measurement-chart');
+    if(count)count.textContent=this.records.length+' نقطة';
+    if(tab)tab.innerHTML=this.records.slice(-8).map((p,i)=>'<div class="measurement-row"><span>'+((Math.max(0,this.records.length-8))+i+1)+'</span><span>X = '+Number(p.x).toPrecision(5)+'</span><span>Y = '+Number(p.y).toPrecision(5)+'</span></div>').join('');
+    if(note){
+      const fit=this._linear();
+      note.textContent=this.fitShown&&fit?('أفضل اتجاه خطي: Y ≈ '+fit.m.toPrecision(5)+' X '+(fit.b>=0?'+ ':'− ')+Math.abs(fit.b).toPrecision(4)+' ، R² ≈ '+fit.r2.toFixed(4)+'. لا تعتبر الخطية قانونًا إلا إذا كان لها معنى فيزيائي في هذه التجربة.'):'غيّر متغيرًا واحدًا، سجّل نقطة، ثم كرر. اختر X وY بما يناسب السؤال الذي تريد اختباره.';
+    }
+    if(!canvas)return;const c=canvas.getContext('2d'),Wc=canvas.width,Hc=canvas.height;c.clearRect(0,0,Wc,Hc);c.fillStyle='#070b14';c.fillRect(0,0,Wc,Hc);
+    const pad={l:38,r:10,t:12,b:28},pw=Wc-pad.l-pad.r,ph=Hc-pad.t-pad.b;
+    c.strokeStyle='#334155';c.lineWidth=1;c.beginPath();c.moveTo(pad.l,pad.t);c.lineTo(pad.l,Hc-pad.b);c.lineTo(Wc-pad.r,Hc-pad.b);c.stroke();
+    if(!this.records.length){c.fillStyle='#64748b';c.font='11px Cairo, sans-serif';c.textAlign='center';c.fillText('سجّل نقاطًا لتظهر العلاقة هنا',Wc/2,Hc/2);return;}
+    let xs=this.records.map(p=>p.x),ys=this.records.map(p=>p.y),xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);
+    if(xmin===xmax){xmin-=1;xmax+=1;}if(ymin===ymax){ymin-=1;ymax+=1;}
+    const mx=(xmax-xmin)*.08,my=(ymax-ymin)*.10;xmin-=mx;xmax+=mx;ymin-=my;ymax+=my;
+    const X=x=>pad.l+(x-xmin)/(xmax-xmin)*pw,Y=y=>pad.t+ph-(y-ymin)/(ymax-ymin)*ph;
+    if(this.fitShown){const f=this._linear();if(f){c.strokeStyle='#22d3ee';c.lineWidth=2;c.beginPath();c.moveTo(X(xmin),Y(f.m*xmin+f.b));c.lineTo(X(xmax),Y(f.m*xmax+f.b));c.stroke();}}
+    this.records.forEach(p=>{c.fillStyle='#fbbf24';c.beginPath();c.arc(X(p.x),Y(p.y),4,0,Math.PI*2);c.fill();});
+    c.fillStyle='#64748b';c.font='9px monospace';c.textAlign='left';c.fillText(xmin.toPrecision(3),pad.l,Hc-8);c.textAlign='right';c.fillText(xmax.toPrecision(3),Wc-pad.r,Hc-8);c.textAlign='right';c.fillText(ymax.toPrecision(3),pad.l-4,pad.t+5);c.fillText(ymin.toPrecision(3),pad.l-4,Hc-pad.b);
+  }
+};
 function openSim(key){
   document.getElementById('view-home').classList.add('hidden');
   document.getElementById('view-sim').classList.remove('hidden');
@@ -5914,6 +6120,7 @@ function openSim(key){
   }
   currentState={ctrl:currentSim.ctrl};
   currentSim.reset(currentState);
+  LabWorkbench.init(currentSim,currentState);
   document.getElementById('sim-title').textContent=currentSim.title;
   document.getElementById('sim-category').textContent=currentSim.category;
   document.getElementById('sim-desc').textContent=currentSim.desc;
@@ -5924,6 +6131,7 @@ function openSim(key){
   document.getElementById('theory').innerHTML=currentSim.theory;
   renderResources();
   prepareQuizForCurrentSim();
+  MeasurementLab.init();
   mobilePanelName='controls';
   initMobilePanelTabs();
   const mn=document.getElementById('mobile-note-summary');
@@ -6390,26 +6598,38 @@ function bindCanvasInteractions(){
   if(!canvasEl||canvasEl.dataset.interactionBound)return;
   canvasEl.dataset.interactionBound='1';
   canvasEl.addEventListener('pointerdown',(e)=>{
-    if(!currentSim||typeof currentSim.pointerDown!=='function')return;
+    if(!currentSim||!currentState)return;
     const p=canvasPointerPayload(e);if(!p)return;
     try{
-      const used=currentSim.pointerDown(currentState,p);
+      let used=LabWorkbench.pointerDown(currentSim,currentState,p);
+      if(!used&&typeof currentSim.pointerDown==='function')used=currentSim.pointerDown(currentState,p);
       if(used){e.preventDefault();try{canvasEl.setPointerCapture(e.pointerId);}catch(_){}}
     }catch(err){console.error(err);}
   });
   canvasEl.addEventListener('pointermove',(e)=>{
-    if(!currentSim||typeof currentSim.pointerMove!=='function')return;
+    if(!currentSim||!currentState)return;
     const p=canvasPointerPayload(e);if(!p)return;
-    try{if(currentSim.pointerMove(currentState,p))e.preventDefault();}catch(err){console.error(err);}
+    try{
+      let used=LabWorkbench.pointerMove(currentSim,currentState,p);
+      if(!used&&typeof currentSim.pointerMove==='function')used=currentSim.pointerMove(currentState,p);
+      if(used)e.preventDefault();
+    }catch(err){console.error(err);}
   });
   const finish=(e)=>{
-    if(!currentSim||typeof currentSim.pointerUp!=='function')return;
+    if(!currentSim||!currentState)return;
     const p=canvasPointerPayload(e);if(!p)return;
-    try{if(currentSim.pointerUp(currentState,p))e.preventDefault();}catch(err){console.error(err);}
+    try{
+      let used=LabWorkbench.pointerUp(currentSim,currentState,p);
+      if(!used&&typeof currentSim.pointerUp==='function')used=currentSim.pointerUp(currentState,p);
+      if(used)e.preventDefault();
+    }catch(err){console.error(err);}
   };
   canvasEl.addEventListener('pointerup',finish);
   canvasEl.addEventListener('pointercancel',(e)=>{
-    if(currentState){currentState.dragFrom=null;currentState.dragCurrent=null;}
+    if(currentState){
+      if(currentState._workbench)currentState._workbench.drag=null;
+      currentState.dragFrom=null;currentState.dragCurrent=null;
+    }
   });
 }
 
@@ -6425,6 +6645,7 @@ function loop(now){
   if(ctx){
     ctx.clearRect(0,0,W,H);
     try{currentSim.draw(ctx,W,H,currentState);}catch(e){}
+    try{LabWorkbench.draw(ctx,W,H,currentSim,currentState);}catch(e){}
     updateReadouts();
   }
   if(now-lastHintUpdate>500){
@@ -6468,9 +6689,16 @@ document.getElementById('btn-reset').addEventListener('click',()=>{
   if(!currentSim)return;
   if(typeof currentSim.hardReset==='function')currentSim.hardReset(currentState);
   else currentSim.reset(currentState);
+  LabWorkbench.init(currentSim,currentState);
   toast('↺ أُعيدت التجربة.','ok');
   updateHintBox();
 });
+
+document.getElementById('measurement-record').addEventListener('click',()=>MeasurementLab.record());
+document.getElementById('measurement-fit').addEventListener('click',()=>MeasurementLab.fit());
+document.getElementById('measurement-clear').addEventListener('click',()=>MeasurementLab.clear());
+document.getElementById('measurement-x').addEventListener('change',()=>MeasurementLab.clear());
+document.getElementById('measurement-y').addEventListener('change',()=>MeasurementLab.clear());
 
 document.getElementById('btn-guide').addEventListener('click',()=>{
   if(!currentSim)return;
