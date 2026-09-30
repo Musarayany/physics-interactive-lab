@@ -5708,10 +5708,58 @@ let lastTime=0;
 let canvasEl=null,ctx=null,W=0,H=0;
 let sliderTipTimers={};
 let currentFilter='all';
+
 let currentQuery='';
+const RELATIVITY_WORLDS=[
+ {n:'01',title:'قبل آينشتاين — أين بدأت المشكلة؟',icon:'🚆',color:'#22d3ee',desc:'المراجع وغاليليو ونيوتن، ثم الضوء والأثير حتى تظهر المشكلة التي لا يحلها الزمن المطلق.',scenes:[
+ ['inertial_frames','👁','مختبر الراصدين S وS′','نفس الحدث، مساران مختلفان، ولا توجد سرعة مطلقة.'],
+ ['galilean_train_ball','🚆','القطار والكرة — غاليليو','اكتشف جمع السرعات الكلاسيكي من مشهد يشاهده راصدان.'],
+ ['newtonian_relativity','⚙️','نسبية نيوتن','لماذا يبقى F=ma بالشكل نفسه في المراجع القصورية؟'],
+ ['michelson_morley','🔬','مطاردة الأثير','ابنِ مقياس التداخل واختبر التنبؤ التاريخي.'],
+ ['trouton_noble','🧭','اختبار اتجاه الأثير','هل يظهر عزم خاص بسبب حركة الأرض المفترضة خلال الأثير؟']]},
+ {n:'02',title:'النسبية الخاصة — المكان والزمن يعاد بناؤهما',icon:'✨',color:'#e879f9',desc:'ثبات سرعة الضوء يقود إلى لورنتز ثم التزامن والطول والزمن وجمع السرعات.',scenes:[
+ ['sr_postulates','💡','نيوتن أم آينشتاين؟','قارن c±v مع ثبات c في عدادات قياس مرئية.'],
+ ['lorentz_transform','📐','مختبر الأحداث ولورنتز','ضع حدثًا وشاهد إحداثياته في S وS′ ومخطط الزمكان.'],
+ ['relativity_simultaneity','⚡','البرق والقطار — التزامن','حدثان متزامنان في الرصيف لا يبقيان كذلك في القطار.'],
+ ['length_contraction','📏','قِس طول مركبة متحركة','اكتشف شرط قياس الطرفين في اللحظة نفسها.'],
+ ['time_dilation','🕰️','ساعة الضوء','شاهد المسار العمودي والقطري واستخرج Δt=γΔτ هندسيًا.'],
+ ['velocity_addition','🛸','سباق السرعات','قارن شبح غاليليو بالمركبة النسبية التي لا تتجاوز c.'],
+ ['sirius_trip','🚀','رحلة إلى سيريوس','اجمع تمدد الزمن وانكماش المسافة في رحلة واحدة.']]},
+ {n:'03',title:'الأدلة والزمكان والجاذبية',icon:'🌌',color:'#fbbf24',desc:'من الجسيمات والساعات الذرية إلى الجاذبية والموجات الثقالية.',scenes:[
+ ['muon_lifetime','☄️','الميونات من الغلاف الجوي','الأرض تفسر الوصول بتمدد الزمن والميون بانكماش المسافة.'],
+ ['hafele_keating','✈️','ساعات ذرية حول الأرض','قارن ساعات محمولة جوًا بساعة مرجعية أرضية.'],
+ ['pound_rebka','🔴','باوند–ريبكا','شاهد تغير تردد الفوتون مع الارتفاع في الجاذبية.'],
+ ['eotvos','⚖️','إيتفوش ومبدأ التكافؤ','اختبر مساواة الكتلة القصورية والثقالية.'],
+ ['eddington','☀️','كسوف إدينغتون','اتبع ضوء النجوم قرب الشمس وانحرافه.'],
+ ['ligo','〰️','LIGO — اهتزاز الزمكان','حوّل تغيرًا بالغ الصغر في طول الذراعين إلى إشارة.']]}
+];
+function renderRelativityHub(){
+ const root=document.getElementById('rel-worlds'); if(!root)return;
+ const core=new Set(['inertial_frames','sr_postulates','lorentz_transform','relativity_simultaneity','length_contraction','time_dilation','velocity_addition','muon_lifetime','michelson_morley']);
+ root.innerHTML=RELATIVITY_WORLDS.map(function(w){
+   var scenes=w.scenes.map(function(sc){
+     var key=sc[0],icon=sc[1],title=sc[2],why=sc[3];
+     return '<a href="#/sim/'+key+'" class="rel-scene"><div class="rel-scene-icon">'+icon+'</div><div class="rel-scene-title">'+title+'</div><div class="rel-scene-why">'+why+'</div>'+(core.has(key)?'<span class="rel-core-badge">يعرض مرجعين / تفاعل مباشر</span>':'')+'<div class="rel-scene-action">ادخل المشهد ←</div></a>';
+   }).join('');
+   return '<section class="rel-world"><div class="rel-world-head"><div class="rel-world-num" style="background:'+w.color+'18;border:1px solid '+w.color+'55;color:'+w.color+'">'+w.n+'</div><div><h2 style="color:'+w.color+'">'+w.icon+' '+w.title+'</h2><div class="rel-world-desc">'+w.desc+'</div></div><div class="rel-world-progress">'+w.scenes.length+' مشاهد مترابطة</div></div><div class="rel-scene-grid">'+scenes+'</div></section>';
+ }).join('');
+}
+function showRelativityHub(){
+ closeSim();
+ document.getElementById('view-home').classList.add('hidden');
+ document.getElementById('view-sim').classList.add('hidden');
+ document.getElementById('view-relativity').classList.remove('hidden');
+ renderRelativityHub();
+ window.scrollTo(0,0);
+}
+function relativityPortalHTML(meta,items){
+ return '<section class="category-section" id="cat-'+encodeURIComponent('النسبية')+'"><div class="flex items-center gap-4 mb-5 pb-4 border-b border-edge"><div class="cat-icon" style="background:'+meta.color+'1a;border-color:'+meta.color+'66;color:'+meta.color+'">'+meta.icon+'</div><div class="flex-1"><h2 class="font-black text-2xl" style="color:'+meta.color+'">النسبية</h2><div class="text-xs text-slate-400 mt-0.5">عالم تعليمي مترابط · <b>'+items.length+'</b> مشهد وتجربة</div></div></div><a href="#/relativity" class="glass rounded-2xl p-6 card-hover block relative overflow-hidden" style="border-color:rgba(232,121,249,.35)"><div class="relative grid md:grid-cols-[1fr_auto] gap-5 items-center"><div><div class="text-4xl mb-3">🛰️ 👁️ 🚆 ✨</div><h3 class="text-xl font-black mb-2">ادخل عالم النسبية والراصدين</h3><p class="text-sm text-slate-300 leading-relaxed">ثلاثة عوالم مترابطة تبدأ من الحدث نفسه في S وS′ بدل البدء بالمعادلة.</p></div><div class="px-5 py-3 rounded-xl font-black text-sm" style="background:#e879f9;color:#090e1c">ابدأ من مختبر الراصدين ←</div></div></a></section>';
+}
+
 
 function route(){
   const hash=location.hash||'#/';
+  if(hash==='#/relativity'){showRelativityHub();return;}
   const m=hash.match(/^#\/sim\/(.+)$/);
   if(m){
     const key=m[1];
@@ -5724,6 +5772,7 @@ window.addEventListener('hashchange',route);
 function showHome(){
   document.getElementById('view-home').classList.remove('hidden');
   document.getElementById('view-sim').classList.add('hidden');
+  document.getElementById('view-relativity').classList.add('hidden');
   renderHome();
 }
 
@@ -5778,6 +5827,7 @@ function renderHome(){
   grid.innerHTML=orderedCats.map(cat=>{
     const meta=CATEGORIES[cat];
     const items=grouped[cat];
+    if(cat==='النسبية')return relativityPortalHTML(meta,items);
     return `
       <section class="category-section" id="cat-${encodeURIComponent(cat)}">
         <div class="flex items-center gap-4 mb-5 pb-4 border-b border-edge">
@@ -6201,6 +6251,7 @@ const MeasurementLab={
 };
 function openSim(key){
   document.getElementById('view-home').classList.add('hidden');
+  document.getElementById('view-relativity').classList.add('hidden');
   document.getElementById('view-sim').classList.remove('hidden');
   currentSimKey=key;
   currentSim=SIMS[key];
@@ -6214,6 +6265,8 @@ function openSim(key){
   document.getElementById('sim-title').textContent=currentSim.title;
   document.getElementById('sim-category').textContent=currentSim.category;
   document.getElementById('sim-desc').textContent=currentSim.desc;
+  const back=document.getElementById('sim-back-link');
+  if(back){back.href=currentSim.category==='النسبية'?'#/relativity':'#/';back.textContent=currentSim.category==='النسبية'?'→ عالم النسبية':'→ كل التجارب';}
   renderControls();
   renderPedagogyShell();
   setProfessorMode(false);
