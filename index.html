@@ -2976,14 +2976,17 @@ michelson_morley: {
     const compact=W<650;
     const trayH=compact?112:100;
     const work={x:16,y:46,w:W-32,h:H-trayH-60};
-    const cx=work.x+work.w*.51, cy=work.y+work.h*.57;
-    const armX=Math.min(work.w*.28,205), armY=Math.min(work.h*.31,150);
+    // نفصل منطقة الأوامر عن الرسم حتى لا تغطي الأزرار شاشة الأهداب أو المسارات.
+    const action={x:work.x+12,y:work.y+26,w:work.w-24,h:62};
+    const scene={x:work.x+12,y:work.y+96,w:work.w-24,h:Math.max(150,work.h-108)};
+    const cx=scene.x+scene.w*.50, cy=scene.y+scene.h*.51;
+    const armX=Math.min(scene.w*.27,190), armY=Math.min(scene.h*.30,108);
     const slots={
-      source:{x:work.x+34,y:cy-20,w:88,h:40,cx:work.x+78,cy:cy},
-      splitter:{x:cx-27,y:cy-27,w:54,h:54,cx:cx,cy:cy},
-      m1:{x:cx+armX-25,y:cy-34,w:50,h:68,cx:cx+armX,cy:cy},
-      m2:{x:cx-34,y:cy-armY-25,w:68,h:50,cx:cx,cy:cy-armY},
-      screen:{x:cx+72,y:cy+74,w:112,h:58,cx:cx+128,cy:cy+103}
+      source:{x:scene.x+18,y:cy-20,w:88,h:40,cx:scene.x+62,cy:cy},
+      splitter:{x:cx-25,y:cy-25,w:50,h:50,cx:cx,cy:cy},
+      m1:{x:cx+armX-23,y:cy-31,w:46,h:62,cx:cx+armX,cy:cy},
+      m2:{x:cx-31,y:cy-armY-22,w:62,h:44,cx:cx,cy:cy-armY},
+      screen:{x:cx+58,y:cy+48,w:104,h:50,cx:cx+110,cy:cy+73}
     };
     const trayY=H-trayH+6;
     const keys=['source','splitter','m1','m2','screen'];
@@ -2992,8 +2995,8 @@ michelson_morley: {
     const tray={x:14,y:trayY,w:W-28,h:trayH-14};
     const items={};
     keys.forEach((k,i)=>{items[k]={x:14+i*(itemW+gap),y:trayY+32,w:itemW,h:trayH-52};});
-    const btnBase={x:work.x+12,y:work.y+work.h-48,h:36};
-    return {compact,work,cx,cy,armX,armY,slots,tray,items,btnBase};
+    const btnBase={x:action.x,y:action.y+24,h:30};
+    return {compact,work,action,scene,cx,cy,armX,armY,slots,tray,items,btnBase};
   },
   _allBuilt(s){return ['source','splitter','m1','m2','screen'].every(k=>s.mm&&s.mm.built[k]);},
   _hit(r,x,y){return r&&x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h;},
@@ -3005,10 +3008,11 @@ michelson_morley: {
     }
   },
   _buttonRects(s,L){
-    const y=L.btnBase.y,h=L.btnBase.h,w=Math.min(190,(L.work.w-36)/2);
-    const center=L.work.x+L.work.w/2;
-    const a={x:center-w-7,y,w,h},b={x:center+7,y,w,h};
-    const full={x:center-Math.min(230,L.work.w*.42),y,w:Math.min(460,L.work.w*.84),h};
+    const y=L.btnBase.y,h=L.btnBase.h,w=Math.min(174,(L.action.w-28)/2);
+    const center=L.action.x+L.action.w/2;
+    const a={x:center-w-6,y,w,h},b={x:center+6,y,w,h};
+    const fw=Math.min(380,L.action.w*.76);
+    const full={x:center-fw/2,y,w:fw,h};
     return {a,b,full};
   },
   _drawButton(ctx,r,text,accent='#fbbf24',filled=false){
@@ -3212,10 +3216,12 @@ michelson_morley: {
         ctx.fillStyle='#e2e8f0';ctx.fillRect(cx-27,cy-5,54,10);ctx.strokeStyle='#22d3ee';ctx.strokeRect(cx-27,cy-5,54,10);
       }else if(k==='screen'){
         ctx.fillStyle='#111827';ctx.strokeStyle='#f472b6';ctx.lineWidth=2;ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeRect(r.x,r.y,r.w,r.h);
-        for(let i=0;i<9;i++){const xx=r.x+8+i*(r.w-16)/8,I=.18+.72*(.5+.5*Math.cos(i*2.2+(s.mm.stage>=5?q.rot*2*Math.PI:0)));ctx.fillStyle='rgba(244,114,182,'+I.toFixed(2)+')';ctx.fillRect(xx, r.y+8, Math.max(2,(r.w-18)/12),r.h-16);}
+        // أهداب أوضح وأعرض بصريًا مع هامش داخلي حتى تبقى الشاشة مقروءة.
+        for(let i=0;i<11;i++){const xx=r.x+7+i*(r.w-14)/10,I=.12+.88*(.5+.5*Math.cos(i*1.75+(s.mm.stage>=5?q.rot*2*Math.PI:0)));ctx.fillStyle='rgba(244,114,182,'+I.toFixed(2)+')';ctx.fillRect(xx, r.y+7, 4,r.h-14);}
       }
       label(ctx,p.name,cx,r.y-10,p.color,'center',L.compact?8:10,true);
-      if(!L.compact)label(ctx,p.sub,cx,r.y+r.h+9,'#64748b','center',8,false);
+      // بعد تركيب الأداة نعرض الاسم العربي فقط لتقليل التشويش البصري.
+      if(k==='screen')label(ctx,'راقب الأهداب هنا',cx,r.y+r.h+10,'#f472b6','center',L.compact?8:9,true);
     };
     for(const k of ['source','splitter','m1','m2','screen'])if(s.mm.built[k])drawPart(k,slots[k]);
 
@@ -3234,16 +3240,25 @@ michelson_morley: {
       }
       // timers attached to arms
       const box=(x,y,title,val,color)=>{ctx.fillStyle='rgba(7,11,20,.92)';ctx.strokeStyle=color;ctx.lineWidth=1.2;ctx.fillRect(x,y,126,42);ctx.strokeRect(x,y,126,42);label(ctx,title,x+63,y+12,color,'center',8,true);label(ctx,val,x+63,y+29,'#f8fafc','center',10,true);};
-      box(L.cx+L.armX*.28,L.cy+22,'⏱ الذراع الموازي',(q.tp*1e9).toFixed(6)+' ns','#fbbf24');
-      box(L.cx-135,L.cy-L.armY*.58,'⏱ الذراع العمودي',(q.tn*1e9).toFixed(6)+' ns','#22d3ee');
+      // بطاقات القياس موضوعة خارج المسار الضوئي، فلا تحجب نصف المرآة أو شاشة الأهداب.
+      box(L.scene.x+L.scene.w-138,L.scene.y+8,'⏱ زمن الذراع الموازي',(q.tp*1e9).toFixed(6)+' ns','#fbbf24');
+      box(L.scene.x+8,L.scene.y+8,'⏱ زمن الذراع العمودي',(q.tn*1e9).toFixed(6)+' ns','#22d3ee');
     }
     ctx.restore();
 
-    // ether wind arrow is outside apparatus rotation
+    // مؤشر فرضية الأثير يبقى أعلى المشهد وبعيدًا عن المسارات.
     if(s.mm.stage>=2){
-      arrow(ctx,work.x+18,work.y+48,work.x+145,work.y+48,'#f472b6',3,9);
-      label(ctx,'ريح الأثير المفترضة v='+s.ctrl.v+' km/s',work.x+154,work.y+48,'#f472b6','left',L.compact?8:10,true);
+      const wy=L.scene.y+54;
+      arrow(ctx,L.scene.x+14,wy,L.scene.x+116,wy,'#f472b6',3,9);
+      label(ctx,'ريح الأثير المفترضة  v='+s.ctrl.v+' km/s',L.scene.x+126,wy,'#f472b6','left',L.compact?8:10,true);
     }
+
+    // شريط أوامر مستقل أعلى المشهد: لا يلامس الأهداب أو أي أداة.
+    ctx.fillStyle='rgba(10,16,29,.94)';
+    ctx.strokeStyle='#334155';ctx.lineWidth=1;
+    ctx.fillRect(L.action.x,L.action.y,L.action.w,L.action.h);
+    ctx.strokeRect(L.action.x,L.action.y,L.action.w,L.action.h);
+    label(ctx,'خطوتك الآن',L.action.x+12,L.action.y+12,'#94a3b8','left',L.compact?8:9,true);
 
     // guided action buttons
     if(s.mm.stage===1)this._drawButton(ctx,btn.full,'💡 أرسل الضوء وشاهد المسارين','#fbbf24',true);
@@ -3254,18 +3269,15 @@ michelson_morley: {
     }
     if(s.mm.stage===4)this._drawButton(ctx,btn.full,'↻ أدر الجهاز 90°','#f472b6',true);
     if(s.mm.stage===5){
-      ctx.fillStyle='rgba(251,191,36,.10)';ctx.strokeStyle='#fbbf24';ctx.fillRect(work.x+20,work.y+work.h-112,work.w-40,50);ctx.strokeRect(work.x+20,work.y+work.h-112,work.w-40,50);
-      label(ctx,'التنبؤ الكلاسيكي بعد الدوران: تغير ≈ '+q.rot.toFixed(5)+' هدب',work.x+work.w/2,work.y+work.h-87,'#fbbf24','center',L.compact?9:12,true);
+      label(ctx,'التنبؤ الكلاسيكي: تغير ≈ '+q.rot.toFixed(5)+' هدب بعد تدوير 90°',L.action.x+L.action.w/2,L.action.y+12,'#fbbf24','center',L.compact?8:10,true);
       this._drawButton(ctx,btn.full,'🔬 اكشف النتيجة التاريخية','#22d3ee',true);
     }
     if(s.mm.stage===6){
-      const y=work.y+work.h-132,h=68,mid=work.x+work.w/2;
-      ctx.fillStyle='rgba(251,191,36,.08)';ctx.strokeStyle='#fbbf24';ctx.fillRect(work.x+18,y,work.w*.46,h);ctx.strokeRect(work.x+18,y,work.w*.46,h);
-      ctx.fillStyle='rgba(34,211,238,.08)';ctx.strokeStyle='#22d3ee';ctx.fillRect(mid+6,y,work.w*.46-24,h);ctx.strokeRect(mid+6,y,work.w*.46-24,h);
-      label(ctx,'التنبؤ الكلاسيكي',work.x+18+work.w*.23,y+16,'#fbbf24','center',L.compact?9:11,true);
-      label(ctx,'≈ '+q.rot.toFixed(5)+' هدب بعد 90°',work.x+18+work.w*.23,y+41,'#f8fafc','center',L.compact?9:11,true);
-      label(ctx,'ما لوحظ',mid+6+(work.w*.46-24)/2,y+16,'#22d3ee','center',L.compact?9:11,true);
-      label(ctx,'لم يظهر الانزياح المتوقع',mid+6+(work.w*.46-24)/2,y+41,'#f8fafc','center',L.compact?8:11,true);
+      const mid=L.action.x+L.action.w/2, y=L.action.y+3, h=20;
+      ctx.fillStyle='rgba(251,191,36,.08)';ctx.strokeStyle='#fbbf24';ctx.fillRect(L.action.x+8,y,L.action.w*.47,h);ctx.strokeRect(L.action.x+8,y,L.action.w*.47,h);
+      ctx.fillStyle='rgba(34,211,238,.08)';ctx.strokeStyle='#22d3ee';ctx.fillRect(mid+4,y,L.action.w*.47-12,h);ctx.strokeRect(mid+4,y,L.action.w*.47-12,h);
+      label(ctx,'التنبؤ: '+q.rot.toFixed(5)+' هدب',L.action.x+8+L.action.w*.235,y+10,'#fbbf24','center',L.compact?7:9,true);
+      label(ctx,'المرصود: لا يظهر الانزياح المتوقع',mid+4+(L.action.w*.47-12)/2,y+10,'#22d3ee','center',L.compact?7:9,true);
       this._drawButton(ctx,btn.a,'↺ أعد من البداية','#94a3b8',false);
       this._drawButton(ctx,btn.b,'🔁 أعد القياس','#22d3ee',false);
     }
