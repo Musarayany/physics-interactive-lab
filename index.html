@@ -378,6 +378,35 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
 .measurement-row{display:grid;grid-template-columns:24px 1fr 1fr;gap:5px;padding:3px 0;border-bottom:1px solid rgba(37,48,74,.55)}
 .measurement-note{font-size:8.5px;color:#64748b;line-height:1.45;margin-top:6px}
 @media(max-width:767px){#measurement-chart{height:120px}.measurement-grid{grid-template-columns:1fr}.measurement-actions button{font-size:8px;padding:6px 3px}}
+
+/* RELATIVITY WORLDS */
+#view-relativity{max-width:1180px;margin:0 auto}
+.rel-hero{position:relative;overflow:hidden;border:1px solid rgba(232,121,249,.28);border-radius:26px;padding:28px;background:radial-gradient(circle at 15% 20%,rgba(34,211,238,.13),transparent 28%),radial-gradient(circle at 84% 30%,rgba(232,121,249,.15),transparent 30%),linear-gradient(135deg,rgba(9,14,28,.98),rgba(16,12,31,.96))}
+.rel-hero:before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(148,163,184,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.055) 1px,transparent 1px);background-size:32px 32px}
+.rel-eyebrow{font-size:10px;font-weight:900;letter-spacing:.08em;color:#e879f9}
+.rel-title{font-size:clamp(29px,5vw,55px);line-height:1.12;font-weight:950;margin-top:6px}
+.rel-sub{max-width:760px;color:#cbd5e1;line-height:1.85;font-size:13px;margin-top:12px}
+.rel-observer-demo{margin-top:22px;display:grid;grid-template-columns:1fr 64px 1fr;gap:10px;align-items:stretch}
+.rel-frame{position:relative;min-height:170px;border:1px solid #25304a;border-radius:18px;background:rgba(5,9,18,.82);overflow:hidden;padding:13px}
+.rel-frame-title{font-size:11px;font-weight:900;color:#cbd5e1}.rel-frame-badge{font-size:9px;color:#94a3b8;margin-top:2px}
+.rel-track{position:absolute;left:14px;right:14px;bottom:42px;height:2px;background:#334155}
+.rel-train{position:absolute;bottom:44px;width:96px;height:35px;border:2px solid #22d3ee;border-radius:9px;background:rgba(34,211,238,.09)}
+.rel-train:before,.rel-train:after{content:"";position:absolute;bottom:-8px;width:12px;height:12px;border-radius:50%;background:#475569}.rel-train:before{left:16px}.rel-train:after{right:16px}
+.rel-ball{position:absolute;width:11px;height:11px;border-radius:50%;background:#fbbf24;box-shadow:0 0 18px rgba(251,191,36,.55)}
+.rel-frame.ground .rel-ball{animation:relBallGround 2.4s ease-in-out infinite}.rel-frame.trainframe .rel-ball{animation:relBallTrain 2.4s ease-in-out infinite}
+.rel-frame.ground .rel-train{animation:relTrain 5s linear infinite}.rel-frame.trainframe .rel-train{left:calc(50% - 48px)}
+@keyframes relTrain{0%{left:-105px}100%{left:calc(100% + 6px)}}@keyframes relBallTrain{0%,100%{left:50%;bottom:79px}50%{left:50%;bottom:137px}}@keyframes relBallGround{0%{left:19%;bottom:79px}50%{left:50%;bottom:137px}100%{left:81%;bottom:79px}}
+.rel-vs{display:flex;align-items:center;justify-content:center;flex-direction:column;color:#64748b;font-weight:900;font-size:9px;gap:5px}.rel-vs b{font-size:16px;color:#e879f9}
+.rel-primary-btn{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:11px 17px;border-radius:12px;background:linear-gradient(135deg,#e879f9,#a78bfa);color:#090e1c;font-size:11px;font-weight:950;box-shadow:0 8px 28px -12px rgba(232,121,249,.75)}
+.rel-worlds{display:grid;gap:18px;margin-top:22px}.rel-world{border:1px solid #25304a;border-radius:22px;background:rgba(8,13,24,.78);overflow:hidden}
+.rel-world-head{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:18px 19px;border-bottom:1px solid #25304a}
+.rel-world-num{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:950;font-size:15px}
+.rel-world h2{font-size:19px;font-weight:950}.rel-world-desc{font-size:10px;color:#94a3b8;line-height:1.65;margin-top:3px}.rel-world-progress{font-size:9px;color:#64748b}
+.rel-scene-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:14px}.rel-scene{display:block;border:1px solid #25304a;border-radius:15px;padding:13px;background:rgba(4,8,17,.72);transition:.2s ease;min-height:138px}
+.rel-scene:hover{transform:translateY(-2px);border-color:rgba(232,121,249,.55);background:rgba(20,12,32,.72)}.rel-scene-icon{font-size:24px}.rel-scene-title{font-size:12px;font-weight:900;color:#f8fafc;margin-top:7px;line-height:1.5}
+.rel-scene-why{font-size:9px;color:#94a3b8;line-height:1.55;margin-top:5px}.rel-scene-action{font-size:9px;color:#e879f9;font-weight:900;margin-top:9px}.rel-core-badge{display:inline-block;border:1px solid rgba(34,211,238,.35);color:#22d3ee;background:rgba(34,211,238,.08);padding:2px 6px;border-radius:999px;font-size:7px;font-weight:900;margin-top:7px}
+.rel-note{margin-top:18px;border:1px solid rgba(34,211,238,.22);border-radius:16px;padding:13px 15px;background:rgba(34,211,238,.055);font-size:10px;line-height:1.75;color:#cbd5e1}
+@media(max-width:767px){.rel-hero{padding:18px 14px;border-radius:18px}.rel-sub{font-size:10.5px;line-height:1.7}.rel-observer-demo{grid-template-columns:1fr;gap:7px}.rel-vs{flex-direction:row;padding:2px}.rel-frame{min-height:140px}.rel-scene-grid{grid-template-columns:1fr;padding:10px}.rel-world-head{grid-template-columns:auto 1fr}.rel-world-progress{display:none}}
 </style>
 </head>
 <body class="grid-bg">
@@ -392,6 +421,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
       </div>
     </a>
     <nav class="flex items-center gap-2">
+      <a href="#/relativity" class="btn px-3 py-2 rounded-lg text-sm hover:bg-panel text-fuchsia-300">🛰️ عالم النسبية</a>
       <a href="#/" class="btn px-3 py-2 rounded-lg text-sm hover:bg-panel">كل التجارب</a>
     </nav>
   </div>
@@ -445,8 +475,25 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
     </div>
   </section>
 
-  <section id="view-sim" class="view hidden">
-    <a href="#/" class="text-sm text-slate-400 hover:text-gold mb-4 inline-block">→ كل التجارب</a>
+  <section id="view-relativity" class="view hidden">
+  <a href="#/" class="text-sm text-slate-400 hover:text-gold mb-4 inline-block">→ كل فروع الفيزياء</a>
+  <div class="rel-hero"><div class="relative">
+    <div class="rel-eyebrow">RELATIVITY LAB · مختبر الراصدين والزمكان</div>
+    <h1 class="rel-title">لا تحفظ النسبية — <span style="color:#e879f9">شاهد الحدث من مرجعين</span></h1>
+    <p class="rel-sub">ابدأ من حدث واحد ثم شاهد كيف يصفه راصد الأرض وراصد المركبة. بعد أن ترى الاختلاف، تظهر المعادلة لتفسره لا لتسبقه.</p>
+    <div class="rel-observer-demo">
+      <div class="rel-frame ground"><div class="rel-frame-title">👁 الراصد S — على الرصيف</div><div class="rel-frame-badge">يرى القطار والكرة يتحركان معًا</div><div class="rel-track"></div><div class="rel-train"></div><div class="rel-ball"></div></div>
+      <div class="rel-vs"><span>نفس الحدث</span><b>⇄</b><span>وصفان</span></div>
+      <div class="rel-frame trainframe"><div class="rel-frame-title">🚆 الراصد S′ — داخل القطار</div><div class="rel-frame-badge">يرى الكرة تصعد وتهبط فوق الموضع نفسه</div><div class="rel-track"></div><div class="rel-train"></div><div class="rel-ball"></div></div>
+    </div>
+    <a class="rel-primary-btn" href="#/sim/inertial_frames">👁 ابدأ بمختبر الراصدين</a>
+  </div></div>
+  <div id="rel-worlds" class="rel-worlds"></div>
+  <div class="rel-note"><b style="color:#22d3ee">قاعدة هذا القسم:</b> اسأل دائمًا: من هو الراصد؟ ما الحدث؟ ماذا يقيس؟ ثم افتح القانون. بهذه الطريقة لا تختلط كميات S مع S′.</div>
+</section>
+
+<section id="view-sim" class="view hidden">
+    <a id="sim-back-link" href="#/" class="text-sm text-slate-400 hover:text-gold mb-4 inline-block">→ كل التجارب</a>
     <div class="mb-5 flex items-start justify-between gap-4 flex-wrap">
       <div>
         <div id="sim-category" class="badge text-cyan border-cyan/30 mb-2"></div>
