@@ -785,46 +785,76 @@ inclined_plane: {
 },
 
 pendulum: {
-  title:'البندول البسيط', icon:'🕰️', category:'ميكانيكا',
-  desc:'كيف يعتمد الزمن الدوري على الطول وتسارع الجاذبية.',
-  welcome:{title:'🕰️ البندول البسيط', steps:['كتلة معلّقة بخيط تتأرجح حول موضع الاتزان.','الزمن الدوري T = 2π√(L/g).','حرّك <b>L</b> وشاهد تغيّر T.','غيّر <b>g</b> لمحاكاة جاذبية القمر أو المشتري.','<b>سؤال:</b> هل يعتمد T على الكتلة؟']},
+  title:'مختبر البندول — اسحب، حرّر، قِس واكتشف', icon:'🕰️', category:'ميكانيكا', labV4:true,
+  desc:'مختبر مصغّر: اسحب كرة البندول بيدك، غيّر طول الخيط والكتلة والجاذبية، استخدم ساعة الإيقاف، ثم اكتشف ما الذي يغيّر الزمن الدوري وما الذي لا يغيّره.',
+  welcome:{title:'🕰️ لا تحفظ قانون البندول — اكتشفه',steps:[
+    'اسحب كرة البندول نفسها إلى زاوية تريدها ثم اتركها.',
+    'غيّر طول الخيط ثم قِس 10 ذبذبات بساعة الإيقاف داخل المختبر.',
+    'غيّر كتلة الكرة وحدها وكرر القياس: هل تغير الزمن الدوري؟',
+    'جرّب جاذبية مختلفة، ثم افتح القانون وقارن استنتاجك مع T=2π√(L/g).'
+  ]},
   controls:[
-    {id:'L',label:'طول الخيط L',min:0.2,max:3,step:0.05,value:1,unit:'m',help:'<b>L</b><br>T ∝ √L.'},
-    {id:'g',label:'تسارع الجاذبية g',min:1,max:25,step:0.1,value:9.81,unit:'m/s²',help:'<b>g</b><br>الأرض 9.81 · القمر 1.62 · المشتري 24.8.'},
-    {id:'a0',label:'الزاوية الابتدائية θ₀',min:5,max:80,step:1,value:30,unit:'°',help:'<b>θ₀</b><br>للزوايا < 15° لا يعتمد T على θ₀.'}
+    {id:'L',label:'طول الخيط L',min:0.2,max:3,step:0.05,value:1,unit:'m',help:'المسافة من نقطة التعليق إلى مركز الكرة. يمكنك أيضًا تغييرها مباشرة بسحب الكرة.'},
+    {id:'m',label:'كتلة الكرة m',min:0.05,max:1,step:0.05,value:0.25,unit:'kg',help:'غيّر الكتلة وحدها ثم قارن الزمن الدوري.'},
+    {id:'g',label:'تسارع الجاذبية g',min:1,max:25,step:0.1,value:9.81,unit:'m/s²',help:'الأرض ≈9.81، القمر ≈1.62، المشتري ≈24.8 m/s².'},
+    {id:'a0',label:'زاوية الإطلاق θ₀',min:5,max:80,step:1,value:30,unit:'°',help:'يمكنك تغييرها بسحب الكرة نفسها.'}
   ],
-  reset(s){s.t=0;s.theta=deg2rad(s.ctrl.a0);s.omega=0;},
-  update(s,dt){const a=-(s.ctrl.g/s.ctrl.L)*Math.sin(s.theta);s.omega+=a*dt;s.theta+=s.omega*dt;s.t+=dt;},
-  readouts(s){const T0=2*Math.PI*Math.sqrt(s.ctrl.L/s.ctrl.g),th=deg2rad(s.ctrl.a0);const T=T0*(1+th*th/16+11*Math.pow(th,4)/3072+173*Math.pow(th,6)/737280);return [
-    {l:'الزمن الدوري T',v:T.toFixed(3),u:'s',c:'gold'},{l:'الزاوية θ',v:rad2deg(s.theta).toFixed(1),u:'°'},
-    {l:'ω',v:s.omega.toFixed(2),u:'rad/s'},{l:'t',v:s.t.toFixed(2),u:'s'}];},
-  hints(s){const h=[];const T0=2*Math.PI*Math.sqrt(s.ctrl.L/s.ctrl.g),th=deg2rad(s.ctrl.a0);const T=T0*(1+th*th/16+11*Math.pow(th,4)/3072+173*Math.pow(th,6)/737280);
-    h.push(`T ≈ <span class="hl">${T.toFixed(3)} s</span> (مع تصحيح السعة).`);
-    if(s.ctrl.g<3)h.push('🌙 جاذبية قمرية ⇒ تأرجح بطيء.');
-    if(s.ctrl.g>20)h.push('جاذبية ضخمة ⇒ تأرجح سريع.');
-    return h;},
-  equations:['T_0 = 2\\pi\\sqrt{\\dfrac{L}{g}}','T \\approx T_0\\left(1+\\dfrac{\\theta_0^2}{16}+\\dfrac{11\\theta_0^4}{3072}+\\dfrac{173\\theta_0^6}{737280}\\right)'],
-  theory:'لا يعتمد الزمن الدوري على الكتلة. صيغة الزاوية الصغيرة T₀ دقيقة فقط عندما تكون السعة صغيرة؛ عند السعات الكبيرة يزداد T قليلًا، لذلك تطبق القراءة تصحيح السعة.',
+  hardReset(s){s.t=0;s.theta=deg2rad(s.ctrl.a0);s.omega=0;s.dragPend=false;s.prevTheta=s.theta;s.stopwatch={active:false,armed:false,start:0,count:0,measured:null,elapsed:0};},
+  reset(s){this.hardReset(s);},
+  onControlChange(s,id){if(id==='a0'){s.theta=deg2rad(s.ctrl.a0);s.omega=0;}if(id==='L')s.omega=0;if(!s.stopwatch)s.stopwatch={active:false,armed:false,start:0,count:0,measured:null,elapsed:0};},
+  _period(s){const T0=2*Math.PI*Math.sqrt(s.ctrl.L/s.ctrl.g),th=deg2rad(s.ctrl.a0);return T0*(1+th*th/16+11*Math.pow(th,4)/3072+173*Math.pow(th,6)/737280);},
+  update(s,dt){
+    if(s.dragPend)return;
+    const prev=s.theta,a=-(s.ctrl.g/s.ctrl.L)*Math.sin(s.theta)-0.003*s.omega;
+    s.omega+=a*dt;s.theta+=s.omega*dt;s.t+=dt;
+    if(!s.stopwatch)s.stopwatch={active:false,armed:false,start:0,count:0,measured:null,elapsed:0};
+    const crossing=prev<0&&s.theta>=0&&s.omega>0;
+    if(s.stopwatch.active){
+      if(s.stopwatch.armed&&crossing){s.stopwatch.armed=false;s.stopwatch.start=s.t;s.stopwatch.count=0;}
+      else if(!s.stopwatch.armed&&crossing){
+        s.stopwatch.count++;s.stopwatch.elapsed=s.t-s.stopwatch.start;
+        if(s.stopwatch.count>=10){s.stopwatch.measured=s.stopwatch.elapsed/10;s.stopwatch.active=false;toast('⏱️ اكتمل قياس 10 ذبذبات: T المقاس ≈ <b>'+s.stopwatch.measured.toFixed(3)+' s</b>.','ok',3600);}
+      }else if(!s.stopwatch.armed)s.stopwatch.elapsed=s.t-s.stopwatch.start;
+    }
+    s.prevTheta=s.theta;
+  },
+  readouts(s){const T=this._period(s),sw=s.stopwatch||{};return[
+    {l:'T النظري',v:T.toFixed(3),u:'s',c:'gold'},
+    {l:'T المقاس',v:Number.isFinite(sw.measured)?sw.measured.toFixed(3):'—',u:'s',c:'cyan'},
+    {l:'عدد الذبذبات المقاسة',v:sw.count||0,u:'/ 10'},
+    {l:'الزاوية الحالية θ',v:rad2deg(s.theta).toFixed(1),u:'°'},
+    {l:'طول الخيط',v:s.ctrl.L.toFixed(2),u:'m'},
+    {l:'كتلة الكرة',v:s.ctrl.m.toFixed(2),u:'kg'}];},
+  hints(s){
+    const T=this._period(s),h=['أمسك الكرة نفسها واسحبها ثم اتركها. بعد ذلك استخدم ساعة القياس داخل الرسم.'];
+    if(s.stopwatch&&s.stopwatch.active)h.push(s.stopwatch.armed?'⏱️ الساعة تنتظر أول عبور منتظم لنقطة الاتزان.':'⏱️ القياس جارٍ: '+s.stopwatch.count+'/10 ذبذبات.');
+    if(Number.isFinite(s.stopwatch&&s.stopwatch.measured))h.push('قارن T المقاس مع T النظري ≈ <span class="hl">'+T.toFixed(3)+' s</span>.');
+    h.push('اختبار حاسم: غيّر الكتلة m وحدها؛ في البندول المثالي يجب ألا يتغير T.');
+    if(s.ctrl.a0>20)h.push('عند الزوايا الكبيرة يزداد T قليلًا، لذا نستخدم تصحيح السعة.');
+    return h;
+  },
+  equations:['T_0=2\\pi\\sqrt{\\frac{L}{g}}','T\\approx T_0\\left(1+\\frac{\\theta_0^2}{16}+\\frac{11\\theta_0^4}{3072}+\\cdots\\right)'],
+  theory:'<b>الفكرة:</b><br>قِس أولًا ثم استنتج. تغيير الكتلة وحدها لا يغيّر الزمن الدوري في النموذج المثالي، بينما زيادة طول الخيط تزيده وفق علاقة جذرية. قياس 10 ذبذبات ثم القسمة على 10 يقلل أثر خطأ بدء وإيقاف الساعة.<br><br><b>الزاوية الكبيرة:</b><br>الصيغة T₀=2π√(L/g) تقريب للزوايا الصغيرة. عند السعات الكبيرة تزداد الفترة قليلًا، ولذلك تطبق القراءة تصحيح السعة.',
+  _sync(id,val){const el=document.getElementById('ctrl-'+id),lab=document.getElementById('val-'+id);if(el)el.value=val;if(lab){const c=this.controls.find(x=>x.id===id);lab.innerHTML=val+' <span class="text-slate-500 text-xs">'+((c&&c.unit)||'')+'</span>';}},
+  _geom(W,H,s){const px=W*.50,py=64,scale=Math.min((H-150)/3,120),len=s.ctrl.L*scale,bx=px+len*Math.sin(s.theta),by=py+len*Math.cos(s.theta),watch={x:18,y:H-62,w:W<650?185:225,h:40};return{px,py,scale,len,bx,by,watch};},
+  pointerDown(s,p){const g=this._geom(p.W,p.H,s);if(p.x>=g.watch.x&&p.x<=g.watch.x+g.watch.w&&p.y>=g.watch.y&&p.y<=g.watch.y+g.watch.h){if(!s.stopwatch.active){s.stopwatch={active:true,armed:true,start:0,count:0,measured:null,elapsed:0};toast('⏱️ سيبدأ العد عند أول عبور منتظم لنقطة الاتزان.','learn',2800);}else{s.stopwatch.active=false;}return true;}if(Math.hypot(p.x-g.bx,p.y-g.by)<34){s.dragPend=true;s.omega=0;return true;}return false;},
+  pointerMove(s,p){if(!s.dragPend)return false;const g=this._geom(p.W,p.H,s),dx=p.x-g.px,dy=p.y-g.py;let theta=Math.atan2(dx,Math.max(15,dy));theta=clamp(theta,deg2rad(-80),deg2rad(80));const L=clamp(Math.hypot(dx,dy)/g.scale,.2,3);s.ctrl.L=Math.round(L/0.05)*0.05;s.ctrl.a0=Math.round(Math.abs(rad2deg(theta)));s.theta=theta;s.omega=0;this._sync('L',s.ctrl.L.toFixed(2));this._sync('a0',s.ctrl.a0);updateHintBox();return true;},
+  pointerUp(s){if(!s.dragPend)return false;s.dragPend=false;s.omega=0;return true;},
   draw(ctx,W,H,s){
-    drawGrid(ctx,W,H);
-    const px=W/2,py=60,maxLen=Math.min(H-130,380),scale=maxLen/3;
-    const len=s.ctrl.L*scale;
-    const bx=px+len*Math.sin(s.theta),by=py+len*Math.cos(s.theta);
-    ctx.fillStyle='#1c2540';ctx.fillRect(px-140,py-14,280,10);
-    ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(148,163,184,.28)';
-    ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,py+len+50);ctx.stroke();ctx.setLineDash([]);
-    ctx.strokeStyle='rgba(251,191,36,.5)';
-    ctx.beginPath();ctx.arc(px,py,Math.min(len*0.35,70),Math.PI/2-Math.abs(s.theta),Math.PI/2,s.theta>0);ctx.stroke();
-    ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(bx,by);ctx.stroke();
-    const r=18+s.ctrl.L*3;
-    const gr=ctx.createRadialGradient(bx-r*0.35,by-r*0.35,2,bx,by,r);
-    gr.addColorStop(0,'#a5f3fc');gr.addColorStop(0.5,'#22d3ee');gr.addColorStop(1,'#0891b2');
-    ctx.fillStyle=gr;ctx.beginPath();ctx.arc(bx,by,r,0,7);ctx.fill();
-    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(px,py,7,0,7);ctx.fill();
-    const T0=2*Math.PI*Math.sqrt(s.ctrl.L/s.ctrl.g),th=deg2rad(s.ctrl.a0);
-    const T=T0*(1+th*th/16+11*Math.pow(th,4)/3072+173*Math.pow(th,6)/737280);
-    label(ctx,`T ≈ ${T.toFixed(3)} s`,W/2,H-24,'#fbbf24','center',15,true);
+    drawGrid(ctx,W,H);const g=this._geom(W,H,s),T=this._period(s),r=16+8*Math.sqrt(s.ctrl.m);
+    ctx.fillStyle='#1c2540';ctx.fillRect(g.px-145,g.py-17,290,12);ctx.fillStyle='#64748b';ctx.fillRect(g.px-5,g.py-5,10,18);label(ctx,'نقطة التعليق',g.px,g.py-28,'#94a3b8','center',10,true);
+    const rx=42,top=g.py,bottom=Math.min(H-95,g.py+3*g.scale);ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(rx,top);ctx.lineTo(rx,bottom);ctx.stroke();
+    for(let m=0;m<=3;m+=.5){const yy=top+m*g.scale;ctx.beginPath();ctx.moveTo(rx-7,yy);ctx.lineTo(rx+7,yy);ctx.stroke();label(ctx,m.toFixed(1)+' m',rx+13,yy,'#94a3b8','left',8,false);}
+    label(ctx,'مسطرة الطول',rx,top-14,'#22d3ee','center',9,true);
+    ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(148,163,184,.32)';ctx.beginPath();ctx.moveTo(g.px,g.py);ctx.lineTo(g.px,g.py+Math.min(g.len+36,H-g.py-85));ctx.stroke();ctx.setLineDash([]);
+    ctx.strokeStyle='rgba(251,191,36,.58)';ctx.beginPath();ctx.arc(g.px,g.py,Math.min(66,g.len*.34),Math.PI/2-Math.abs(s.theta),Math.PI/2,s.theta>0);ctx.stroke();
+    ctx.strokeStyle='#cbd5e1';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(g.px,g.py);ctx.lineTo(g.bx,g.by);ctx.stroke();
+    const grad=ctx.createRadialGradient(g.bx-r*.35,g.by-r*.35,2,g.bx,g.by,r);grad.addColorStop(0,'#cffafe');grad.addColorStop(.45,'#22d3ee');grad.addColorStop(1,'#0e7490');ctx.fillStyle=grad;ctx.beginPath();ctx.arc(g.bx,g.by,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#67e8f9';ctx.stroke();
+    label(ctx,'اسحب الكرة',g.bx,g.by+r+15,'#22d3ee','center',9,true);
+    ctx.fillStyle='rgba(7,11,20,.92)';ctx.strokeStyle=s.stopwatch&&s.stopwatch.active?'#fbbf24':'#475569';ctx.fillRect(g.watch.x,g.watch.y,g.watch.w,g.watch.h);ctx.strokeRect(g.watch.x,g.watch.y,g.watch.w,g.watch.h);
+    label(ctx,(s.stopwatch&&s.stopwatch.active?'⏸ أوقف القياس':'⏱ ابدأ قياس 10 ذبذبات'),g.watch.x+g.watch.w/2,g.watch.y+13,s.stopwatch&&s.stopwatch.active?'#fbbf24':'#cbd5e1','center',9,true);
+    const wt=s.stopwatch?(s.stopwatch.armed?'ينتظر العبور...':((s.stopwatch.elapsed||0).toFixed(2)+' s | '+(s.stopwatch.count||0)+'/10')):'—';label(ctx,wt,g.watch.x+g.watch.w/2,g.watch.y+29,'#22d3ee','center',9,true);
+    ctx.fillStyle='rgba(14,20,36,.82)';ctx.strokeStyle='#25304a';ctx.fillRect(W-205,22,185,82);ctx.strokeRect(W-205,22,185,82);label(ctx,'T المتوقع',W-112,40,'#94a3b8','center',9,true);label(ctx,T.toFixed(3)+' s',W-112,60,'#fbbf24','center',15,true);label(ctx,'m='+s.ctrl.m.toFixed(2)+' kg | g='+s.ctrl.g.toFixed(2),W-112,84,'#cbd5e1','center',9,false);
   }
 },
 
@@ -1009,56 +1039,53 @@ circular_motion: {
 },
 
 ohm: {
-  title:'قانون أوم', icon:'⚡', category:'كهرباء',
-  desc:'I = V/R — التيار والجهد والمقاومة.',
-  welcome:{title:'⚡ قانون أوم',steps:['إلكترونات تتحرك في دائرة.','زد V ⇒ يزيد I، زد R ⇒ يقل I.','I = V/R.']},
+  title:'مختبر قانون أوم — قِس وابنِ منحنى V–I', icon:'⚡', category:'كهرباء', labV4:true,
+  desc:'دائرة قياس واضحة بأجهزة مسماة: بطارية، مقاومة، أميتر، فولتميتر ومفتاح. سجّل نقاطًا متعددة ثم استخرج R من ميل منحنى V–I.',
+  welcome:{title:'⚡ اكتشف قانون أوم من قياساتك',steps:[
+    'أغلق المفتاح داخل الرسم وتعرّف إلى الأميتر والفولتميتر.',
+    'ثبّت R وغيّر V، ثم اضغط «سجّل هذه القراءة» عدة مرات.',
+    'راقب منحنى V مقابل I وهو يتكون من نقاطك أنت.',
+    'قارن ميل الخط بالمقاومة المضبوطة R؛ عندها تكون قد استنتجت V=IR تجريبيًا.'
+  ]},
   controls:[
-    {id:'V',label:'الجهد V',min:1,max:24,step:0.5,value:9,unit:'V',help:'<b>V</b><br>I ∝ V.'},
-    {id:'R',label:'المقاومة R',min:5,max:500,step:5,value:100,unit:'Ω',help:'<b>R</b><br>I ∝ 1/R.'}
+    {id:'V',label:'جهد البطارية V',min:1,max:24,step:0.5,value:4,unit:'V',help:'غيّره مع تثبيت R لبناء منحنى V–I.'},
+    {id:'R',label:'المقاومة R',min:10,max:500,step:10,value:100,unit:'Ω',help:'عند تغيير R تبدأ سلسلة قياسات جديدة لأن ميل V–I يجب أن يساوي المقاومة الجديدة.'}
   ],
-  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
-  readouts(s){const I=s.ctrl.V/s.ctrl.R;return[
-    {l:'I = V/R',v:(I*1000).toFixed(1),u:'mA',c:'gold'},{l:'P = VI',v:(s.ctrl.V*I).toFixed(3),u:'W'},{l:'R',v:s.ctrl.R,u:'Ω'}];},
-  hints(s){const I=s.ctrl.V/s.ctrl.R;return[
-    `I = ${s.ctrl.V}/${s.ctrl.R} = <span class="hl">${(I*1000).toFixed(2)} mA</span>.`,
-    I>0.1?'⚠️ تيار كبير.':'التيار معتدل.'];},
-  equations:['I = \\dfrac{V}{R}','P = V \\cdot I'],
-  theory:'التيار يتناسب طرديًا مع الجهد وعكسيًا مع المقاومة.',
+  hardReset(s){s.t=0;s.ohm={switchOn:false,points:[],seriesR:s.ctrl.R,lastI:0};},
+  reset(s){this.hardReset(s);},
+  onControlChange(s,id,oldValue,newValue){if(!s.ohm)this.hardReset(s);if(id==='R'&&Number(oldValue)!==Number(newValue)){s.ohm.points=[];s.ohm.seriesR=s.ctrl.R;toast('📊 تغيرت R؛ بدأت سلسلة قياسات جديدة.','learn',2600);}},
+  _I(s){return s.ohm&&s.ohm.switchOn?s.ctrl.V/s.ctrl.R:0;},
+  _fit(s){const pts=s.ohm&&s.ohm.points||[];if(pts.length<2)return null;let sii=0,siv=0;pts.forEach(p=>{sii+=p.I*p.I;siv+=p.I*p.V;});return sii>0?siv/sii:null;},
+  update(s,dt){s.t+=dt;if(!s.ohm)this.hardReset(s);s.ohm.lastI=this._I(s);},
+  readouts(s){const I=this._I(s),fit=this._fit(s);return[
+    {l:'التيار المقاس بالأميتر',v:(I*1000).toFixed(1),u:'mA',c:'gold'},
+    {l:'فرق الجهد على المقاومة',v:(s.ohm&&s.ohm.switchOn?s.ctrl.V:0).toFixed(2),u:'V',c:'cyan'},
+    {l:'القدرة P=VI',v:(s.ctrl.V*I).toFixed(3),u:'W'},
+    {l:'النقاط المسجلة',v:(s.ohm&&s.ohm.points||[]).length,u:''},
+    {l:'R من ميل V–I',v:Number.isFinite(fit)?fit.toFixed(1):'—',u:'Ω'}];},
+  hints(s){const I=this._I(s),fit=this._fit(s),h=[];h.push(!s.ohm||!s.ohm.switchOn?'الدائرة مفتوحة؛ اضغط المفتاح داخل الرسم لإغلاقها.':'الدائرة مغلقة: الأميتر على التوالي والفولتميتر على طرفي المقاومة.');h.push('ثبت R='+s.ctrl.R+' Ω، ثم غيّر V وسجل 4–5 نقاط.');if(Number.isFinite(fit))h.push('ميل الخط من بياناتك ≈ <span class="hl">'+fit.toFixed(1)+' Ω</span>. قارنه مع R='+s.ctrl.R+' Ω.');if(I>.2)h.push('⚠️ تيار كبير نسبيًا؛ لاحظ ارتفاع P=VI.');return h;},
+  equations:['V=IR','I=\\frac{V}{R}','R_{exp}=\\frac{\\sum I_iV_i}{\\sum I_i^2}','P=VI'],
+  theory:'<b>لا نبدأ من القانون:</b><br>ثبت المقاومة، ثم اجمع عدة أزواج من V وI. إذا تشكل خط مستقيم يمر قرب الأصل فهذا يعني V∝I، وميل الخط هو R.<br><br><b>الأجهزة:</b><br>الأميتر على التوالي ليقيس التيار نفسه المار في المقاومة، والفولتميتر على التوازي ليقيس فرق الجهد بين طرفيها. المفتاح يفتح أو يغلق المسار.',
+  _geom(W,H){const circuit={x:28,y:62,w:W*.56-38,h:H-108},graph={x:W*.60,y:62,w:W*.37,h:H-108},sw={x:28+((W*.56-38)*.52),y:84,w:92,h:34};const rec={x:28+(W*.56-38)*.50-80,y:62+(H-108)-46,w:160,h:34};return{circuit,graph,sw,rec};},
+  pointerDown(s,p){if(!s.ohm)this.hardReset(s);const g=this._geom(p.W,p.H);if(p.x>=g.sw.x&&p.x<=g.sw.x+g.sw.w&&p.y>=g.sw.y&&p.y<=g.sw.y+g.sw.h){s.ohm.switchOn=!s.ohm.switchOn;toast(s.ohm.switchOn?'🔌 أغلقت المفتاح؛ بدأ التيار.':'⛔ فتحت المفتاح؛ التيار صفر.','learn',2200);updateHintBox();return true;}if(p.x>=g.rec.x&&p.x<=g.rec.x+g.rec.w&&p.y>=g.rec.y&&p.y<=g.rec.y+g.rec.h){if(!s.ohm.switchOn){toast('أغلق المفتاح أولًا.','err',2000);return true;}const I=s.ctrl.V/s.ctrl.R;if(s.ohm.points.some(q=>Math.abs(q.V-s.ctrl.V)<1e-9)){toast('هذه قيمة V مسجلة. غيّر الجهد ثم سجّل نقطة جديدة.','learn',2300);return true;}s.ohm.points.push({V:s.ctrl.V,I,R:s.ctrl.R});s.ohm.points.sort((a,b)=>a.I-b.I);toast('📍 سُجلت القراءة.','ok',1800);updateHintBox();return true;}return false;},
+  pointerMove(){return false;},pointerUp(){return false;},
   draw(ctx,W,H,s){
-    drawGrid(ctx,W,H);
-    const padX=90,padY=70;
-    const L=padX,R=W-padX,T=padY,B=H-padY;
-    ctx.strokeStyle='#475569';ctx.lineWidth=5;
-    ctx.beginPath();ctx.rect(L,T,R-L,B-T);ctx.stroke();
-    ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;ctx.beginPath();ctx.rect(L,T,R-L,B-T);ctx.stroke();
-    const batY=(T+B)/2;
-    ctx.fillStyle='#070b14';ctx.fillRect(L-22,batY-34,44,68);
-    ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;
-    ctx.beginPath();ctx.moveTo(L-16,batY-12);ctx.lineTo(L+16,batY-12);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(L-8,batY+4);ctx.lineTo(L+8,batY+4);ctx.stroke();
-    label(ctx,`V=${s.ctrl.V}V`,L-40,batY,'#fbbf24','right',13,true);
-    const resY=(T+B)/2,resH=60,resW=40;
-    const gr=ctx.createLinearGradient(R-resW/2,0,R+resW/2,0);
-    gr.addColorStop(0,'#b45309');gr.addColorStop(0.5,'#fbbf24');gr.addColorStop(1,'#b45309');
-    ctx.fillStyle=gr;ctx.fillRect(R-resW/2,resY-resH/2,resW,resH);
-    label(ctx,`R=${s.ctrl.R}Ω`,R+40,resY,'#fbbf24','left',13,true);
-    const I=s.ctrl.V/s.ctrl.R;
-    const amX=W/2,amY=T;
-    ctx.fillStyle='#0a0e1a';ctx.beginPath();ctx.arc(amX,amY,24,0,7);ctx.fill();
-    ctx.strokeStyle='#22d3ee';ctx.lineWidth=2;ctx.stroke();
-    label(ctx,'A',amX,amY,'#22d3ee','center',16,true);
-    const speed=clamp(I*400,0.15,3.5);
-    const totalLen=2*((R-L)+(B-T));
-    const t=s.t*speed*60;
-    for(let i=0;i<48;i++){
-      const d=((t+i*(totalLen/48))%totalLen+totalLen)%totalLen;
-      let x,y;
-      if(d<R-L){x=L+d;y=T;}
-      else if(d<(R-L)+(B-T)){x=R;y=T+(d-(R-L));}
-      else if(d<2*(R-L)+(B-T)){x=R-(d-((R-L)+(B-T)));y=B;}
-      else{x=L;y=B-(d-(2*(R-L)+(B-T)));}
-      ctx.fillStyle='#67e8f9';ctx.beginPath();ctx.arc(x,y,3.5,0,7);ctx.fill();
-    }
+    drawGrid(ctx,W,H);if(!s.ohm)this.hardReset(s);const g=this._geom(W,H),c=g.circuit,gr=g.graph,I=this._I(s);
+    ctx.fillStyle='rgba(8,13,24,.78)';ctx.strokeStyle='#25304a';ctx.fillRect(c.x,c.y,c.w,c.h);ctx.strokeRect(c.x,c.y,c.w,c.h);label(ctx,'دائرة القياس',c.x+12,c.y+17,'#cbd5e1','left',11,true);
+    const L=c.x+58,R=c.x+c.w-60,T=c.y+86,B=c.y+c.h-76;ctx.strokeStyle=s.ohm.switchOn?'#22d3ee':'#475569';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(L,T);ctx.lineTo(R,T);ctx.lineTo(R,B);ctx.lineTo(L,B);ctx.lineTo(L,T);ctx.stroke();
+    const by=(T+B)/2;ctx.fillStyle='#111827';ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.fillRect(L-28,by-42,56,84);ctx.strokeRect(L-28,by-42,56,84);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(L-16,by-10);ctx.lineTo(L+16,by-10);ctx.moveTo(L-8,by+8);ctx.lineTo(L+8,by+8);ctx.stroke();label(ctx,'البطارية',L,by-57,'#fbbf24','center',10,true);label(ctx,s.ctrl.V.toFixed(1)+' V',L,by+58,'#fbbf24','center',10,true);
+    const rx=R,ry=(T+B)/2;ctx.fillStyle='#b45309';ctx.strokeStyle='#fbbf24';ctx.fillRect(rx-18,ry-42,36,84);ctx.strokeRect(rx-18,ry-42,36,84);label(ctx,'المقاومة',rx,ry-57,'#fbbf24','center',10,true);label(ctx,s.ctrl.R+' Ω',rx,ry+58,'#fbbf24','center',10,true);
+    const ax=(L+R)/2,ay=T;ctx.fillStyle='#07111b';ctx.strokeStyle='#22d3ee';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ax,ay,25,0,Math.PI*2);ctx.fill();ctx.stroke();label(ctx,'A',ax,ay,'#22d3ee','center',17,true);label(ctx,(I*1000).toFixed(1)+' mA',ax,ay-37,'#22d3ee','center',9,true);
+    const vx=R-92,vy=ry;ctx.fillStyle='#07111b';ctx.strokeStyle='#a78bfa';ctx.beginPath();ctx.arc(vx,vy,25,0,Math.PI*2);ctx.fill();ctx.stroke();label(ctx,'V',vx,vy,'#a78bfa','center',17,true);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(vx+24,vy-5);ctx.lineTo(R-18,ry-38);ctx.moveTo(vx+24,vy+5);ctx.lineTo(R-18,ry+38);ctx.stroke();label(ctx,s.ohm.switchOn?s.ctrl.V.toFixed(1)+' V':'0.0 V',vx,vy+38,'#a78bfa','center',9,true);
+    ctx.fillStyle='rgba(7,11,20,.95)';ctx.strokeStyle=s.ohm.switchOn?'#a3e635':'#f87171';ctx.fillRect(g.sw.x,g.sw.y,g.sw.w,g.sw.h);ctx.strokeRect(g.sw.x,g.sw.y,g.sw.w,g.sw.h);label(ctx,s.ohm.switchOn?'● المفتاح مغلق':'○ المفتاح مفتوح',g.sw.x+g.sw.w/2,g.sw.y+g.sw.h/2,s.ohm.switchOn?'#a3e635':'#f87171','center',9,true);
+    if(s.ohm.switchOn){const speed=clamp(I*180,.4,5),per=2*((R-L)+(B-T)),tt=s.t*speed*45;for(let k=0;k<26;k++){const d=(tt+k*per/26)%per;let x,y;if(d<R-L){x=L+d;y=T;}else if(d<(R-L)+(B-T)){x=R;y=T+d-(R-L);}else if(d<2*(R-L)+(B-T)){x=R-(d-(R-L+B-T));y=B;}else{x=L;y=B-(d-(2*(R-L)+(B-T)));}ctx.fillStyle='#67e8f9';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();}}
+    ctx.fillStyle='rgba(251,191,36,.12)';ctx.strokeStyle='#fbbf24';ctx.fillRect(g.rec.x,g.rec.y,g.rec.w,g.rec.h);ctx.strokeRect(g.rec.x,g.rec.y,g.rec.w,g.rec.h);label(ctx,'📍 سجّل هذه القراءة',g.rec.x+g.rec.w/2,g.rec.y+g.rec.h/2,'#fbbf24','center',10,true);
+    ctx.fillStyle='rgba(8,13,24,.78)';ctx.strokeStyle='#25304a';ctx.fillRect(gr.x,gr.y,gr.w,gr.h);ctx.strokeRect(gr.x,gr.y,gr.w,gr.h);label(ctx,'الرسم الذي تبنيه أنت: V مقابل I',gr.x+gr.w/2,gr.y+18,'#cbd5e1','center',10,true);
+    const gx=gr.x+48,gy=gr.y+gr.h-48,gw=gr.w-70,gh=gr.h-90;arrow(ctx,gx,gy,gx+gw,gy,'#64748b',1.5,7);arrow(ctx,gx,gy,gx,gy-gh,'#64748b',1.5,7);label(ctx,'I (mA)',gx+gw,gy+18,'#94a3b8','right',8,true);label(ctx,'V',gx-12,gy-gh,'#94a3b8','right',8,true);
+    const imax=24/Math.max(10,s.ctrl.R)*1000*1.12,vmax=25,pts=s.ohm.points||[];const fit=this._fit(s);
+    if(pts.length>=2&&Number.isFinite(fit)){ctx.strokeStyle='#22d3ee';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx+gw,gy-(fit*(imax/1000)/vmax)*gh);ctx.stroke();}
+    pts.forEach(p=>{const x=gx+(p.I*1000/imax)*gw,y=gy-(p.V/vmax)*gh;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();});
+    label(ctx,Number.isFinite(fit)?('الميل ≈ '+fit.toFixed(1)+' Ω'):'سجّل نقطتين على الأقل',gr.x+gr.w/2,gr.y+gr.h-18,Number.isFinite(fit)?'#22d3ee':'#64748b','center',9,true);
   }
 },
 
@@ -5763,7 +5790,7 @@ function renderControls(){
         currentSim.ctrl[c.id]=newValue;
         input.querySelectorAll('.choice-btn').forEach(b=>b.classList.toggle('active',b===btn));
         document.getElementById('val-'+c.id).textContent=btn.textContent;
-        currentSim.reset(currentState);
+        if(typeof currentSim.onControlChange==='function')currentSim.onControlChange(currentState,c.id,oldValue,newValue);else currentSim.reset(currentState);
         if(c.help)showTip(btn,c.help,2600);
         updateHintBox();
         pedagogyExplainChange(c,oldValue,btn.textContent,before);
@@ -5774,6 +5801,7 @@ function renderControls(){
       input.addEventListener('input',(e)=>{
         const before=pedagogySnapshot(),oldValue=currentSim.ctrl[c.id],newValue=e.target.value;
         currentSim.ctrl[c.id]=newValue;
+        if(typeof currentSim.onControlChange==='function')currentSim.onControlChange(currentState,c.id,oldValue,newValue);
         updateHintBox();
         pedagogyExplainChange(c,oldValue,newValue,before);
       });
@@ -5783,7 +5811,7 @@ function renderControls(){
       const before=pedagogySnapshot(),oldValue=currentSim.ctrl[c.id],newValue=parseFloat(e.target.value);
       currentSim.ctrl[c.id]=newValue;
       document.getElementById('val-'+c.id).innerHTML=currentSim.ctrl[c.id]+' <span class="text-slate-500 text-xs">'+(c.unit||'')+'</span>';
-      currentSim.reset(currentState);
+      if(typeof currentSim.onControlChange==='function')currentSim.onControlChange(currentState,c.id,oldValue,newValue);else currentSim.reset(currentState);
       if(!sliderTipTimers[c.id]||Date.now()-sliderTipTimers[c.id]>4000){
         sliderTipTimers[c.id]=Date.now();
         if(c.help)showTip(input,c.help,3000);
