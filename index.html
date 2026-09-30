@@ -1633,55 +1633,123 @@ spectrum: {
 },
 
 rutherford: {
-  title:'تشتت رذرفورد', icon:'🎯', category:'الفيزياء الذرية',
-  desc:'اكتشاف النواة عبر تشتت جسيمات ألفا.',
-  welcome:{title:'🎯 تشتت رذرفورد',steps:['جسيمات ألفا على رقاقة ذهب.','معظمها يمر، وقليل ينحرف.','استنتاج: النواة صغيرة موجبة.']},
+  title:'مختبر رذرفورد — أطلق جسيمات α وشاهد كيف تكشف النواة', icon:'🎯', category:'الفيزياء الذرية', labV4:true,
+  desc:'ابدأ بجسيم ألفا واحد بمعامل صدم تختاره، ثم أطلق 100 جسيم وابنِ histogram لزوايا التشتت. شاهد لماذا يمر معظمها ولماذا يعود عدد قليل بزوايا كبيرة.',
+  welcome:{title:'🎯 من مسار جسيم واحد إلى اكتشاف النواة',steps:[
+    'اختر مادة الرقيقة وطاقة α، ثم غيّر معامل الصدم b لجسيم واحد.',
+    'اضغط «أطلق جسيمًا واحدًا» لترى كيف تتغير زاوية الانحراف عندما يقترب المسار من النواة.',
+    'بعد أن تفهم الجسيم الواحد، أطلق 100 جسيم وابنِ توزيع الزوايا.',
+    'فعّل «تكبير الذرة» لترى لماذا تمر أغلب الجسيمات في فراغ بينما تنحرف القريبة من النواة بقوة.'
+  ]},
   controls:[
-    {id:'Z',label:'العدد الذري Z',min:1,max:79,step:1,value:79,unit:'',help:'<b>Z</b>'},
-    {id:'E',label:'طاقة جسيم ألفا',min:1,max:10,step:0.5,value:5,unit:'MeV',help:'<b>E</b>'},
-    {id:'rate',label:'معدل الإطلاق',min:1,max:10,step:1,value:5,unit:'',help:'<b>معدل</b>'}
+    {id:'Z',label:'مادة الرقيقة / العدد الذري Z',type:'buttons',value:79,options:[
+      {value:13,label:'Al — ألمنيوم'},{value:29,label:'Cu — نحاس'},{value:47,label:'Ag — فضة'},{value:79,label:'Au — ذهب'}
+    ],help:'زيادة Z تعني شحنة نووية موجبة أكبر، فتزداد قوة التنافر الكهروستاتيكي مع جسيم α.'},
+    {id:'E',label:'طاقة جسيم α',min:2,max:10,step:.5,value:5,unit:'MeV',help:'الجسيم الأعلى طاقة أقل انحرافًا عادةً لأنه يمر أسرع وبزخم أكبر.'},
+    {id:'b',label:'معامل الصدم b للجسيم المفرد',min:-80,max:80,step:2,value:30,unit:'fm',help:'المسافة الجانبية التي كان سيمر بها الجسيم عن مركز النواة لولا التنافر. |b| صغير ⇒ اقتراب أكبر ⇒ انحراف أكبر.'}
   ],
-  reset(s){s.t=0;s.particles=[];},
-  update(s,dt){
-    s.t+=dt;
-    if(Math.random()<0.05*s.ctrl.rate&&s.particles.length<80){
-      s.particles.push({x:20,y:H/2+(Math.random()-0.5)*H*0.5,vx:3,vy:0,b:(Math.random()-0.5)*60});
-    }
-    const foilX=W*0.55;
-    s.particles.forEach(p=>{
-      if(p.x<foilX){p.x+=p.vx;p.y+=p.vy;}
-      else{
-        const defl=(s.ctrl.Z/s.ctrl.E)*0.5;
-        const ang=Math.atan2(p.y-H/2+p.b*0.3,60)/1.5*defl;
-        p.x+=p.vx*Math.cos(ang*2);p.y+=p.vx*Math.sin(ang*2)*1.5;
-      }
-    });
-    s.particles=s.particles.filter(p=>p.x<W+20&&p.y>-20&&p.y<H+20);
+  hardReset(s){s.t=0;s.ruth={rays:[],hist:Array(18).fill(0),total:0,back:0,small:0,last:null,zoom:false};},
+  reset(s){this.hardReset(s);},
+  onControlChange(s){if(!s.ruth)this.hardReset(s);},
+  _theta(Z,E,b){
+    const ab=Math.max(.25,Math.abs(b));
+    return 2*Math.atan((1.44*Z)/(E*ab));
   },
-  readouts(s){return[
-    {l:'الجسيمات',v:s.particles.length,u:''},{l:'Z',v:s.ctrl.Z,u:''},
-    {l:'E',v:s.ctrl.E,u:'MeV'},{l:'مقياس التشتت النسبي',v:Math.pow(s.ctrl.Z/s.ctrl.E,2).toFixed(1),u:'a.u.'}];},
-  hints(s){return[
-    `عند زاوية ثابتة: شدة التشتت ∝ (Z/E)².`,
-    'زاوية كل جسيم تعتمد أيضًا على معامل الصدم b؛ الرسم تمثيل احتمالي تعليمي.'];},
-  equations:['\\dfrac{d\\sigma}{d\\Omega} \\propto \\dfrac{Z^2}{E^2 \\sin^4(\\theta/2)}'],
-  theory:'الذرة فراغ، والنواة صغيرة موجبة.',
+  _launch(s,b){
+    if(!s.ruth)this.hardReset(s);
+    const theta=this._theta(s.ctrl.Z,s.ctrl.E,b),sign=b===0?1:Math.sign(b);
+    const signed=-sign*theta,deg=Math.abs(theta*180/Math.PI);
+    const ray={b,theta:signed,deg,Z:s.ctrl.Z,E:s.ctrl.E,born:s.t};
+    s.ruth.rays.push(ray);if(s.ruth.rays.length>70)s.ruth.rays.shift();
+    const bin=Math.min(17,Math.floor(deg/10));s.ruth.hist[bin]++;s.ruth.total++;if(deg>90)s.ruth.back++;if(deg<10)s.ruth.small++;s.ruth.last=ray;
+  },
+  _launchBatch(s,n){
+    const bmax=80;
+    for(let i=0;i<n;i++){
+      const sign=Math.random()<.5?-1:1;
+      const b=sign*bmax*Math.sqrt(Math.max(.0001,Math.random()));
+      this._launch(s,b);
+    }
+  },
+  update(s,dt){s.t+=dt;if(!s.ruth)this.hardReset(s);},
+  readouts(s){const r=s.ruth||{},last=r.last;return[
+    {l:'زاوية آخر جسيم',v:last?last.deg.toFixed(1):'—',u:'°',c:'gold'},
+    {l:'عدد الجسيمات المسجلة',v:r.total||0,u:''},
+    {l:'مرت تقريبًا مستقيمة (<10°)',v:r.total?(100*r.small/r.total).toFixed(1):'—',u:'%',c:'cyan'},
+    {l:'تشتت خلفي (>90°)',v:r.total?(100*r.back/r.total).toFixed(2):'—',u:'%'},
+    {l:'Z الرقيقة',v:s.ctrl.Z,u:''},
+    {l:'طاقة α',v:s.ctrl.E.toFixed(1),u:'MeV'}];},
+  hints(s){
+    const th=this._theta(s.ctrl.Z,s.ctrl.E,s.ctrl.b)*180/Math.PI,h=[];
+    h.push('لجسيمك المحدد b='+s.ctrl.b+' fm، التوقع المبسط لزاوية الانحراف ≈ <span class="hl">'+th.toFixed(1)+'°</span>. أطلقه وشاهد المسار.');
+    h.push('صغّر |b| فقط: ستلاحظ أن الجسيم يقترب أكثر من النواة فتزداد زاوية التشتت.');
+    h.push('بعد فهم الجسيم الواحد، أطلق 100 جسيم. إذا كان معظم العمود في الزوايا الصغيرة وقليل في الكبيرة فهذا هو المفتاح التجريبي لفكرة أن الذرة معظمها فراغ وأن النواة صغيرة وكثيفة.');
+    if(s.ruth&&s.ruth.total>30)h.push('توزيعك الحالي: '+(100*s.ruth.small/s.ruth.total).toFixed(1)+'% أقل من 10°، و'+(100*s.ruth.back/s.ruth.total).toFixed(2)+'% أكبر من 90° في هذه المحاكاة.');
+    return h;
+  },
+  equations:['\\theta=2\\tan^{-1}\\!\\left(\\frac{1.44\\,Z}{E\\,|b|}\\right)\\quad(\\text{بوحدات MeV,fm})','\\frac{d\\sigma}{d\\Omega}\\propto\\frac{Z^2}{E^2\\sin^4(\\theta/2)}'],
+  theory:'<b>الفكرة التجريبية:</b><br>أرسل جيجر ومارسدن جسيمات α نحو رقيقة معدنية. لو كانت الشحنة الموجبة موزعة في الذرة انتشارًا واسعًا، لما توقعنا ارتدادات كبيرة. لكن أغلب الجسيمات مرت بانحراف صغير جدًا، بينما انحرف عدد قليل بشدة.<br><br><b>المعنى:</b><br>مرور الأغلبية يعني أن معظم حجم الذرة فراغ. الزوايا الكبيرة القليلة تعني أن الشحنة الموجبة والكتلة متركزتان في منطقة صغيرة جدًا: النواة.<br><br><b>معامل الصدم:</b><br>يمثل b مقدار قرب المسار من مركز النواة. عندما يصغر |b| يصبح التنافر الكهروستاتيكي أشد ويكبر الانحراف. زيادة Z تزيد الانحراف، بينما زيادة طاقة α تقلله.',
+  _buttons(W,H){
+    const y=18,g=7,w=Math.min(128,(W-50)/4);
+    return[
+      {id:'one',x:18,y,w,h:34,label:'▶ جسيم واحد'},
+      {id:'hundred',x:18+(w+g),y,w,h:34,label:'▶▶ 100 جسيم'},
+      {id:'zoom',x:18+2*(w+g),y,w,h:34,label:'🔬 تكبير الذرة'},
+      {id:'clear',x:18+3*(w+g),y,w,h:34,label:'↺ مسح'}
+    ];
+  },
+  pointerDown(s,p){
+    if(!s.ruth)this.hardReset(s);
+    for(const b of this._buttons(p.W,p.H)){
+      if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){
+        if(b.id==='one'){this._launch(s,s.ctrl.b);toast('أطلقت جسيمًا بمعامل الصدم الذي اخترته.','learn',1900);}
+        if(b.id==='hundred'){this._launchBatch(s,100);toast('📊 أضيفت 100 حادثة إلى توزيع الزوايا.','ok',2100);}
+        if(b.id==='zoom'){s.ruth.zoom=!s.ruth.zoom;}
+        if(b.id==='clear'){this.hardReset(s);}
+        updateHintBox();return true;
+      }
+    }
+    return false;
+  },
+  pointerMove(){return false;},pointerUp(){return false;},
   draw(ctx,W,H,s){
-    drawGrid(ctx,W,H);
-    const foilX=W*0.55;
-    ctx.fillStyle='#1c2540';ctx.fillRect(foilX-4,60,8,H-120);
-    ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.strokeRect(foilX-4,60,8,H-120);
-    label(ctx,'رقاقة ذهب',foilX,H-40,'#fbbf24','center',13,true);
-    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(20,H/2,12,0,7);ctx.fill();
-    label(ctx,'مصدر α',20,H/2+25,'#fbbf24','center',11,true);
-    s.particles.forEach(p=>{
-      const g=ctx.createRadialGradient(p.x-2,p.y-2,1,p.x,p.y,5);
-      g.addColorStop(0,'#fde68a');g.addColorStop(1,'#b45309');
-      ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();
-    });
+    drawGrid(ctx,W,H);if(!s.ruth)this.hardReset(s);
+    const buttons=this._buttons(W,H);buttons.forEach(b=>{ctx.fillStyle='rgba(7,11,20,.92)';ctx.strokeStyle=(b.id==='zoom'&&s.ruth.zoom)?'#fbbf24':'#475569';ctx.fillRect(b.x,b.y,b.w,b.h);ctx.strokeRect(b.x,b.y,b.w,b.h);label(ctx,b.label,b.x+b.w/2,b.y+b.h/2,(b.id==='zoom'&&s.ruth.zoom)?'#fbbf24':'#cbd5e1','center',W<650?7:9,true);});
+    const scene={x:18,y:65,w:W*.64-26,h:H-88},hist={x:W*.66,y:65,w:W*.32-18,h:H-88};
+    ctx.fillStyle='rgba(8,13,24,.78)';ctx.strokeStyle='#25304a';ctx.fillRect(scene.x,scene.y,scene.w,scene.h);ctx.strokeRect(scene.x,scene.y,scene.w,scene.h);ctx.fillRect(hist.x,hist.y,hist.w,hist.h);ctx.strokeRect(hist.x,hist.y,hist.w,hist.h);
+    const cx=scene.x+scene.w*.58,cy=scene.y+scene.h*.50,sourceX=scene.x+40,scaleB=Math.min(scene.h*.34/80,1.8);
+    // source/collimator/foil
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(sourceX,cy,11,0,7);ctx.fill();label(ctx,'مصدر α',sourceX,cy+25,'#fbbf24','center',9,true);
+    ctx.fillStyle='#64748b';ctx.fillRect(sourceX+38,cy-35,12,25);ctx.fillRect(sourceX+38,cy+10,12,25);label(ctx,'Collimator',sourceX+44,cy-48,'#94a3b8','center',7,true);
+    ctx.fillStyle='rgba(251,191,36,.25)';ctx.strokeStyle='#fbbf24';ctx.fillRect(cx-3,scene.y+26,6,scene.h-52);ctx.strokeRect(cx-3,scene.y+26,6,scene.h-52);label(ctx,'الرقيقة',cx,scene.y+17,'#fbbf24','center',9,true);
+    // nucleus
+    ctx.fillStyle='#ef4444';ctx.beginPath();ctx.arc(cx,cy,7,0,7);ctx.fill();label(ctx,'النواة',cx+12,cy-12,'#f87171','left',8,true);
+    // detector ring
+    ctx.strokeStyle='rgba(34,211,238,.35)';ctx.lineWidth=6;ctx.beginPath();ctx.arc(cx,cy,Math.min(scene.w*.35,scene.h*.40),-Math.PI*.85,Math.PI*.85);ctx.stroke();label(ctx,'شاشة الكشف',scene.x+scene.w-10,scene.y+20,'#22d3ee','right',8,true);
+    // rays
+    s.ruth.rays.forEach((ray,idx)=>{
+      const iy=cy+ray.b*scaleB*.42,rad=Math.min(scene.w*.38,scene.h*.43),ex=cx+Math.cos(ray.theta)*rad,ey=iy+Math.sin(ray.theta)*rad;
+      ctx.globalAlpha=.20+.70*(idx/(Math.max(1,s.ruth.rays.length-1)));
+      ctx.strokeStyle=ray.deg>90?'#f472b6':ray.deg>20?'#fbbf24':'#22d3ee';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(sourceX+5,iy);ctx.lineTo(cx-4,iy);ctx.lineTo(ex,ey);ctx.stroke();
+    });ctx.globalAlpha=1;
+    // impact parameter guide for selected single particle
+    const iy=cy+s.ctrl.b*scaleB*.42;ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(167,139,250,.65)';ctx.beginPath();ctx.moveTo(sourceX+62,iy);ctx.lineTo(cx-8,iy);ctx.stroke();ctx.setLineDash([]);label(ctx,'b='+s.ctrl.b+' fm',sourceX+90,iy-10,'#a78bfa','left',8,true);
+    // histogram
+    label(ctx,'توزيع زوايا التشتت',hist.x+hist.w/2,hist.y+18,'#cbd5e1','center',9,true);
+    const base=hist.y+hist.h-42,top=hist.y+45,barW=(hist.w-36)/18,maxC=Math.max(1,...s.ruth.hist);
+    ctx.strokeStyle='#64748b';ctx.beginPath();ctx.moveTo(hist.x+24,top);ctx.lineTo(hist.x+24,base);ctx.lineTo(hist.x+hist.w-10,base);ctx.stroke();
+    s.ruth.hist.forEach((n,i)=>{const bh=(n/maxC)*(base-top-12),x=hist.x+26+i*barW;ctx.fillStyle=i>=9?'#f472b6':i>=2?'#fbbf24':'#22d3ee';ctx.fillRect(x,base-bh,Math.max(2,barW-1),bh);});
+    label(ctx,'0°',hist.x+24,base+14,'#64748b','center',7,false);label(ctx,'90°',hist.x+26+9*barW,base+14,'#64748b','center',7,false);label(ctx,'180°',hist.x+hist.w-10,base+14,'#64748b','right',7,false);
+    label(ctx,(s.ruth.total||0)+' جسيم',hist.x+hist.w/2,hist.y+35,'#fbbf24','center',8,true);
+    // zoom inset
+    if(s.ruth.zoom){
+      const zw=Math.min(220,scene.w*.42),zh=130,zx=scene.x+12,zy=scene.y+12;
+      ctx.fillStyle='rgba(3,7,18,.95)';ctx.strokeStyle='#a78bfa';ctx.fillRect(zx,zy,zw,zh);ctx.strokeRect(zx,zy,zw,zh);label(ctx,'🔬 تكبير قرب النواة — الفراغ ليس مرسومًا بمقياس حقيقي',zx+zw/2,zy+14,'#a78bfa','center',7,true);
+      const ncx=zx+zw*.62,ncy=zy+zh*.56;ctx.fillStyle='#ef4444';ctx.beginPath();ctx.arc(ncx,ncy,16,0,7);ctx.fill();label(ctx,'نواة موجبة',ncx,ncy+30,'#f87171','center',7,true);
+      const b=s.ctrl.b,theta=-Math.sign(b||1)*this._theta(s.ctrl.Z,s.ctrl.E,b),sy=ncy+b*.35;ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(zx+10,sy);ctx.quadraticCurveTo(ncx-30,sy,ncx+Math.cos(theta)*70,ncy+Math.sin(theta)*70);ctx.stroke();
+    }
   }
-}
-,
+},
 
 molecule: {
   title:'اهتزاز جزيء ثنائي الذرة', icon:'🔬', category:'الفيزياء الجزيئية',
@@ -4201,43 +4269,147 @@ capacitor_network_lab: {
 },
 
 thin_lens_focus: {
-  title:'مختبر العدسة الرقيقة والتركيز', icon:'🔍', category:'بصريات',
-  desc:'حرّك الشاشة حتى تتكوّن صورة حقيقية حادة وتحقق من معادلة العدسة والتكبير.',
-  welcome:{title:'🔍 العدسة الرقيقة',steps:['اختر البعد البؤري f وبعد الجسم dₒ.','حرّك الشاشة حتى يطابق موضعها dᵢ النظري.','تحقق من 1/f = 1/dₒ + 1/dᵢ.','قارن اتجاه وحجم الصورة بالتكبير m = −dᵢ/dₒ.']},
+  title:'المنضدة البصرية — حرّك الجسم والشاشة واكتشف معادلة العدسة', icon:'🔍', category:'بصريات', labV4:true,
+  desc:'منضدة بصرية قابلة للسحب: حرّك الجسم والشاشة بيدك، راقب الصورة وهي تصبح حادة أو مشوشة، قِس u وv من المسطرة، ثم تحقق بنفسك من 1/f=1/u+1/v.',
+  welcome:{title:'🔍 تعامل معها كمنضدة بصرية حقيقية',steps:[
+    'اسحب الجسم الأزرق على السكة لتغيير بعده عن العدسة.',
+    'اسحب الشاشة الرمادية حتى تحصل على أوضح صورة ممكنة.',
+    'عندما تصبح الصورة حادة، سجل القياس u وv بدل قراءة القانون أولًا.',
+    'كرر التجربة لعدة أوضاع للجسم، ثم قارن 1/f مع 1/u+1/v.'
+  ]},
   controls:[
-    {id:'f',label:'البعد البؤري f',min:5,max:40,step:1,value:15,unit:'cm'},
-    {id:'do',label:'بعد الجسم dₒ',min:8,max:100,step:1,value:45,unit:'cm'},
-    {id:'screen',label:'موضع الشاشة dₛ',min:5,max:120,step:1,value:23,unit:'cm'},
-    {id:'ho',label:'ارتفاع الجسم hₒ',min:1,max:10,step:.5,value:5,unit:'cm'}
+    {id:'f',label:'البعد البؤري للعدسة f',min:5,max:40,step:1,value:15,unit:'cm',help:'خاصية للعدسة المجمعة. البؤرتان F وF′ تظهران على السكة.'},
+    {id:'do',label:'بعد الجسم u',min:8,max:100,step:1,value:45,unit:'cm',help:'يمكنك تغييره أيضًا بسحب الجسم الأزرق على السكة.'},
+    {id:'screen',label:'بعد الشاشة عن العدسة',min:5,max:120,step:1,value:23,unit:'cm',help:'يمكنك تغييره أيضًا بسحب الشاشة الرمادية. ابحث عن الموضع الذي تصبح فيه الصورة أكثر حدة.'},
+    {id:'ho',label:'ارتفاع الجسم',min:1,max:10,step:.5,value:5,unit:'cm',help:'يغير حجم الجسم وبالتالي حجم الصورة، لكنه لا يغير موضع الصورة في تقريب العدسة الرقيقة.'}
   ],
-  reset(s){s.t=0;}, update(s,dt){s.t+=dt;},
+  hardReset(s){s.t=0;s.lensLab={drag:null,records:[]};},
+  reset(s){this.hardReset(s);},
+  onControlChange(s){if(!s.lensLab)this.hardReset(s);},
   calc(s){
-    const f=s.ctrl.f, d0=s.ctrl.do, den=d0-f;
-    if(Math.abs(den)<1e-9)return {di:Infinity,m:Infinity,real:false,err:Infinity,focused:false};
-    const di=f*d0/den, m=-di/d0, real=di>0, err=real?Math.abs(s.ctrl.screen-di):Infinity;
-    return {di,m,real,err,focused:real&&err<=1};
+    const f=Number(s.ctrl.f),u=Number(s.ctrl.do),den=u-f;
+    if(Math.abs(den)<1e-9)return{v:Infinity,m:Infinity,real:false,err:Infinity,focused:false};
+    const v=f*u/den,m=-v/u,real=v>0,err=real?Math.abs(Number(s.ctrl.screen)-v):Infinity;
+    return{v,m,real,err,focused:real&&err<=0.8};
   },
-  readouts(s){const c=this.calc(s);return [
-    {l:'dᵢ النظري',v:Number.isFinite(c.di)?c.di.toFixed(2):'∞',u:'cm',c:'gold'},
-    {l:'التكبير m',v:Number.isFinite(c.m)?c.m.toFixed(3):'∞',u:'',c:'cyan'},
-    {l:'نوع الصورة',v:!Number.isFinite(c.di)?'عند اللانهاية':(c.real?'حقيقية مقلوبة':'افتراضية معتدلة'),u:''},
-    {l:'خطأ موضع الشاشة',v:c.real?c.err.toFixed(2):'—',u:'cm'},
-    {l:'التركيز',v:c.focused?'✅ حاد':'غير حاد',u:''}
-  ];},
-  hints(s){const c=this.calc(s);const h=[];
-    if(!Number.isFinite(c.di)){h.push('الجسم عند البؤرة تقريبًا، لذلك تخرج الأشعة متوازية وتكون الصورة عند اللانهاية.');return h;}
-    if(!c.real){h.push('لأن dₒ < f فالصورة افتراضية؛ لا يمكن استقبالها على شاشة خلف العدسة.');}
-    else if(c.focused)h.push('✅ الشاشة عند موضع الصورة تقريبًا؛ تحقق عمليًا من معادلة العدسة.');
-    else if(c.di>120)h.push(`موضع الصورة النظري ${c.di.toFixed(2)} cm خارج مدى الشاشة الحالي؛ أبعد الجسم عن البؤرة أو خفّض f.`);
-    else h.push(`حرّك الشاشة نحو <span class="hl">${c.di.toFixed(2)} cm</span> للحصول على صورة حادة.`);
-    h.push(`m = ${c.m.toFixed(3)}؛ الإشارة السالبة تعني صورة مقلوبة.`);return h;},
-  equations:['\\frac1f=\\frac1{d_o}+\\frac1{d_i}','m=\\frac{h_i}{h_o}=-\\frac{d_i}{d_o}'],
-  theory:'تستخدم المحاكاة تقريب العدسة الرقيقة واتفاق الإشارات القياسي: f>0 لعدسة مجمعة، وdᵢ>0 للصورة الحقيقية. عندما يكون الجسم داخل البعد البؤري تصبح الصورة افتراضية ولا تُلتقط على شاشة.',
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cy=H*.56,lx=W*.47;ctx.strokeStyle='#f472b6';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(lx,cy,13,H*.28,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([5,5]);ctx.strokeStyle='#475569';ctx.beginPath();ctx.moveTo(25,cy);ctx.lineTo(W-25,cy);ctx.stroke();ctx.setLineDash([]);
-    const scale=Math.min((lx-70)/Math.max(30,s.ctrl.do), (W-lx-70)/Math.max(35,Math.min(120,Math.abs(Number.isFinite(c.di)?c.di:s.ctrl.screen))));
-    const ox=lx-s.ctrl.do*scale,oh=Math.min(H*.28,s.ctrl.ho*scale*2.1);arrow(ctx,ox,cy,ox,cy-oh,'#22d3ee',4,10);label(ctx,'الجسم',ox,cy+24,'#22d3ee','center',12,true);
-    const sx=Math.min(W-35,lx+s.ctrl.screen*scale);ctx.strokeStyle='#64748b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(sx,cy-H*.30);ctx.lineTo(sx,cy+H*.30);ctx.stroke();label(ctx,'الشاشة',sx,cy+H*.34,'#94a3b8','center',11,true);
-    if(Number.isFinite(c.di)){const ix=lx+c.di*scale,dyImg=Math.max(-H*.29,Math.min(H*.29,-c.m*oh)),iy=cy+dyImg;ctx.strokeStyle='#fbbf24';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(ox,cy-oh);ctx.lineTo(lx,cy-oh);ctx.lineTo(ix,iy);ctx.stroke();ctx.beginPath();ctx.moveTo(ox,cy-oh);ctx.lineTo(lx,cy);ctx.lineTo(ix,iy);ctx.stroke();if(c.real&&ix<W-15)arrow(ctx,ix,cy,ix,iy,c.focused?'#a3e635':'#fbbf24',4,10);}
+  _sync(id,val){
+    const el=document.getElementById('ctrl-'+id),lab=document.getElementById('val-'+id);
+    if(el)el.value=val;
+    if(lab){const c=this.controls.find(q=>q.id===id);lab.innerHTML=val+' <span class="text-slate-500 text-xs">'+((c&&c.unit)||'')+'</span>';}
+  },
+  _geom(W,H,s){
+    const railY=H*.72,lensX=W*.51,left=55,right=W-55;
+    const scale=Math.min((lensX-left)/105,(right-lensX)/125);
+    const ox=lensX-s.ctrl.do*scale,sx=lensX+s.ctrl.screen*scale;
+    const record={x:W-220,y:18,w:190,h:34};
+    return{railY,lensX,left,right,scale,ox,sx,record};
+  },
+  update(s,dt){s.t+=dt;if(!s.lensLab)this.hardReset(s);},
+  readouts(s){
+    const c=this.calc(s),lhs=1/s.ctrl.f,rhs=Number.isFinite(c.v)?1/s.ctrl.do+1/c.v:NaN;
+    return[
+      {l:'موضع الصورة النظري v',v:Number.isFinite(c.v)?c.v.toFixed(2):'∞',u:'cm',c:'gold'},
+      {l:'موضع الشاشة',v:Number(s.ctrl.screen).toFixed(2),u:'cm',c:'cyan'},
+      {l:'حدة الصورة',v:!c.real?'لا توجد صورة حقيقية':(c.focused?'✅ حادة':(c.err<5?'قريبة من التركيز':'مشوشة')),u:''},
+      {l:'التكبير m',v:Number.isFinite(c.m)?c.m.toFixed(3):'∞',u:''},
+      {l:'1/f',v:lhs.toFixed(4),u:'cm⁻¹'},
+      {l:'1/u + 1/v',v:Number.isFinite(rhs)?rhs.toFixed(4):'—',u:'cm⁻¹'}
+    ];
+  },
+  hints(s){
+    const c=this.calc(s),h=[];
+    if(!c.real){
+      h.push('الجسم داخل البعد البؤري: الأشعة الخارجة متباعدة، لذلك <b>لا تستطيع الشاشة التقاط صورة حقيقية</b>. انظر إلى امتدادات الأشعة المتقطعة خلف العدسة لتفهم الصورة الافتراضية.');
+      return h;
+    }
+    if(c.focused)h.push('✅ وصلت إلى التركيز تقريبًا. الآن سجّل u وv بالزر داخل المنضدة.');
+    else h.push('حرّك الشاشة بيدك. الصورة النظرية تتكون قرب <span class="hl">'+c.v.toFixed(2)+' cm</span> من العدسة، لكن حاول العثور عليها بصريًا أولًا.');
+    h.push('عندما تبتعد الشاشة عن v النظري تظهر الصورة باهتة/ممتدة؛ هذا تمثيل بصري لعدم التركيز.');
+    h.push('غيّر ارتفاع الجسم وحده بعد أن تجد التركيز: ستتغير الصورة في الحجم، لكن موضعها لا يتغير.');
+    return h;
+  },
+  equations:['\\frac1f=\\frac1u+\\frac1v','m=\\frac{h_i}{h_o}=-\\frac vu'],
+  theory:'<b>كيف تعمل التجربة؟</b><br>توضع شمعة أو جسم مضيء وعدسة وشاشة على منضدة مدرجة. لا نعرف موضع الصورة مسبقًا عمليًا؛ نحرك الشاشة حتى تصبح الصورة أوضح ما يمكن، ثم نقرأ u وv من المسطرة.<br><br><b>الأشعة الرئيسة:</b><br>شعاع موازٍ للمحور ينكسر مارًا بالبؤرة، وشعاع يمر بالمركز البصري لا ينحرف تقريبًا في تقريب العدسة الرقيقة. تقاطعهما يحدد موضع الصورة الحقيقية. إذا كان u&lt;f فإن الأشعة بعد العدسة تتباعد، وامتداداتها الخلفية تتقاطع في صورة افتراضية لا يمكن استقبالها على الشاشة.<br><br><b>التعلم من القياس:</b><br>سجل عدة أزواج u وv. لكل زوج احسب 1/u+1/v؛ يجب أن تبقى قريبة من 1/f إذا كان تقريب العدسة الرقيقة صالحًا.',
+  pointerDown(s,p){
+    if(!s.lensLab)this.hardReset(s);const g=this._geom(p.W,p.H,s);
+    if(p.x>=g.record.x&&p.x<=g.record.x+g.record.w&&p.y>=g.record.y&&p.y<=g.record.y+g.record.h){
+      const c=this.calc(s);
+      if(!c.real||!c.focused){toast('حرّك الشاشة حتى تصبح الصورة حادة أولًا.','err',2500);return true;}
+      const rec={u:Number(s.ctrl.do),v:Number(s.ctrl.screen),f:Number(s.ctrl.f)};
+      if(!s.lensLab.records.some(r=>Math.abs(r.u-rec.u)<.5))s.lensLab.records.push(rec);
+      toast('📏 سُجل القياس u='+rec.u.toFixed(1)+' cm ، v='+rec.v.toFixed(1)+' cm.','ok',2600);return true;
+    }
+    if(Math.abs(p.x-g.ox)<28&&Math.abs(p.y-g.railY)<100){s.lensLab.drag='object';return true;}
+    if(Math.abs(p.x-g.sx)<28&&Math.abs(p.y-g.railY)<170){s.lensLab.drag='screen';return true;}
+    return false;
+  },
+  pointerMove(s,p){
+    if(!s.lensLab||!s.lensLab.drag)return false;const g=this._geom(p.W,p.H,s);
+    if(s.lensLab.drag==='object'){
+      const u=clamp((g.lensX-p.x)/g.scale,8,100);s.ctrl.do=Math.round(u);this._sync('do',s.ctrl.do);
+    }else{
+      const ds=clamp((p.x-g.lensX)/g.scale,5,120);s.ctrl.screen=Math.round(ds);this._sync('screen',s.ctrl.screen);
+    }
+    updateHintBox();return true;
+  },
+  pointerUp(s){if(!s.lensLab||!s.lensLab.drag)return false;s.lensLab.drag=null;return true;},
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);if(!s.lensLab)this.hardReset(s);const c=this.calc(s),g=this._geom(W,H,s),cy=g.railY;
+    // optical bench
+    ctx.fillStyle='rgba(8,13,24,.78)';ctx.strokeStyle='#25304a';ctx.fillRect(18,56,W-36,H-96);ctx.strokeRect(18,56,W-36,H-96);
+    label(ctx,'منضدة بصرية مدرجة — اسحب الجسم أو الشاشة مباشرة',32,76,'#cbd5e1','left',11,true);
+    ctx.strokeStyle='#64748b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(g.left,cy);ctx.lineTo(g.right,cy);ctx.stroke();
+    for(let d=-100;d<=120;d+=10){
+      const x=g.lensX+d*g.scale;if(x<g.left||x>g.right)continue;
+      ctx.strokeStyle='#475569';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,cy-6);ctx.lineTo(x,cy+8);ctx.stroke();
+      label(ctx,(d===0?'0':Math.abs(d)),x,cy+22,'#64748b','center',7,false);
+    }
+    label(ctx,'المسافة عن العدسة (cm)',g.lensX,cy+39,'#64748b','center',8,true);
+    // focal marks
+    const fx1=g.lensX-s.ctrl.f*g.scale,fx2=g.lensX+s.ctrl.f*g.scale;
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(fx1,cy,4,0,7);ctx.fill();ctx.beginPath();ctx.arc(fx2,cy,4,0,7);ctx.fill();
+    label(ctx,'F',fx1,cy-14,'#fbbf24','center',9,true);label(ctx,'F′',fx2,cy-14,'#fbbf24','center',9,true);
+    // lens
+    ctx.strokeStyle='#a78bfa';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(g.lensX,cy-75,13,95,0,0,Math.PI*2);ctx.stroke();
+    label(ctx,'العدسة',g.lensX,cy-184,'#a78bfa','center',10,true);label(ctx,'f='+s.ctrl.f+' cm',g.lensX,cy-166,'#a78bfa','center',8,true);
+    // object
+    const oh=Math.min(100,s.ctrl.ho*13);arrow(ctx,g.ox,cy,g.ox,cy-oh,'#22d3ee',5,11);ctx.fillStyle='#22d3ee';ctx.fillRect(g.ox-14,cy+2,28,7);label(ctx,'الجسم — اسحبني',g.ox,cy-oh-16,'#22d3ee','center',9,true);label(ctx,'u='+s.ctrl.do+' cm',g.ox,cy+55,'#22d3ee','center',9,true);
+    // screen
+    ctx.strokeStyle=c.focused?'#a3e635':'#94a3b8';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(g.sx,cy-120);ctx.lineTo(g.sx,cy+8);ctx.stroke();label(ctx,'الشاشة — اسحبني',g.sx,cy-136,c.focused?'#a3e635':'#94a3b8','center',9,true);label(ctx,s.ctrl.screen+' cm',g.sx,cy+55,'#94a3b8','center',9,true);
+    // principal rays
+    const imageX=Number.isFinite(c.v)?g.lensX+c.v*g.scale:null;
+    if(Number.isFinite(c.v)){
+      const ih=-c.m*oh,iy=cy-ih;
+      ctx.strokeStyle='#fbbf24';ctx.lineWidth=2.2;
+      // parallel then focal
+      ctx.beginPath();ctx.moveTo(g.ox,cy-oh);ctx.lineTo(g.lensX,cy-oh);ctx.lineTo(imageX,iy);ctx.stroke();
+      // central ray
+      ctx.strokeStyle='#22d3ee';ctx.beginPath();ctx.moveTo(g.ox,cy-oh);ctx.lineTo(g.lensX,cy);ctx.lineTo(imageX,iy);ctx.stroke();
+      if(c.real){
+        if(imageX>g.lensX&&imageX<g.right+80){arrow(ctx,imageX,cy,imageX,iy,'#fbbf24',4,10);label(ctx,'الصورة النظرية',imageX,iy+(ih>0?-16:18),'#fbbf24','center',8,true);}
+        // image on screen: sharp if screen near image, smeared otherwise
+        const focus=Math.exp(-Math.pow(c.err/5,2));
+        const imgH=Math.max(8,Math.min(110,Math.abs(c.m*oh)));
+        const dir=c.m<0?1:-1;
+        const endY=cy+dir*imgH;
+        if(c.focused){arrow(ctx,g.sx,cy,g.sx,endY,'#a3e635',5,11);}
+        else{
+          const blur=Math.min(28,4+c.err*.7);
+          for(let k=-3;k<=3;k++){ctx.globalAlpha=.08+.08*focus;arrow(ctx,g.sx+k*blur/3,cy,g.sx+k*blur/3,endY,'#f472b6',2,6);}
+          ctx.globalAlpha=1;
+        }
+        label(ctx,c.focused?'✅ صورة حادة':'صورة مشوشة',g.sx,cy-106,c.focused?'#a3e635':'#f472b6','center',8,true);
+      }else{
+        // virtual extensions
+        ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(251,191,36,.55)';ctx.beginPath();ctx.moveTo(g.lensX,cy-oh);ctx.lineTo(imageX,iy);ctx.moveTo(g.lensX,cy);ctx.lineTo(imageX,iy);ctx.stroke();ctx.setLineDash([]);
+        if(imageX>g.left&&imageX<g.lensX)arrow(ctx,imageX,cy,imageX,iy,'#f472b6',4,10);
+        label(ctx,'صورة افتراضية — لا تُلتقط على الشاشة',g.lensX+20,88,'#f472b6','left',9,true);
+      }
+    }
+    // record button
+    ctx.fillStyle=c.focused?'rgba(163,230,53,.12)':'rgba(251,191,36,.08)';ctx.strokeStyle=c.focused?'#a3e635':'#64748b';ctx.fillRect(g.record.x,g.record.y,g.record.w,g.record.h);ctx.strokeRect(g.record.x,g.record.y,g.record.w,g.record.h);label(ctx,'📏 سجّل u وv عند التركيز',g.record.x+g.record.w/2,g.record.y+g.record.h/2,c.focused?'#a3e635':'#94a3b8','center',9,true);
+    // records
+    const rec=s.lensLab.records||[];if(rec.length){const txt=rec.slice(-3).map((r,i)=>'u='+r.u.toFixed(0)+' ، v='+r.v.toFixed(1)).join('   |   ');label(ctx,'قياساتك: '+txt,W/2,H-18,'#cbd5e1','center',8,true);}
   }
 },
 
