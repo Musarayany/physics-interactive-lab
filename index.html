@@ -2899,45 +2899,391 @@ foucault: {
 },
 
 
+
 michelson_morley: {
-  title:'تجربة مايكلسون–مورلي — مطاردة الأثير', icon:'🔬', category:'النسبية',
-  desc:'مقياس التداخل التاريخي الذي اختبر هل تتغير رحلة الضوء باختلاف اتجاه حركة الأرض المفترضة خلال الأثير.',
-  welcome:{title:'🔬 تجربة مايكلسون–مورلي',steps:['قسّم الشعاع إلى ذراعين متعامدين.','افترض تاريخيًا ريح أثير بسرعة v.','قارن زمن الرحلة في الذراع الموازية والعمودية.','دوّر الجهاز ذهنيًا 90° وشاهد إزاحة الأهداب المتوقعة ثم قارنها بالنتيجة السالبة.']},
+  title:'تجربة مايكلسون–مورلي — مختبر الأثير التفاعلي', icon:'🔬', category:'النسبية',
+  desc:'لا تشاهد حركة فقط: ابنِ الجهاز بيدك، تعرّف إلى كل أداة، أرسل الضوء، قِس الزمنين، توقّع النتيجة، ثم دوّر الجهاز وقارن التنبؤ الكلاسيكي بالنتيجة التاريخية.',
+  welcome:{title:'🔬 مختبر مايكلسون–مورلي الجديد',steps:[
+    '<b>أولًا:</b> ابنِ مقياس التداخل بنفسك بسحب الأدوات إلى أماكنها.',
+    '<b>ثانيًا:</b> اضغط على أي أداة بعد تركيبها لتعرف وظيفتها.',
+    '<b>ثالثًا:</b> أرسل الضوء وشاهد كيف ينقسم إلى مسارين متعامدين ثم يعود إلى الشاشة.',
+    '<b>رابعًا:</b> فعّل فكرة «ريح الأثير» التاريخية، اقرأ الزمنين وتوقّع ماذا سيحدث للأهداب.',
+    '<b>خامسًا:</b> دوّر الجهاز 90° ثم اكشف النتيجة التاريخية. الهدف أن تكتشف لماذا كانت التجربة مشكلة كبيرة للفيزياء الكلاسيكية.'
+  ]},
   controls:[
-    {id:'v',label:'سرعة ريح الأثير المفترضة',min:0,max:60,step:1,value:30,unit:'km/s'},
-    {id:'L',label:'طول الذراع L',min:1,max:20,step:.5,value:11,unit:'m'},
-    {id:'lam',label:'الطول الموجي λ',min:400,max:700,step:5,value:550,unit:'nm'}
+    {id:'mode',label:'طريقة الاستخدام',type:'buttons',value:0,options:[
+      {value:0,label:'🎓 تعلم موجّه'},
+      {value:1,label:'🧪 استكشاف حر'},
+      {value:2,label:'👨‍🏫 وضع الأستاذ'}
+    ],help:'التعلم الموجّه يبدأ من تركيب الجهاز. الاستكشاف الحر يبدأ بجهاز جاهز. وضع الأستاذ يبقي النتيجة مخفية حتى يقرر كشفها.'},
+    {id:'v',label:'سرعة «ريح الأثير» المفترضة',min:0,max:60,step:1,value:30,unit:'km/s',help:'هذه ليست سرعة أثبتتها التجربة؛ إنها السرعة المفترضة في النموذج الكلاسيكي الذي كان يُختبر.'},
+    {id:'L',label:'طول كل ذراع L',min:1,max:20,step:.5,value:11,unit:'m',help:'كلما طال المسار صار فرق الزمن الكلاسيكي المتوقع أكبر.'},
+    {id:'lam',label:'الطول الموجي للضوء λ',min:400,max:700,step:5,value:550,unit:'nm',help:'فرق الطور يتحول إلى تغير في الأهداب بحسب الطول الموجي.'}
   ],
-  reset(s){s.t=0;}, update(s,dt){s.t=(s.t||0)+dt;},
-  calc(s){const c=CONST.c,v=s.ctrl.v*1000,L=s.ctrl.L,lam=s.ctrl.lam*1e-9,tp=2*L*c/(c*c-v*v),tn=2*L/Math.sqrt(c*c-v*v),dt=tp-tn,n=c*dt/lam;return{tp,tn,dt,n,rot:2*n};},
-  readouts(s){const q=this.calc(s);return[
-    {l:'t∥',v:(q.tp*1e9).toFixed(6),u:'ns'},
-    {l:'t⊥',v:(q.tn*1e9).toFixed(6),u:'ns'},
-    {l:'Δt الكلاسيكي',v:(q.dt*1e15).toFixed(4),u:'fs',c:'gold'},
-    {l:'إزاحة هدب متوقعة',v:q.n.toFixed(5),u:'fringe'},
-    {l:'بعد تدوير 90°',v:q.rot.toFixed(5),u:'fringe',c:'cyan'},
-    {l:'النتيجة المرصودة تاريخيًا',v:'≈ صفر',u:''}
-  ];},
-  hints(s){const q=this.calc(s);return[
-    'في نموذج الأثير الكلاسيكي تكون رحلة الذهاب والعودة في الذراع الموازية مختلفة عن العمودية.',
-    'لهذه القيم يتوقع النموذج التعليمي تغيرًا بعد التدوير ≈ <span class="hl">'+q.rot.toFixed(5)+' هدب</span>.',
-    'النتيجة السالبة لم تكن وحدها اشتقاقًا للنسبية، لكنها أضعفت بشدة فكرة الأثير الساكن القابل للكشف.',
-    'الحساب هنا نموذج أحادي المرور؛ جهاز مايكلسون–مورلي الحقيقي زاد طول المسار البصري بالانعكاسات.'
-  ];},
+  reset(s){
+    s.t=0;
+    const mode=Number(s.ctrl.mode||0);
+    if(!s.mm || s.mm.mode!==mode){
+      const built=mode===0?{}:{source:true,splitter:true,m1:true,m2:true,screen:true};
+      s.mm={
+        mode:mode,
+        built:built,
+        selected:null,
+        drag:null,
+        dragMoved:false,
+        stage:mode===0?0:1,
+        light:false,
+        prediction:null,
+        rotation:0,
+        rotating:false,
+        reveal:false,
+        pulse:0
+      };
+    }
+  },
+  update(s,dt){
+    s.t=(s.t||0)+dt;
+    if(!s.mm)return;
+    if(s.mm.light)s.mm.pulse=(s.mm.pulse+dt*.42)%1;
+    if(s.mm.rotating){
+      s.mm.rotation=Math.min(Math.PI/2,s.mm.rotation+dt*1.35);
+      if(s.mm.rotation>=Math.PI/2-.001){
+        s.mm.rotation=Math.PI/2;
+        s.mm.rotating=false;
+        s.mm.stage=Math.max(s.mm.stage,5);
+        updateHintBox();
+      }
+    }
+  },
+  calc(s){
+    const c=CONST.c,v=s.ctrl.v*1000,L=s.ctrl.L,lam=s.ctrl.lam*1e-9;
+    const tp=2*L*c/(c*c-v*v);
+    const tn=2*L/Math.sqrt(c*c-v*v);
+    const dt=tp-tn;
+    const n=c*dt/lam;
+    return {tp,tn,dt,n,rot:2*n,beta:v/c};
+  },
+  _parts(){
+    return {
+      source:{name:'مصدر الضوء',sub:'Light source',icon:'●',color:'#fbbf24',desc:'يرسل شعاعًا ضوئيًا نحو نصف المرآة. من هنا تبدأ الرحلة.'},
+      splitter:{name:'نصف المرآة',sub:'Beam splitter',icon:'◇',color:'#a78bfa',desc:'لوح شبه عاكس بزاوية 45°. يقسم الشعاع إلى مسارين متعامدين ثم يساعد على إعادة جمعهما.'},
+      m1:{name:'المرآة M₁',sub:'Mirror M₁',icon:'▯',color:'#22d3ee',desc:'تعكس الشعاع في الذراع الأفقي ليعود إلى نصف المرآة.'},
+      m2:{name:'المرآة M₂',sub:'Mirror M₂',icon:'▯',color:'#22d3ee',desc:'تعكس الشعاع في الذراع العمودي ليعود إلى نصف المرآة.'},
+      screen:{name:'شاشة الأهداب',sub:'Interference screen',icon:'▤',color:'#f472b6',desc:'يصل إليها الشعاعان بعد إعادة جمعهما، فتظهر أهداب التداخل التي نراقب حركتها.'}
+    };
+  },
+  _layout(W,H){
+    const compact=W<650;
+    const trayH=compact?112:100;
+    const work={x:16,y:46,w:W-32,h:H-trayH-60};
+    const cx=work.x+work.w*.51, cy=work.y+work.h*.57;
+    const armX=Math.min(work.w*.28,205), armY=Math.min(work.h*.31,150);
+    const slots={
+      source:{x:work.x+34,y:cy-20,w:88,h:40,cx:work.x+78,cy:cy},
+      splitter:{x:cx-27,y:cy-27,w:54,h:54,cx:cx,cy:cy},
+      m1:{x:cx+armX-25,y:cy-34,w:50,h:68,cx:cx+armX,cy:cy},
+      m2:{x:cx-34,y:cy-armY-25,w:68,h:50,cx:cx,cy:cy-armY},
+      screen:{x:cx+72,y:cy+74,w:112,h:58,cx:cx+128,cy:cy+103}
+    };
+    const trayY=H-trayH+6;
+    const keys=['source','splitter','m1','m2','screen'];
+    const gap=compact?6:10;
+    const itemW=(W-28-gap*(keys.length-1))/keys.length;
+    const tray={x:14,y:trayY,w:W-28,h:trayH-14};
+    const items={};
+    keys.forEach((k,i)=>{items[k]={x:14+i*(itemW+gap),y:trayY+32,w:itemW,h:trayH-52};});
+    const btnBase={x:work.x+12,y:work.y+work.h-48,h:36};
+    return {compact,work,cx,cy,armX,armY,slots,tray,items,btnBase};
+  },
+  _allBuilt(s){return ['source','splitter','m1','m2','screen'].every(k=>s.mm&&s.mm.built[k]);},
+  _hit(r,x,y){return r&&x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h;},
+  _syncStage(s){
+    if(this._allBuilt(s)&&s.mm.stage===0){
+      s.mm.stage=1;
+      toast('✅ الجهاز اكتمل. الآن اضغط «أرسل الضوء» ولاحظ وظيفة كل جزء.','ok',3200);
+      updateHintBox();
+    }
+  },
+  _buttonRects(s,L){
+    const y=L.btnBase.y,h=L.btnBase.h,w=Math.min(190,(L.work.w-36)/2);
+    const center=L.work.x+L.work.w/2;
+    const a={x:center-w-7,y,w,h},b={x:center+7,y,w,h};
+    const full={x:center-Math.min(230,L.work.w*.42),y,w:Math.min(460,L.work.w*.84),h};
+    return {a,b,full};
+  },
+  _drawButton(ctx,r,text,accent='#fbbf24',filled=false){
+    ctx.save();
+    ctx.fillStyle=filled?accent:'rgba(7,11,20,.88)';
+    ctx.strokeStyle=accent;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.roundRect?ctx.roundRect(r.x,r.y,r.w,r.h,10):ctx.rect(r.x,r.y,r.w,r.h);ctx.fill();ctx.stroke();
+    label(ctx,text,r.x+r.w/2,r.y+r.h/2,filled?'#070b14':accent,'center',11,true);
+    ctx.restore();
+  },
+  _infoToast(key){
+    const p=this._parts()[key];
+    if(p)toast('<b>'+p.name+'</b> — '+p.desc,'learn',4200);
+  },
+  pointerDown(s,p){
+    if(!s.mm)return false;
+    const L=this._layout(p.W,p.H), parts=this._parts(), btn=this._buttonRects(s,L);
+    // on-canvas workflow buttons
+    if(s.mm.stage===1 && this._hit(btn.full,p.x,p.y)){
+      s.mm.light=true;s.mm.stage=2;s.mm.pulse=0;updateHintBox();toast('💡 انقسم الشعاع إلى مسارين. تابع الأسهم والعدادين.','learn',3200);return true;
+    }
+    if(s.mm.stage===2 && this._hit(btn.full,p.x,p.y)){
+      s.mm.stage=3;updateHintBox();return true;
+    }
+    if(s.mm.stage===3){
+      if(this._hit(btn.a,p.x,p.y)){s.mm.prediction=1;s.mm.stage=4;updateHintBox();toast('تم تسجيل توقعك: الأهداب ستتحرك. الآن دوّر الجهاز.','learn',2600);return true;}
+      if(this._hit(btn.b,p.x,p.y)){s.mm.prediction=0;s.mm.stage=4;updateHintBox();toast('تم تسجيل توقعك: لن تتحرك الأهداب. الآن دوّر الجهاز.','learn',2600);return true;}
+    }
+    if(s.mm.stage===4 && this._hit(btn.full,p.x,p.y)){
+      s.mm.rotating=true;updateHintBox();return true;
+    }
+    if(s.mm.stage===5 && this._hit(btn.full,p.x,p.y)){
+      s.mm.reveal=true;s.mm.stage=6;updateHintBox();toast('🔬 الآن قارن التنبؤ الكلاسيكي بالنتيجة التاريخية.','ok',3600);return true;
+    }
+    if(s.mm.stage===6 && this._hit(btn.a,p.x,p.y)){
+      s.mm={mode:s.mm.mode,built:s.mm.mode===0?{}:{source:true,splitter:true,m1:true,m2:true,screen:true},selected:null,drag:null,dragMoved:false,stage:s.mm.mode===0?0:1,light:false,prediction:null,rotation:0,rotating:false,reveal:false,pulse:0};
+      updateHintBox();return true;
+    }
+    if(s.mm.stage===6 && this._hit(btn.b,p.x,p.y)){
+      s.mm.stage=2;s.mm.reveal=false;s.mm.prediction=null;s.mm.rotation=0;s.mm.light=true;s.mm.pulse=0;updateHintBox();return true;
+    }
+    // placed instruments: tap to learn their role
+    for(const k of Object.keys(L.slots)){
+      if(s.mm.built[k] && this._hit(L.slots[k],p.x,p.y)){s.mm.drag={kind:'placed',key:k,x:p.x,y:p.y};s.mm.dragMoved=false;return true;}
+    }
+    // tray instruments: drag or tap-select
+    for(const k of Object.keys(L.items)){
+      if(!s.mm.built[k] && this._hit(L.items[k],p.x,p.y)){
+        s.mm.drag={kind:'tray',key:k,x:p.x,y:p.y};s.mm.dragMoved=false;s.mm.selected=k;return true;
+      }
+    }
+    // when a tool is selected, tapping its destination places it
+    if(s.mm.selected && !s.mm.built[s.mm.selected] && this._hit(L.slots[s.mm.selected],p.x,p.y)){
+      s.mm.built[s.mm.selected]=true;const key=s.mm.selected;s.mm.selected=null;this._infoToast(key);this._syncStage(s);return true;
+    }
+    return false;
+  },
+  pointerMove(s,p){
+    if(!s.mm||!s.mm.drag)return false;
+    const dx=p.x-s.mm.drag.x,dy=p.y-s.mm.drag.y;
+    if(Math.hypot(dx,dy)>6)s.mm.dragMoved=true;
+    s.mm.drag.x=p.x;s.mm.drag.y=p.y;
+    return s.mm.drag.kind==='tray';
+  },
+  pointerUp(s,p){
+    if(!s.mm||!s.mm.drag)return false;
+    const d=s.mm.drag;s.mm.drag=null;
+    const L=this._layout(p.W,p.H);
+    if(d.kind==='placed'){
+      if(!s.mm.dragMoved)this._infoToast(d.key);
+      s.mm.dragMoved=false;return true;
+    }
+    if(d.kind==='tray'){
+      if(this._hit(L.slots[d.key],p.x,p.y)){
+        s.mm.built[d.key]=true;s.mm.selected=null;this._infoToast(d.key);this._syncStage(s);
+      }else if(!s.mm.dragMoved){
+        s.mm.selected=d.key;
+        toast('📌 تم اختيار <b>'+this._parts()[d.key].name+'</b>. الآن المس مكانه المتقطع أو اسحبه إليه.','learn',2800);
+      }else{
+        const names={source:'موضع مصدر الضوء إلى يسار الجهاز',splitter:'نقطة تقاطع الذراعين',m1:'نهاية الذراع الأفقي',m2:'نهاية الذراع العمودي',screen:'أسفل يمين نصف المرآة'};
+        toast('❌ هذا ليس مكان الأداة. ضعها في <b>'+names[d.key]+'</b>.','err',3000);
+      }
+      s.mm.dragMoved=false;return true;
+    }
+    return false;
+  },
+  readouts(s){
+    if(!s.mm)return[];
+    const q=this.calc(s),built=Object.keys(s.mm.built||{}).length;
+    const phase=2*Math.PI*q.rot;
+    const rows=[
+      {l:'مرحلة المختبر',v:(s.mm.stage+1)+'/7',u:'',c:'gold'},
+      {l:'الأدوات المركبة',v:built,u:'/ 5',c:'cyan'}
+    ];
+    if(s.mm.stage>=2){
+      rows.push({l:'زمن الذراع الموازي t∥',v:(q.tp*1e9).toFixed(6),u:'ns'});
+      rows.push({l:'زمن الذراع العمودي t⊥',v:(q.tn*1e9).toFixed(6),u:'ns'});
+      rows.push({l:'فرق الزمن الكلاسيكي Δt',v:(q.dt*1e15).toFixed(4),u:'fs',c:'gold'});
+      rows.push({l:'تغير الأهداب المتوقع بعد 90°',v:q.rot.toFixed(5),u:'هدب',c:'cyan'});
+    }
+    if(s.mm.stage>=6)rows.push({l:'النتيجة التاريخية',v:'لم يظهر الانزياح المتوقع',u:'',c:'gold'});
+    return rows;
+  },
+  hints(s){
+    if(!s.mm)return[];
+    const q=this.calc(s),h=[];
+    if(s.mm.stage===0){
+      const missing=['source','splitter','m1','m2','screen'].filter(k=>!s.mm.built[k]);
+      h.push('<b>المهمة 1 — ابنِ الجهاز.</b> اسحب الأدوات من صندوق الأدوات إلى الأماكن المتقطعة.');
+      if(s.mm.selected)h.push('الأداة المختارة الآن: <span class="hl">'+this._parts()[s.mm.selected].name+'</span>.');
+      h.push('باقي الأدوات: '+missing.map(k=>this._parts()[k].name).join('، ')+'.');
+      return h;
+    }
+    if(s.mm.stage===1){
+      h.push('<b>المهمة 2 — افهم الجهاز.</b> اضغط أي أداة لتظهر وظيفتها، ثم اضغط «أرسل الضوء».');
+      h.push('مسار 1 سيذهب إلى M₁ ويعود، ومسار 2 سيذهب إلى M₂ ويعود، ثم يجتمعان عند الشاشة.');
+      return h;
+    }
+    if(s.mm.stage===2){
+      h.push('<b>المهمة 3 — قِس قبل أن تحكم.</b> راقب العدادين بجوار الذراعين.');
+      h.push('في فرضية الأثير الكلاسيكية: t∥='+ (q.tp*1e9).toFixed(6)+' ns، وt⊥='+ (q.tn*1e9).toFixed(6)+' ns.');
+      h.push('الفرق صغير جدًا، لذلك لا نقيسه بساعة عادية؛ نحوله إلى <b>فرق طور</b> ثم إلى حركة أهداب.');
+      return h;
+    }
+    if(s.mm.stage===3){
+      h.push('<b>المهمة 4 — توقّع.</b> إذا دوّرنا الجهاز 90°، يتبادل الذراعان دورهما بالنسبة إلى «ريح الأثير» المفترضة. ماذا تتوقع للأهداب؟');
+      h.push('لا تنظر إلى النتيجة التاريخية بعد. اختر بناءً على النموذج الكلاسيكي فقط.');
+      return h;
+    }
+    if(s.mm.stage===4){
+      h.push('<b>المهمة 5 — نفّذ الاختبار.</b> دوّر الجهاز 90°. إذا كان فرق الزمن حقيقيًا بسبب الأثير، يجب أن يتغير فرق الطور.');
+      if(s.mm.prediction!==null)h.push('توقعك المسجل: <span class="hl">'+(s.mm.prediction?'ستتحرك الأهداب':'لن تتحرك الأهداب')+'</span>.');
+      return h;
+    }
+    if(s.mm.stage===5){
+      h.push('<b>التنبؤ الكلاسيكي:</b> التغير المتوقع بعد تدوير 90° ≈ <span class="hl">'+q.rot.toFixed(5)+' هدب</span> في هذا النموذج المبسط.');
+      h.push('الآن اضغط «اكشف النتيجة التاريخية».');
+      return h;
+    }
+    h.push('<b>المفاجأة:</b> لم يظهر الانزياح المتوقع بالمقدار الذي يتطلبه نموذج الأثير الساكن البسيط.');
+    h.push('المشكلة ليست أن «الضوء توقف»؛ بل أن اختلاف السرعة الاتجاهي الذي كان يجب أن تحوله المداخلة إلى حركة أهداب لم يظهر كما توقع النموذج.');
+    h.push('هذه النتيجة كانت من المقدمات المهمة لإعادة التفكير في المكان والزمن والوصول إلى النسبية الخاصة.');
+    return h;
+  },
   equations:[
-    't_{\\parallel}=\\frac{L}{c-v}+\\frac{L}{c+v}',
+    't_{\\parallel}=\\frac{L}{c-v}+\\frac{L}{c+v}=\\frac{2Lc}{c^2-v^2}',
     't_{\\perp}=\\frac{2L}{\\sqrt{c^2-v^2}}',
-    '\\Delta N\\approx\\frac{c\\Delta t}{\\lambda}'
+    '\\Delta t=t_{\\parallel}-t_{\\perp}',
+    '\\Delta N\\approx\\frac{c\\,\\Delta t}{\\lambda}'
   ],
-  theory:'<b>الفكرة:</b><br>كان الاعتقاد أن الضوء موجة تنتشر في وسط يسمى الأثير. إذا كانت الأرض تتحرك خلاله فيفترض أن تظهر «ريح أثير» تجعل سرعة الضوء بالنسبة للجهاز مختلفة باختلاف الاتجاه.<br><br><b>الجهاز:</b><br>يقسم نصف المرآة الشعاع إلى ذراعين متعامدين ثم يعيد جمعهما. في الذراع الموازية يدخل c−v وc+v في زمن الرحلة، بينما في الذراع العمودية يكون المسار مائلًا كي يعود الشعاع إلى المرآة المتحركة مع الجهاز. ينتج فرق زمن صغير يتحول إلى فرق طور وإزاحة أهداب.<br><br><b>لماذا كانت النتيجة مهمة؟</b><br>لم يظهر الانزياح المتوقع بالمقدار الكلاسيكي. هذا مهّد للتخلي عن الأثير الساكن البسيط، وجعل فكرة ثبات سرعة الضوء وتحولات لورنتز أكثر إلحاحًا.',
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const q=this.calc(s),cx=W*.50,cy=H*.55,Lx=Math.min(180,W*.30),Ly=Math.min(145,H*.30),p=(1+Math.sin((s.t||0)*2.3))/2;
-    ctx.strokeStyle='#475569';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx-Lx,cy);ctx.lineTo(cx+Lx,cy);ctx.moveTo(cx,cy-Ly);ctx.lineTo(cx,cy+Ly);ctx.stroke();
-    ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.PI/4);ctx.fillStyle='#94a3b8';ctx.fillRect(-4,-28,8,56);ctx.restore();
-    ctx.fillStyle='#e2e8f0';ctx.fillRect(cx+Lx-5,cy-28,10,56);ctx.fillRect(cx-28,cy-Ly-5,56,10);
-    ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(cx-Lx,cy);ctx.lineTo(cx,cy);ctx.lineTo(cx+p*Lx,cy);ctx.stroke();
-    ctx.strokeStyle='#22d3ee';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy-p*Ly);ctx.stroke();
-    arrow(ctx,45,H*.18,160,H*.18,'#f472b6',3,9);label(ctx,'ريح أثير مفترضة',170,H*.18,'#f472b6','left',11,true);
-    label(ctx,'Δt='+(q.dt*1e15).toFixed(3)+' fs',W-30,H-30,'#fbbf24','right',11,true);
+  theory:'<b>ابدأ من المشكلة لا من القانون:</b><br>في أواخر القرن التاسع عشر كان من الطبيعي تشبيه الضوء بالموجات الأخرى وافتراض وسط ينتشر فيه يسمى الأثير. إذا كانت الأرض تتحرك خلال هذا الأثير، فالجهاز يجب أن يشعر باتجاه مميز يسمى هنا «ريح الأثير».<br><br><b>ماذا يفعل الجهاز؟</b><br>مصدر الضوء يرسل شعاعًا إلى نصف مرآة مائلة. نصف المرآة يقسمه إلى شعاعين متعامدين. الشعاع الأول يذهب إلى المرآة M₁ ثم يعود، والثاني يذهب إلى M₂ ثم يعود. عند الرجوع يجتمعان، وتظهر على الشاشة أهداب تداخل حساسة جدًا لاختلاف زمن الرحلة.<br><br><b>لماذا ذراعان متعامدان؟</b><br>وفق التصور الكلاسيكي للأثير، الذراع الموازي للحركة المفترضة للأرض عبر الأثير لا يملك زمن رحلة مساويًا للذراع العمودي. في الاتجاه الموازي يدخل c−v في الذهاب وc+v في العودة. أما في الاتجاه العمودي فيلزم مسار مائل حتى يلحق الشعاع بالمرآة المتحركة مع الجهاز.<br><br><b>لماذا تدوير الجهاز مهم؟</b><br>لأن تدوير المقياس 90° يبدل أي الذراعين موازي وأيهما عمودي بالنسبة إلى ريح الأثير المفترضة. لذلك لا نبحث عن زمن مطلق صغير جدًا؛ نبحث عن <b>تغير في فرق الطور</b> يظهر كحركة في الأهداب.<br><br><b>ماذا حدث؟</b><br>لم يظهر الانزياح المتوقع بالمقدار الذي يتنبأ به النموذج الكلاسيكي البسيط للأثير. هذه النتيجة السالبة لم تكن وحدها «إثبات النسبية»، لكنها كانت ضربة كبيرة لفكرة الأثير الساكن القابل للكشف ومهدت لتغير أعمق في فهم المكان والزمن.<br><br><b>ملاحظة تعليمية:</b><br>الحساب الرقمي هنا يوضح منطق المقارنة بين الذراعين في نموذج مثالي أحادي المرور. الجهاز التاريخي استعمل ترتيبات بصرية تجعل المسار الفعال أكبر، لكن الفكرة الفيزيائية التي يتعلمها الطالب هي نفسها: <b>توقع فرق طور اتجاهي ثم البحث عنه بالتداخل.</b>',
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);
+    if(!s.mm)return;
+    const L=this._layout(W,H),P=this._parts(),q=this.calc(s),btn=this._buttonRects(s,L);
+    const work=L.work,slots=L.slots;
+    // stage ribbon
+    const labels=['ابنِ الجهاز','تعرّف إلى الأدوات','أرسل الضوء','توقّع','دوّر الجهاز','قارن','استنتج'];
+    const st=Math.min(6,s.mm.stage);
+    ctx.fillStyle='rgba(14,20,36,.94)';ctx.fillRect(work.x,10,work.w,28);
+    for(let i=0;i<labels.length;i++){
+      const seg=work.w/labels.length,x=work.x+i*seg;
+      if(i<=st){ctx.fillStyle=i===st?'rgba(251,191,36,.24)':'rgba(34,211,238,.10)';ctx.fillRect(x,10,seg,28);}
+      ctx.strokeStyle='#25304a';ctx.strokeRect(x,10,seg,28);
+      label(ctx,(i+1)+' '+labels[i],x+seg/2,24,i===st?'#fbbf24':'#94a3b8','center',L.compact?7:9,i===st);
+    }
+    // workbench
+    ctx.fillStyle='rgba(8,13,24,.72)';ctx.fillRect(work.x,work.y,work.w,work.h);
+    ctx.strokeStyle='#25304a';ctx.strokeRect(work.x,work.y,work.w,work.h);
+    label(ctx,'طاولة المختبر — المس أي أداة مركبة لتعرف وظيفتها',work.x+12,work.y+16,'#cbd5e1','left',L.compact?9:11,true);
+
+    // apparatus frame can rotate visually after stage 4
+    ctx.save();
+    ctx.translate(L.cx,L.cy);
+    ctx.rotate(s.mm.rotation||0);
+    ctx.translate(-L.cx,-L.cy);
+    // arm guides
+    ctx.strokeStyle='rgba(148,163,184,.20)';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(L.cx,L.cy);ctx.lineTo(slots.m1.cx,slots.m1.cy);ctx.moveTo(L.cx,L.cy);ctx.lineTo(slots.m2.cx,slots.m2.cy);ctx.stroke();
+    label(ctx,'الذراع الموازي',L.cx+L.armX*.52,L.cy-18,'#94a3b8','center',L.compact?8:10,true);
+    label(ctx,'الذراع العمودي',L.cx+12,L.cy-L.armY*.52,'#94a3b8','left',L.compact?8:10,true);
+    // target slots
+    for(const k of ['source','splitter','m1','m2','screen']){
+      const r=slots[k],part=P[k];
+      if(!s.mm.built[k]){
+        ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle=s.mm.selected===k?'#fbbf24':'#475569';ctx.lineWidth=1.5;ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.setLineDash([]);
+        label(ctx,'ضع هنا',r.cx,r.cy-7,s.mm.selected===k?'#fbbf24':'#64748b','center',L.compact?8:9,true);
+        label(ctx,part.name,r.cx,r.cy+8,'#94a3b8','center',L.compact?7:8,false);ctx.restore();
+      }
+    }
+    // instrument drawing helper
+    const drawPart=(k,r)=>{
+      const p=P[k],cx=r.cx,cy=r.cy;
+      if(k==='source'){
+        ctx.fillStyle='#111827';ctx.strokeStyle=p.color;ctx.lineWidth=2;ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeRect(r.x,r.y,r.w,r.h);
+        ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(r.x+r.w-10,cy,5,0,7);ctx.fill();
+      }else if(k==='splitter'){
+        ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.PI/4);ctx.fillStyle='rgba(167,139,250,.28)';ctx.strokeStyle=p.color;ctx.lineWidth=3;ctx.fillRect(-4,-25,8,50);ctx.strokeRect(-4,-25,8,50);ctx.restore();
+      }else if(k==='m1'){
+        ctx.fillStyle='#e2e8f0';ctx.fillRect(cx-5,cy-27,10,54);ctx.strokeStyle='#22d3ee';ctx.strokeRect(cx-5,cy-27,10,54);
+      }else if(k==='m2'){
+        ctx.fillStyle='#e2e8f0';ctx.fillRect(cx-27,cy-5,54,10);ctx.strokeStyle='#22d3ee';ctx.strokeRect(cx-27,cy-5,54,10);
+      }else if(k==='screen'){
+        ctx.fillStyle='#111827';ctx.strokeStyle='#f472b6';ctx.lineWidth=2;ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeRect(r.x,r.y,r.w,r.h);
+        for(let i=0;i<9;i++){const xx=r.x+8+i*(r.w-16)/8,I=.18+.72*(.5+.5*Math.cos(i*2.2+(s.mm.stage>=5?q.rot*2*Math.PI:0)));ctx.fillStyle='rgba(244,114,182,'+I.toFixed(2)+')';ctx.fillRect(xx, r.y+8, Math.max(2,(r.w-18)/12),r.h-16);}
+      }
+      label(ctx,p.name,cx,r.y-10,p.color,'center',L.compact?8:10,true);
+      if(!L.compact)label(ctx,p.sub,cx,r.y+r.h+9,'#64748b','center',8,false);
+    };
+    for(const k of ['source','splitter','m1','m2','screen'])if(s.mm.built[k])drawPart(k,slots[k]);
+
+    // light path
+    if(s.mm.light && this._allBuilt(s)){
+      const p=s.mm.pulse||0;
+      ctx.lineWidth=3.5;
+      ctx.strokeStyle='rgba(251,191,36,.35)';ctx.beginPath();ctx.moveTo(slots.source.cx+slots.source.w/2-5,L.cy);ctx.lineTo(L.cx,L.cy);ctx.lineTo(slots.m1.cx,L.cy);ctx.stroke();
+      ctx.strokeStyle='rgba(34,211,238,.35)';ctx.beginPath();ctx.moveTo(L.cx,L.cy);ctx.lineTo(L.cx,slots.m2.cy);ctx.stroke();
+      const travel=(a,b,t,color)=>{const x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,5,0,7);ctx.fill();};
+      const A={x:L.cx,y:L.cy},R={x:slots.m1.cx,y:slots.m1.cy},U={x:slots.m2.cx,y:slots.m2.cy};
+      const pp=p<.5?p*2:(1-p)*2;
+      travel(A,R,pp,'#fbbf24');travel(A,U,pp,'#22d3ee');
+      if(p>.52){
+        ctx.strokeStyle='rgba(244,114,182,.55)';ctx.beginPath();ctx.moveTo(L.cx,L.cy);ctx.lineTo(slots.screen.cx,slots.screen.cy);ctx.stroke();
+      }
+      // timers attached to arms
+      const box=(x,y,title,val,color)=>{ctx.fillStyle='rgba(7,11,20,.92)';ctx.strokeStyle=color;ctx.lineWidth=1.2;ctx.fillRect(x,y,126,42);ctx.strokeRect(x,y,126,42);label(ctx,title,x+63,y+12,color,'center',8,true);label(ctx,val,x+63,y+29,'#f8fafc','center',10,true);};
+      box(L.cx+L.armX*.28,L.cy+22,'⏱ الذراع الموازي',(q.tp*1e9).toFixed(6)+' ns','#fbbf24');
+      box(L.cx-135,L.cy-L.armY*.58,'⏱ الذراع العمودي',(q.tn*1e9).toFixed(6)+' ns','#22d3ee');
+    }
+    ctx.restore();
+
+    // ether wind arrow is outside apparatus rotation
+    if(s.mm.stage>=2){
+      arrow(ctx,work.x+18,work.y+48,work.x+145,work.y+48,'#f472b6',3,9);
+      label(ctx,'ريح الأثير المفترضة v='+s.ctrl.v+' km/s',work.x+154,work.y+48,'#f472b6','left',L.compact?8:10,true);
+    }
+
+    // guided action buttons
+    if(s.mm.stage===1)this._drawButton(ctx,btn.full,'💡 أرسل الضوء وشاهد المسارين','#fbbf24',true);
+    if(s.mm.stage===2)this._drawButton(ctx,btn.full,'⏱ قارن الزمنين ثم انتقل للتوقع','#22d3ee',true);
+    if(s.mm.stage===3){
+      this._drawButton(ctx,btn.a,'أتوقع: الأهداب تتحرك','#fbbf24',false);
+      this._drawButton(ctx,btn.b,'أتوقع: لا تتغير','#22d3ee',false);
+    }
+    if(s.mm.stage===4)this._drawButton(ctx,btn.full,'↻ أدر الجهاز 90°','#f472b6',true);
+    if(s.mm.stage===5){
+      ctx.fillStyle='rgba(251,191,36,.10)';ctx.strokeStyle='#fbbf24';ctx.fillRect(work.x+20,work.y+work.h-112,work.w-40,50);ctx.strokeRect(work.x+20,work.y+work.h-112,work.w-40,50);
+      label(ctx,'التنبؤ الكلاسيكي بعد الدوران: تغير ≈ '+q.rot.toFixed(5)+' هدب',work.x+work.w/2,work.y+work.h-87,'#fbbf24','center',L.compact?9:12,true);
+      this._drawButton(ctx,btn.full,'🔬 اكشف النتيجة التاريخية','#22d3ee',true);
+    }
+    if(s.mm.stage===6){
+      const y=work.y+work.h-132,h=68,mid=work.x+work.w/2;
+      ctx.fillStyle='rgba(251,191,36,.08)';ctx.strokeStyle='#fbbf24';ctx.fillRect(work.x+18,y,work.w*.46,h);ctx.strokeRect(work.x+18,y,work.w*.46,h);
+      ctx.fillStyle='rgba(34,211,238,.08)';ctx.strokeStyle='#22d3ee';ctx.fillRect(mid+6,y,work.w*.46-24,h);ctx.strokeRect(mid+6,y,work.w*.46-24,h);
+      label(ctx,'التنبؤ الكلاسيكي',work.x+18+work.w*.23,y+16,'#fbbf24','center',L.compact?9:11,true);
+      label(ctx,'≈ '+q.rot.toFixed(5)+' هدب بعد 90°',work.x+18+work.w*.23,y+41,'#f8fafc','center',L.compact?9:11,true);
+      label(ctx,'ما لوحظ',mid+6+(work.w*.46-24)/2,y+16,'#22d3ee','center',L.compact?9:11,true);
+      label(ctx,'لم يظهر الانزياح المتوقع',mid+6+(work.w*.46-24)/2,y+41,'#f8fafc','center',L.compact?8:11,true);
+      this._drawButton(ctx,btn.a,'↺ أعد من البداية','#94a3b8',false);
+      this._drawButton(ctx,btn.b,'🔁 أعد القياس','#22d3ee',false);
+    }
+
+    // toolbox
+    ctx.fillStyle='rgba(14,20,36,.96)';ctx.fillRect(L.tray.x,L.tray.y,L.tray.w,L.tray.h);ctx.strokeStyle='#334155';ctx.strokeRect(L.tray.x,L.tray.y,L.tray.w,L.tray.h);
+    label(ctx,'🧰 صندوق الأدوات — اسحب الأداة إلى مكانها، أو المس الأداة ثم مكانها',L.tray.x+10,L.tray.y+16,'#cbd5e1','left',L.compact?8:10,true);
+    for(const k of ['source','splitter','m1','m2','screen']){
+      const r=L.items[k],p=P[k];
+      ctx.fillStyle=s.mm.built[k]?'rgba(15,23,42,.35)':(s.mm.selected===k?'rgba(251,191,36,.16)':'rgba(7,11,20,.78)');
+      ctx.strokeStyle=s.mm.built[k]?'#1e293b':(s.mm.selected===k?'#fbbf24':'#475569');ctx.lineWidth=1.2;ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeRect(r.x,r.y,r.w,r.h);
+      label(ctx,s.mm.built[k]?'✓ '+p.name:p.name,r.x+r.w/2,r.y+r.h*.40,s.mm.built[k]?'#64748b':p.color,'center',L.compact?7:9,true);
+      if(!L.compact)label(ctx,p.sub,r.x+r.w/2,r.y+r.h*.68,'#64748b','center',7,false);
+    }
+    // dragged object ghost
+    if(s.mm.drag&&s.mm.drag.kind==='tray'&&s.mm.dragMoved){
+      const p=P[s.mm.drag.key];ctx.save();ctx.globalAlpha=.85;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(s.mm.drag.x,s.mm.drag.y,12,0,7);ctx.fill();label(ctx,p.name,s.mm.drag.x,s.mm.drag.y-20,p.color,'center',9,true);ctx.restore();
+    }
   }
 },
 
