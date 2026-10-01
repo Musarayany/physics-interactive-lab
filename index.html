@@ -5850,7 +5850,170 @@ mutual_induction_frequency_current_lab: {
   equations:['\\mathcal E_s=-M\\frac{dI_p}{dt}','I_p(t)=I_{p0}\\sin\\omega t','V_{s,\\rm rms}=\\omega M I_{p,\\rm rms}'],
   theory:'في نظام خطي ذي حث متبادل ثابت M، مشتقة تيار جيبي تضيف عامل ω، لذلك يتناسب جهد الثانوي RMS مع كل من f وIₚ,rms. لا يشمل النموذج تشبع القلب أو خسائره.',
   hints(s){return['ضاعف f مع ثبات M وIₚ فتتضاعف Vₛ.','ضاعف Iₚ مع ثبات f وM فتتضاعف Vₛ.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cy=H/2;ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;for(let k=0;k<8;k++){ctx.beginPath();ctx.ellipse(W*.33+k*4,cy,35,75,0,0,Math.PI*2);ctx.stroke();}ctx.strokeStyle='#22d3ee';for(let k=0;k<8;k++){ctx.beginPath();ctx.ellipse(W*.66+k*4,cy,35,75,0,0,Math.PI*2);ctx.stroke();}label(ctx,'الملف الرئيسي',W*.33,cy+105,'#fbbf24','center',12,true);label(ctx,'الملف الثانوي',W*.68,cy+105,'#22d3ee','center',12,true);label(ctx,`Vₛ=${c.Vs.toFixed(2)} V rms`,W/2,35,'#cbd5e1','center',14,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const c=this.calc(s);
+
+  // Real physics:
+  // Ip(t)=sqrt(2) Ip,rms sin(wt)
+  // es(t)=-M dIp/dt=-sqrt(2) w M Ip,rms cos(wt)
+  // The visual clock is intentionally slowed so 5–500 Hz remains observable.
+  const fNorm=(s.ctrl.f-5)/(500-5);
+  const iNorm=(s.ctrl.Ip-.01)/(2-.01);
+  const mNorm=(s.ctrl.M-1)/(100-1);
+  const visualHz=.35+3.65*Math.max(0,Math.min(1,fNorm));
+  const phase=2*Math.PI*visualHz*s.t;
+  const iInst=Math.SQRT2*s.ctrl.Ip*Math.sin(phase);
+  const eInst=-c.Vpk*Math.cos(phase);
+  const iPhase=Math.sin(phase);
+  const ePhase=-Math.cos(phase);
+
+  const cy=H*.43;
+  const couplingGap=W*(.31-.15*Math.max(0,Math.min(1,mNorm)));
+  const pX=W/2-couplingGap/2;
+  const sX=W/2+couplingGap/2;
+  const coilH=Math.min(155,H*.29);
+  const pTurns=10;
+  const sTurns=10;
+  const turnSpread=64;
+
+  // Background coupling region.
+  const cg=ctx.createLinearGradient(pX,0,sX,0);
+  cg.addColorStop(0,'rgba(251,191,36,.035)');
+  cg.addColorStop(.5,'rgba(34,211,238,'+(.025+.12*mNorm)+')');
+  cg.addColorStop(1,'rgba(34,211,238,.035)');
+  ctx.fillStyle=cg;
+  ctx.fillRect(pX-turnSpread,cy-coilH*.72,(sX-pX)+turnSpread*2,coilH*1.44);
+
+  // Shared magnetic flux. Direction reverses with primary current.
+  const fluxAmp=Math.abs(iPhase)*(0.18+.72*iNorm)*(0.25+.75*mNorm);
+  const fieldDir=iPhase>=0?1:-1;
+  const fieldLines=Math.round(3+7*(.25+.75*mNorm));
+  for(let k=0;k<fieldLines;k++){
+    const yy=cy-coilH*.48+k*(coilH*.96/Math.max(1,fieldLines-1));
+    const bow=(k-(fieldLines-1)/2)*5;
+    ctx.save();
+    ctx.strokeStyle='rgba(34,211,238,'+(0.08+.62*fluxAmp)+')';
+    ctx.lineWidth=1.2+2.4*fluxAmp;
+    ctx.shadowColor='#22d3ee';
+    ctx.shadowBlur=5+14*fluxAmp;
+    ctx.beginPath();
+    ctx.moveTo(pX+34,yy);
+    ctx.bezierCurveTo(W/2-35,yy+bow,W/2+35,yy-bow,sX-34,yy);
+    ctx.stroke();
+    ctx.restore();
+    const midx=W/2,midy=yy;
+    arrow(ctx,
+      midx-fieldDir*20,midy,
+      midx+fieldDir*20,midy,
+      '#22d3ee',1.4+1.8*fluxAmp,7
+    );
+  }
+
+  // Primary coil: brightness and moving charge markers follow Ip(t).
+  ctx.save();
+  ctx.strokeStyle='#fbbf24';
+  ctx.lineWidth=3.5+2*Math.abs(iPhase)*iNorm;
+  ctx.shadowColor='#fbbf24';
+  ctx.shadowBlur=5+13*Math.abs(iPhase)*iNorm;
+  for(let k=0;k<pTurns;k++){
+    const ox=(k-(pTurns-1)/2)*(turnSpread/(pTurns-1));
+    ctx.beginPath();
+    ctx.ellipse(pX+ox,cy,32,coilH/2,0,0,Math.PI*2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Charge carriers moving around primary turns. Speed is a slowed visual proxy for f.
+  const chargeCount=8;
+  const motionDir=iPhase>=0?1:-1;
+  const chargePhase=phase*(.65+1.6*fNorm);
+  for(let q=0;q<chargeCount;q++){
+    const a=chargePhase*motionDir+q*2*Math.PI/chargeCount;
+    const qx=pX+32*Math.cos(a);
+    const qy=cy+(coilH/2)*Math.sin(a);
+    ctx.fillStyle='#fde68a';
+    ctx.shadowColor='#fbbf24';
+    ctx.shadowBlur=7;
+    ctx.beginPath();ctx.arc(qx,qy,3.5,0,Math.PI*2);ctx.fill();
+  }
+  ctx.shadowBlur=0;
+
+  // Secondary coil: induced EMF shown as alternating polarity, not as a claimed current.
+  ctx.save();
+  ctx.strokeStyle='#22d3ee';
+  ctx.lineWidth=3.5+2*Math.abs(ePhase)*Math.min(1,c.Vs/5);
+  ctx.shadowColor='#22d3ee';
+  ctx.shadowBlur=5+14*Math.abs(ePhase)*Math.min(1,c.Vs/5);
+  for(let k=0;k<sTurns;k++){
+    const ox=(k-(sTurns-1)/2)*(turnSpread/(sTurns-1));
+    ctx.beginPath();
+    ctx.ellipse(sX+ox,cy,32,coilH/2,0,0,Math.PI*2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Polarity on secondary alternates with induced EMF.
+  const polTop=eInst>=0?'+':'−',polBottom=eInst>=0?'−':'+';
+  label(ctx,polTop,sX,cy-coilH/2-22,eInst>=0?'#a3e635':'#f472b6','center',17,true);
+  label(ctx,polBottom,sX,cy+coilH/2+22,eInst>=0?'#f472b6':'#a3e635','center',17,true);
+
+  // Visual coupling distance indicator: M is represented as coupling strength.
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pX,cy+coilH/2+52);ctx.lineTo(sX,cy+coilH/2+52);ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(pX,cy+coilH/2+46);ctx.lineTo(pX,cy+coilH/2+58);
+  ctx.moveTo(sX,cy+coilH/2+46);ctx.lineTo(sX,cy+coilH/2+58);
+  ctx.stroke();
+  label(ctx,'اقتران تمثيلي  M='+s.ctrl.M.toFixed(0)+' mH',W/2,cy+coilH/2+70,'#94a3b8','center',9,true);
+
+  label(ctx,'الملف الرئيسي',pX,cy+coilH/2+24,'#fbbf24','center',11,true);
+  label(ctx,'الملف الثانوي',sX,cy+coilH/2+24,'#22d3ee','center',11,true);
+  label(ctx,'Iₚ(t)='+iInst.toFixed(2)+' A',pX,cy-coilH/2-28,'#fbbf24','center',10,true);
+  label(ctx,'εₛ(t)='+eInst.toFixed(2)+' V',sX,cy-coilH/2-28,'#22d3ee','center',10,true);
+
+  // AC voltmeter connected to secondary.
+  const mx=W*.86,my=cy,mr=46;
+  ctx.fillStyle='rgba(7,11,20,.92)';ctx.strokeStyle='#cbd5e1';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(mx,my,mr,Math.PI,2*Math.PI);ctx.lineTo(mx-mr,my);ctx.fill();ctx.stroke();
+  const meterAngle=Math.PI+(Math.PI*Math.max(-1,Math.min(1,ePhase))+Math.PI)/2;
+  const needleAng=Math.PI+(Math.PI/2)*(1+Math.max(-1,Math.min(1,ePhase)));
+  ctx.strokeStyle='#ef4444';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(mx,my);ctx.lineTo(mx+mr*.78*Math.cos(needleAng),my+mr*.78*Math.sin(needleAng));ctx.stroke();
+  ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(mx,my,4,0,Math.PI*2);ctx.fill();
+  label(ctx,'V~',mx,my+18,'#cbd5e1','center',12,true);
+  label(ctx,c.Vs.toFixed(3)+' V rms',mx,my+mr+23,'#22d3ee','center',9,true);
+  ctx.strokeStyle='#64748b';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(sX+34,cy-28);ctx.lineTo(mx-mr,cy-28);ctx.lineTo(mx-mr,my);
+  ctx.moveTo(sX+34,cy+28);ctx.lineTo(mx+mr,cy+28);ctx.lineTo(mx+mr,my);ctx.stroke();
+
+  // Oscilloscope-style traces. Number of cycles responds to f.
+  const plotX=38,plotY=H*.72,plotW=W*.67,plotH=H*.22;
+  ctx.fillStyle='rgba(5,10,18,.90)';ctx.strokeStyle='#334155';ctx.lineWidth=1.5;
+  ctx.fillRect(plotX,plotY,plotW,plotH);ctx.strokeRect(plotX,plotY,plotW,plotH);
+  for(let k=1;k<4;k++){const yy=plotY+k*plotH/4;ctx.strokeStyle='rgba(148,163,184,.10)';ctx.beginPath();ctx.moveTo(plotX,yy);ctx.lineTo(plotX+plotW,yy);ctx.stroke();}
+  const cycles=1+5*fNorm;
+  const mid1=plotY+plotH*.30,mid2=plotY+plotH*.72,amp=plotH*.16;
+  ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<=220;i++){const u=i/220,x=plotX+u*plotW,y=mid1-amp*Math.sin(2*Math.PI*cycles*u);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+  ctx.strokeStyle='#22d3ee';ctx.beginPath();
+  for(let i=0;i<=220;i++){const u=i/220,x=plotX+u*plotW,y=mid2+amp*Math.cos(2*Math.PI*cycles*u);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+  label(ctx,'Iₚ(t)',plotX+8,mid1-amp-10,'#fbbf24','left',9,true);
+  label(ctx,'Vₛ(t) ∝ −dIₚ/dt',plotX+8,mid2-amp-10,'#22d3ee','left',9,true);
+
+  // Compact live HUD.
+  const bx=W*.73,by=24,bw=W*.24,bh=104;
+  ctx.fillStyle='rgba(7,11,20,.88)';ctx.strokeStyle='rgba(148,163,184,.25)';
+  ctx.fillRect(bx,by,bw,bh);ctx.strokeRect(bx,by,bw,bh);
+  label(ctx,'الحث المتبادل',bx+12,by+18,'#e2e8f0','left',11,true);
+  label(ctx,'f = '+s.ctrl.f.toFixed(0)+' Hz',bx+12,by+39,'#cbd5e1','left',9,true);
+  label(ctx,'Iₚ,rms = '+s.ctrl.Ip.toFixed(2)+' A',bx+12,by+58,'#fbbf24','left',9,true);
+  label(ctx,'M = '+s.ctrl.M.toFixed(0)+' mH',bx+12,by+77,'#22d3ee','left',9,true);
+  label(ctx,'Vₛ,rms = '+c.Vs.toFixed(3)+' V',bx+12,by+96,'#a3e635','left',10,true);
+
+  label(ctx,'الزمن البصري مبطّأ لعرض 5–500 Hz بوضوح',W/2,16,'#64748b','center',8,false);
+}
 },
 
 induced_voltage_turns_diameter_lab: {
