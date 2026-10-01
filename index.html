@@ -7352,12 +7352,14 @@ requestAnimationFrame(loop);
     });
   }
 
-  function trackInitialVisit(){
-    sendEvent('page_view', {
-      page_title: document.title,
-      page_location: window.location.href,
-      page_path: window.location.pathname
-    });
+  function trackInitialVisit(sendExplicitPageView){
+    if (sendExplicitPageView) {
+      sendEvent('page_view', {
+        page_title: document.title,
+        page_location: window.location.href,
+        page_path: window.location.pathname
+      });
+    }
     sendEvent('physics_lab_visit', {
       app_name: 'physics_interactive_lab',
       page_path: window.location.pathname
@@ -7381,7 +7383,7 @@ requestAnimationFrame(loop);
     markReady(function(name, params){
       window.gtag('event', name, params || {});
     });
-    trackInitialVisit();
+    trackInitialVisit(true);
   }
 
   function loadScript(src){
@@ -7417,11 +7419,12 @@ requestAnimationFrame(loop);
           app = window.firebase.initializeApp(firebaseConfig, 'physics-lab-analytics');
         }
 
-        var analytics = app.analytics();
+        var analytics = window.firebase.analytics(app);
         markReady(function(name, params){
           analytics.logEvent(name, params || {});
         });
-        trackInitialVisit();
+        // Firebase Analytics records the standard page_view automatically.
+        trackInitialVisit(false);
       })
       .catch(function(){
         // Analytics must never interfere with the physics lab.
