@@ -1319,24 +1319,40 @@ ohm: {
   _geom(W,H){const circuit={x:28,y:62,w:W*.56-38,h:H-108},graph={x:W*.60,y:62,w:W*.37,h:H-108},sw={x:28+((W*.56-38)*.52),y:84,w:92,h:34};const rec={x:28+(W*.56-38)*.50-80,y:62+(H-108)-46,w:160,h:34};return{circuit,graph,sw,rec};},
   pointerDown(s,p){if(!s.ohm)this.hardReset(s);const g=this._geom(p.W,p.H);if(p.x>=g.sw.x&&p.x<=g.sw.x+g.sw.w&&p.y>=g.sw.y&&p.y<=g.sw.y+g.sw.h){s.ohm.switchOn=!s.ohm.switchOn;toast(s.ohm.switchOn?'🔌 أغلقت المفتاح؛ بدأ التيار.':'⛔ فتحت المفتاح؛ التيار صفر.','learn',2200);updateHintBox();return true;}if(p.x>=g.rec.x&&p.x<=g.rec.x+g.rec.w&&p.y>=g.rec.y&&p.y<=g.rec.y+g.rec.h){if(!s.ohm.switchOn){toast('أغلق المفتاح أولًا.','err',2000);return true;}const I=s.ctrl.V/s.ctrl.R;if(s.ohm.points.some(q=>Math.abs(q.V-s.ctrl.V)<1e-9)){toast('هذه قيمة V مسجلة. غيّر الجهد ثم سجّل نقطة جديدة.','learn',2300);return true;}s.ohm.points.push({V:s.ctrl.V,I,R:s.ctrl.R});s.ohm.points.sort((a,b)=>a.I-b.I);toast('📍 سُجلت القراءة.','ok',1800);updateHintBox();return true;}return false;},
   pointerMove(){return false;},pointerUp(){return false;},
-  draw(ctx,W,H,s){
-    drawGrid(ctx,W,H);if(!s.ohm)this.hardReset(s);const g=this._geom(W,H),c=g.circuit,gr=g.graph,I=this._I(s);
-    ctx.fillStyle='rgba(8,13,24,.78)';ctx.strokeStyle='#25304a';ctx.fillRect(c.x,c.y,c.w,c.h);ctx.strokeRect(c.x,c.y,c.w,c.h);label(ctx,'دائرة القياس',c.x+12,c.y+17,'#cbd5e1','left',11,true);
-    const L=c.x+58,R=c.x+c.w-60,T=c.y+86,B=c.y+c.h-76;ctx.strokeStyle=s.ohm.switchOn?'#22d3ee':'#475569';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(L,T);ctx.lineTo(R,T);ctx.lineTo(R,B);ctx.lineTo(L,B);ctx.lineTo(L,T);ctx.stroke();
-    const by=(T+B)/2;ctx.fillStyle='#111827';ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.fillRect(L-28,by-42,56,84);ctx.strokeRect(L-28,by-42,56,84);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(L-16,by-10);ctx.lineTo(L+16,by-10);ctx.moveTo(L-8,by+8);ctx.lineTo(L+8,by+8);ctx.stroke();label(ctx,'البطارية',L,by-57,'#fbbf24','center',10,true);label(ctx,s.ctrl.V.toFixed(1)+' V',L,by+58,'#fbbf24','center',10,true);
-    const rx=R,ry=(T+B)/2;ctx.fillStyle='#b45309';ctx.strokeStyle='#fbbf24';ctx.fillRect(rx-18,ry-42,36,84);ctx.strokeRect(rx-18,ry-42,36,84);label(ctx,'المقاومة',rx,ry-57,'#fbbf24','center',10,true);label(ctx,s.ctrl.R+' Ω',rx,ry+58,'#fbbf24','center',10,true);
-    const ax=(L+R)/2,ay=T;ctx.fillStyle='#07111b';ctx.strokeStyle='#22d3ee';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ax,ay,25,0,Math.PI*2);ctx.fill();ctx.stroke();label(ctx,'A',ax,ay,'#22d3ee','center',17,true);label(ctx,(I*1000).toFixed(1)+' mA',ax,ay-37,'#22d3ee','center',9,true);
-    const vx=R-92,vy=ry;ctx.fillStyle='#07111b';ctx.strokeStyle='#a78bfa';ctx.beginPath();ctx.arc(vx,vy,25,0,Math.PI*2);ctx.fill();ctx.stroke();label(ctx,'V',vx,vy,'#a78bfa','center',17,true);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(vx+24,vy-5);ctx.lineTo(R-18,ry-38);ctx.moveTo(vx+24,vy+5);ctx.lineTo(R-18,ry+38);ctx.stroke();label(ctx,s.ohm.switchOn?s.ctrl.V.toFixed(1)+' V':'0.0 V',vx,vy+38,'#a78bfa','center',9,true);
-    ctx.fillStyle='rgba(7,11,20,.95)';ctx.strokeStyle=s.ohm.switchOn?'#a3e635':'#f87171';ctx.fillRect(g.sw.x,g.sw.y,g.sw.w,g.sw.h);ctx.strokeRect(g.sw.x,g.sw.y,g.sw.w,g.sw.h);label(ctx,s.ohm.switchOn?'● المفتاح مغلق':'○ المفتاح مفتوح',g.sw.x+g.sw.w/2,g.sw.y+g.sw.h/2,s.ohm.switchOn?'#a3e635':'#f87171','center',9,true);
-    if(s.ohm.switchOn){const speed=clamp(I*180,.4,5),per=2*((R-L)+(B-T)),tt=s.t*speed*45;for(let k=0;k<26;k++){const d=(tt+k*per/26)%per;let x,y;if(d<R-L){x=L+d;y=T;}else if(d<(R-L)+(B-T)){x=R;y=T+d-(R-L);}else if(d<2*(R-L)+(B-T)){x=R-(d-(R-L+B-T));y=B;}else{x=L;y=B-(d-(2*(R-L)+(B-T)));}ctx.fillStyle='#67e8f9';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();}}
-    ctx.fillStyle='rgba(251,191,36,.12)';ctx.strokeStyle='#fbbf24';ctx.fillRect(g.rec.x,g.rec.y,g.rec.w,g.rec.h);ctx.strokeRect(g.rec.x,g.rec.y,g.rec.w,g.rec.h);label(ctx,'📍 سجّل هذه القراءة',g.rec.x+g.rec.w/2,g.rec.y+g.rec.h/2,'#fbbf24','center',10,true);
-    ctx.fillStyle='rgba(8,13,24,.78)';ctx.strokeStyle='#25304a';ctx.fillRect(gr.x,gr.y,gr.w,gr.h);ctx.strokeRect(gr.x,gr.y,gr.w,gr.h);label(ctx,'الرسم الذي تبنيه أنت: V مقابل I',gr.x+gr.w/2,gr.y+18,'#cbd5e1','center',10,true);
-    const gx=gr.x+48,gy=gr.y+gr.h-48,gw=gr.w-70,gh=gr.h-90;arrow(ctx,gx,gy,gx+gw,gy,'#64748b',1.5,7);arrow(ctx,gx,gy,gx,gy-gh,'#64748b',1.5,7);label(ctx,'I (mA)',gx+gw,gy+18,'#94a3b8','right',8,true);label(ctx,'V',gx-12,gy-gh,'#94a3b8','right',8,true);
-    const imax=24/Math.max(10,s.ctrl.R)*1000*1.12,vmax=25,pts=s.ohm.points||[];const fit=this._fit(s);
-    if(pts.length>=2&&Number.isFinite(fit)){ctx.strokeStyle='#22d3ee';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx+gw,gy-(fit*(imax/1000)/vmax)*gh);ctx.stroke();}
-    pts.forEach(p=>{const x=gx+(p.I*1000/imax)*gw,y=gy-(p.V/vmax)*gh;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();});
-    label(ctx,Number.isFinite(fit)?('الميل ≈ '+fit.toFixed(1)+' Ω'):'سجّل نقطتين على الأقل',gr.x+gr.w/2,gr.y+gr.h-18,Number.isFinite(fit)?'#22d3ee':'#64748b','center',9,true);
-  }
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);if(!s.ohm)this.hardReset(s);const g=this._geom(W,H),c=g.circuit,gr=g.graph,I=this._I(s);
+  ctx.fillStyle='rgba(8,13,24,.78)';ctx.strokeStyle='#25304a';ctx.fillRect(c.x,c.y,c.w,c.h);ctx.strokeRect(c.x,c.y,c.w,c.h);label(ctx,'دائرة القياس',c.x+12,c.y+17,'#cbd5e1','left',11,true);
+  const L=c.x+58,R=c.x+c.w-60,T=c.y+86,B=c.y+c.h-76;
+  ctx.strokeStyle=s.ohm.switchOn?'#22d3ee':'#475569';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(L,T);ctx.lineTo(R,T);ctx.lineTo(R,B);ctx.lineTo(L,B);ctx.lineTo(L,T);ctx.stroke();
+
+  const by=(T+B)/2,vNorm=(s.ctrl.V-1)/23;
+  ctx.save();ctx.shadowColor='#fbbf24';ctx.shadowBlur=4+18*vNorm;ctx.fillStyle='rgba(251,191,36,'+(.08+.18*vNorm)+')';ctx.strokeStyle='#fbbf24';ctx.lineWidth=2+2*vNorm;
+  ctx.fillRect(L-28,by-42,56,84);ctx.strokeRect(L-28,by-42,56,84);ctx.restore();
+  ctx.lineWidth=3;ctx.strokeStyle='#fbbf24';ctx.beginPath();ctx.moveTo(L-16,by-10);ctx.lineTo(L+16,by-10);ctx.moveTo(L-8,by+8);ctx.lineTo(L+8,by+8);ctx.stroke();
+  ctx.fillStyle='rgba(251,191,36,.12)';ctx.fillRect(L-42,by+70,84,8);ctx.fillStyle='#fbbf24';ctx.fillRect(L-42,by+70,84*vNorm,8);
+  label(ctx,'البطارية',L,by-57,'#fbbf24','center',10,true);label(ctx,s.ctrl.V.toFixed(1)+' V',L,by+58,'#fbbf24','center',10,true);
+
+  const rx=R,ry=(T+B)/2,rNorm=(s.ctrl.R-10)/490,resW=24+30*rNorm;
+  ctx.save();ctx.shadowColor=s.ohm.switchOn?'#fb923c':'transparent';ctx.shadowBlur=s.ohm.switchOn?Math.min(18,s.ctrl.V*I*10):0;
+  ctx.fillStyle='#b45309';ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.fillRect(rx-resW/2,ry-42,resW,84);ctx.strokeRect(rx-resW/2,ry-42,resW,84);ctx.restore();
+  for(let k=0;k<4;k++){const yy=ry-28+k*18;ctx.strokeStyle=k%2?'#ef4444':'#111827';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(rx-resW/2+3,yy);ctx.lineTo(rx+resW/2-3,yy);ctx.stroke();}
+  label(ctx,'المقاومة',rx,ry-57,'#fbbf24','center',10,true);label(ctx,s.ctrl.R+' Ω',rx,ry+58,'#fbbf24','center',10,true);
+
+  const ax=(L+R)/2,ay=T;ctx.fillStyle='#07111b';ctx.strokeStyle='#22d3ee';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ax,ay,25,0,Math.PI*2);ctx.fill();ctx.stroke();label(ctx,'A',ax,ay,'#22d3ee','center',17,true);label(ctx,(I*1000).toFixed(1)+' mA',ax,ay-37,'#22d3ee','center',9,true);
+  const vx=R-92,vy=ry;ctx.fillStyle='#07111b';ctx.strokeStyle='#a78bfa';ctx.beginPath();ctx.arc(vx,vy,25,0,Math.PI*2);ctx.fill();ctx.stroke();label(ctx,'V',vx,vy,'#a78bfa','center',17,true);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(vx+24,vy-5);ctx.lineTo(R-resW/2,ry-38);ctx.moveTo(vx+24,vy+5);ctx.lineTo(R-resW/2,ry+38);ctx.stroke();label(ctx,s.ohm.switchOn?s.ctrl.V.toFixed(1)+' V':'0.0 V',vx,vy+38,'#a78bfa','center',9,true);
+
+  ctx.fillStyle='rgba(7,11,20,.95)';ctx.strokeStyle=s.ohm.switchOn?'#a3e635':'#f87171';ctx.fillRect(g.sw.x,g.sw.y,g.sw.w,g.sw.h);ctx.strokeRect(g.sw.x,g.sw.y,g.sw.w,g.sw.h);label(ctx,s.ohm.switchOn?'● المفتاح مغلق':'○ المفتاح مفتوح',g.sw.x+g.sw.w/2,g.sw.y+g.sw.h/2,s.ohm.switchOn?'#a3e635':'#f87171','center',9,true);
+  if(s.ohm.switchOn){const speed=clamp(I*180,.4,5),per=2*((R-L)+(B-T)),tt=s.t*speed*45;for(let k=0;k<26;k++){const d=(tt+k*per/26)%per;let x,y;if(d<R-L){x=L+d;y=T;}else if(d<(R-L)+(B-T)){x=R;y=T+d-(R-L);}else if(d<2*(R-L)+(B-T)){x=R-(d-(R-L+B-T));y=B;}else{x=L;y=B-(d-(2*(R-L)+(B-T)));}ctx.fillStyle='#67e8f9';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();}}
+  ctx.fillStyle='rgba(251,191,36,.12)';ctx.strokeStyle='#fbbf24';ctx.fillRect(g.rec.x,g.rec.y,g.rec.w,g.rec.h);ctx.strokeRect(g.rec.x,g.rec.y,g.rec.w,g.rec.h);label(ctx,'📍 سجّل هذه القراءة',g.rec.x+g.rec.w/2,g.rec.y+g.rec.h/2,'#fbbf24','center',10,true);
+
+  ctx.fillStyle='rgba(8,13,24,.78)';ctx.strokeStyle='#25304a';ctx.fillRect(gr.x,gr.y,gr.w,gr.h);ctx.strokeRect(gr.x,gr.y,gr.w,gr.h);label(ctx,'الرسم الذي تبنيه أنت: V مقابل I',gr.x+gr.w/2,gr.y+18,'#cbd5e1','center',10,true);
+  const gx=gr.x+48,gy=gr.y+gr.h-48,gw=gr.w-70,gh=gr.h-90;arrow(ctx,gx,gy,gx+gw,gy,'#64748b',1.5,7);arrow(ctx,gx,gy,gx,gy-gh,'#64748b',1.5,7);label(ctx,'I (mA)',gx+gw,gy+18,'#94a3b8','right',8,true);label(ctx,'V',gx-12,gy-gh,'#94a3b8','right',8,true);
+  const imax=24/Math.max(10,s.ctrl.R)*1000*1.12,vmax=25,pts=s.ohm.points||[],fit=this._fit(s);
+  if(pts.length>=2&&Number.isFinite(fit)){ctx.strokeStyle='#22d3ee';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx+gw,gy-(fit*(imax/1000)/vmax)*gh);ctx.stroke();}
+  pts.forEach(p=>{const x=gx+(p.I*1000/imax)*gw,y=gy-(p.V/vmax)*gh;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();});
+  label(ctx,Number.isFinite(fit)?('الميل ≈ '+fit.toFixed(1)+' Ω'):'سجّل نقطتين على الأقل',gr.x+gr.w/2,gr.y+gr.h-18,Number.isFinite(fit)?'#22d3ee':'#64748b','center',9,true);
+}
 },
 
 newton_prism: {
@@ -5137,28 +5153,40 @@ resistor_network_lab: {
     if(target){s.selectedNode=(s.selectedNode===target)?null:target;updateHintBox();return true;}
     return false;
   },
-  draw(ctx,W,H,s){
-    drawGrid(ctx,W,H);const ns=this.nodes(W,H),st=this.check(s),c=this.calc(s);
-    label(ctx,'اسحب سلكًا بين الدوائر الطرفية المضيئة',W/2,24,'#94a3b8','center',12,true);
-    // battery
-    ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(45,H*.30);ctx.lineTo(45,H*.70);ctx.stroke();
-    ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(35,H*.42);ctx.lineTo(62,H*.42);ctx.moveTo(40,H*.57);ctx.lineTo(57,H*.57);ctx.stroke();
-    label(ctx,'بطارية',48,H*.75,'#fbbf24','center',12,true);label(ctx,'+',62,H*.19,'#fbbf24','center',15,true);label(ctx,'−',62,H*.84,'#fbbf24','center',15,true);
-    // ammeter
-    ctx.strokeStyle='#22d3ee';ctx.lineWidth=3;ctx.beginPath();ctx.arc((ns.aL.x+ns.aR.x)/2,ns.aL.y,32,0,Math.PI*2);ctx.stroke();label(ctx,'A',(ns.aL.x+ns.aR.x)/2,ns.aL.y+6,'#22d3ee','center',22,true);
-    // resistors
-    [['r1L','r1R','R₁='+s.ctrl.R1+'Ω'],['r2L','r2R','R₂='+s.ctrl.R2+'Ω'],['r3L','r3R','R₃='+s.ctrl.R3+'Ω']].forEach(([l,r,t])=>{const a=ns[l],b=ns[r];resistor(ctx,a.x+10,a.y-14,b.x-a.x-20,28,t,'#a3e635');});
-    // voltmeter
-    ctx.strokeStyle='#f472b6';ctx.lineWidth=3;ctx.beginPath();ctx.arc((ns.vL.x+ns.vR.x)/2,ns.vL.y,30,0,Math.PI*2);ctx.stroke();label(ctx,'V',(ns.vL.x+ns.vR.x)/2,ns.vL.y+6,'#f472b6','center',21,true);
-    // completed wires
-    (s.wires||[]).forEach(([a,b])=>{const A=ns[a],B=ns[b];if(!A||!B)return;const good=this.required(s.ctrl.goal).some(e=>this.edge(e[0],e[1])===this.edge(a,b));ctx.strokeStyle=good?'#22d3ee':'#f87171';ctx.lineWidth=good?4:5;ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();});
-    // dragging wire
-    if(s.dragFrom&&s.dragCurrent&&ns[s.dragFrom]){const A=ns[s.dragFrom];ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(s.dragCurrent.x,s.dragCurrent.y);ctx.stroke();ctx.setLineDash([]);}
-    // terminals on top
-    Object.entries(ns).forEach(([id,n])=>{const selected=s.selectedNode===id||s.dragFrom===id;ctx.beginPath();ctx.arc(n.x,n.y,selected?9:7,0,Math.PI*2);ctx.fillStyle=selected?'#fbbf24':'#e2e8f0';ctx.fill();ctx.strokeStyle='#0f172a';ctx.lineWidth=2;ctx.stroke();});
-    const g=Number(s.ctrl.goal),gn=g===1?'توالي':g===2?'توازي':'مختلط';label(ctx,`التحدي: ${gn}`,W-18,H-18,'#fbbf24','right',13,true);
-    label(ctx,st.ok?`✓ I=${c.It.toFixed(3)} A`:`${st.done}/${st.total} وصلات`,18,H-18,st.ok?'#a3e635':'#94a3b8','left',13,true);
-  }
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);const ns=this.nodes(W,H),st=this.check(s),c=this.calc(s);
+  label(ctx,'اسحب سلكًا بين الدوائر الطرفية المضيئة',W/2,24,'#94a3b8','center',12,true);
+  const vNorm=(s.ctrl.V-2)/22;
+  ctx.save();ctx.shadowColor='#fbbf24';ctx.shadowBlur=4+18*vNorm;ctx.strokeStyle='#fbbf24';ctx.lineWidth=3+2*vNorm;ctx.beginPath();ctx.moveTo(45,H*.30);ctx.lineTo(45,H*.70);ctx.stroke();ctx.restore();
+  ctx.lineWidth=4;ctx.strokeStyle='#fbbf24';ctx.beginPath();ctx.moveTo(35,H*.42);ctx.lineTo(62,H*.42);ctx.moveTo(40,H*.57);ctx.lineTo(57,H*.57);ctx.stroke();
+  ctx.fillStyle='rgba(251,191,36,.12)';ctx.fillRect(18,H*.72,60,7);ctx.fillStyle='#fbbf24';ctx.fillRect(18,H*.72,60*vNorm,7);
+  label(ctx,'بطارية',48,H*.75,'#fbbf24','center',12,true);label(ctx,s.ctrl.V.toFixed(0)+' V',48,H*.79,'#fbbf24','center',9,true);label(ctx,'+',62,H*.19,'#fbbf24','center',15,true);label(ctx,'−',62,H*.84,'#fbbf24','center',15,true);
+
+  ctx.strokeStyle='#22d3ee';ctx.lineWidth=3;ctx.beginPath();ctx.arc((ns.aL.x+ns.aR.x)/2,ns.aL.y,32,0,Math.PI*2);ctx.stroke();label(ctx,'A',(ns.aL.x+ns.aR.x)/2,ns.aL.y+6,'#22d3ee','center',22,true);
+
+  const rs=[
+    ['r1L','r1R','R₁',s.ctrl.R1,'#a3e635'],
+    ['r2L','r2R','R₂',s.ctrl.R2,'#22d3ee'],
+    ['r3L','r3R','R₃',s.ctrl.R3,'#f472b6']
+  ];
+  rs.forEach(([l,r,name,val,color])=>{
+    const a=ns[l],b=ns[r],norm=(val-5)/95,hh=18+20*norm,ww=b.x-a.x-20,y=a.y-hh/2;
+    ctx.fillStyle='rgba(163,230,53,'+(.06+.08*norm)+')';ctx.strokeStyle=color;ctx.lineWidth=2+1.5*norm;
+    ctx.fillRect(a.x+10,y,ww,hh);ctx.strokeRect(a.x+10,y,ww,hh);
+    const bands=2+Math.round(norm*4);for(let k=0;k<bands;k++){const x=a.x+18+k*(ww-16)/Math.max(1,bands-1);ctx.strokeStyle=k%2?'#fbbf24':'#ef4444';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y+3);ctx.lineTo(x,y+hh-3);ctx.stroke();}
+    label(ctx,name+'='+val+'Ω',(a.x+b.x)/2,a.y-30,color,'center',10,true);
+  });
+
+  ctx.strokeStyle='#f472b6';ctx.lineWidth=3;ctx.beginPath();ctx.arc((ns.vL.x+ns.vR.x)/2,ns.vL.y,30,0,Math.PI*2);ctx.stroke();label(ctx,'V',(ns.vL.x+ns.vR.x)/2,ns.vL.y+6,'#f472b6','center',21,true);
+
+  (s.wires||[]).forEach(([a,b])=>{const A=ns[a],B=ns[b];if(!A||!B)return;const good=this.required(s.ctrl.goal).some(e=>this.edge(e[0],e[1])===this.edge(a,b));ctx.strokeStyle=good?'#22d3ee':'#f87171';ctx.lineWidth=good?4:5;ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();});
+  if(s.dragFrom&&s.dragCurrent&&ns[s.dragFrom]){const A=ns[s.dragFrom];ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(s.dragCurrent.x,s.dragCurrent.y);ctx.stroke();ctx.setLineDash([]);}
+  Object.entries(ns).forEach(([id,n])=>{const selected=s.selectedNode===id||s.dragFrom===id;ctx.beginPath();ctx.arc(n.x,n.y,selected?9:7,0,Math.PI*2);ctx.fillStyle=selected?'#fbbf24':'#e2e8f0';ctx.fill();ctx.strokeStyle='#0f172a';ctx.lineWidth=2;ctx.stroke();});
+
+  const gg=Number(s.ctrl.goal),gn=gg===1?'توالي':gg===2?'توازي':'مختلط';label(ctx,'التحدي: '+gn,W-18,H-18,'#fbbf24','right',13,true);
+  label(ctx,st.ok?('✓ I='+c.It.toFixed(3)+' A'):(st.done+'/'+st.total+' وصلات'),18,H-18,st.ok?'#a3e635':'#94a3b8','left',13,true);
+}
 },
 
 kirchhoff_lab: {
@@ -8076,6 +8104,21 @@ function bindCanvasInteractions(){
   });
 }
 
+
+/* LAB_RUNTIME_GUARD_V1 */
+const labRuntimeErrorSeen=new Set();
+function reportLabRuntimeError(stage,error){
+  const key=(currentSimKey||'unknown')+'|'+stage+'|'+String(error&&error.message||error);
+  console.error('[Physics Lab]',currentSimKey,stage,error);
+  if(labRuntimeErrorSeen.has(key))return;
+  labRuntimeErrorSeen.add(key);
+  try{toast('⚠️ حدث خلل في تجربة «'+(currentSim&&currentSim.title||currentSimKey)+'» أثناء '+stage+'. تم تسجيل الخطأ بدل إخفائه.','err',4200);}catch(_){}
+  try{if(typeof gtag==='function')gtag('event','lab_runtime_error',{lab_key:currentSimKey||'unknown',stage:String(stage),error:String(error&&error.message||error).slice(0,120)});}catch(_){}
+}
+function guardedLabCall(stage,fn,fallback){
+  try{return fn();}catch(e){reportLabRuntimeError(stage,e);return fallback;}
+}
+
 let lastHintUpdate=0;
 function loop(now){
   requestAnimationFrame(loop);
@@ -8083,12 +8126,12 @@ function loop(now){
   const dt=Math.min((now-lastTime)/1000,0.05);
   lastTime=now;
   if(running){
-    try{currentSim.update(currentState,dt);}catch(e){}
+    guardedLabCall('update',()=>currentSim.update(currentState,dt));
   }
   if(ctx){
     ctx.clearRect(0,0,W,H);
-    try{currentSim.draw(ctx,W,H,currentState);}catch(e){}
-    try{LabWorkbench.draw(ctx,W,H,currentSim,currentState);}catch(e){}
+    guardedLabCall('draw',()=>currentSim.draw(ctx,W,H,currentState));
+    guardedLabCall('workbench',()=>LabWorkbench.draw(ctx,W,H,currentSim,currentState));
     updateReadouts();
   }
   if(now-lastHintUpdate>500){
@@ -8120,7 +8163,7 @@ function updateReadouts(){
         </div>
       `).join('') || '<div class="mobile-summary-chip"><span class="m-l">القياسات</span><span class="m-v">—</span></div>';
     }
-  }catch(e){}
+  }catch(e){reportLabRuntimeError('readouts',e);}
 }
 
 document.getElementById('btn-play').addEventListener('click',()=>{
