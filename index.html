@@ -408,6 +408,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
 .rel-note{margin-top:18px;border:1px solid rgba(34,211,238,.22);border-radius:16px;padding:13px 15px;background:rgba(34,211,238,.055);font-size:10px;line-height:1.75;color:#cbd5e1}
 @media(max-width:767px){.rel-hero{padding:18px 14px;border-radius:18px}.rel-sub{font-size:10.5px;line-height:1.7}.rel-observer-demo{grid-template-columns:1fr;gap:7px}.rel-vs{flex-direction:row;padding:2px}.rel-frame{min-height:140px}.rel-scene-grid{grid-template-columns:1fr;padding:10px}.rel-world-head{grid-template-columns:auto 1fr}.rel-world-progress{display:none}}
 </style>
+<script src="./analytics-config.js"></script>
 </head>
 <body class="grid-bg">
 
@@ -7321,5 +7322,70 @@ window.addEventListener('load',()=>{
 route();
 requestAnimationFrame(loop);
 </script>
+
+<!-- PHYSICS_PRIVATE_ANALYTICS_V1: visitor + social-link analytics; reports are visible only to authorized GA4 users. -->
+<script>
+(function(){
+  'use strict';
+
+  var cfg = window.PHYSICS_ANALYTICS || {};
+  var measurementId = String(cfg.measurementId || '').trim();
+
+  // Safe no-op until a valid GA4 Measurement ID is configured.
+  if (cfg.enabled === false || !/^G-[A-Z0-9]+$/i.test(measurementId)) return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
+
+  var gaScript = document.createElement('script');
+  gaScript.async = true;
+  gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
+  document.head.appendChild(gaScript);
+
+  window.gtag('js', new Date());
+  window.gtag('config', measurementId, {
+    send_page_view: true,
+    page_title: document.title,
+    page_location: window.location.href
+  });
+
+  // Dedicated visit event in addition to GA4's standard page_view/users metrics.
+  window.gtag('event', 'physics_lab_visit', {
+    app_name: 'physics_interactive_lab',
+    page_path: window.location.pathname
+  });
+
+  function findSocialAnchor(target){
+    var el = target;
+    while (el && el !== document) {
+      if (el.tagName === 'A' && el.classList && el.classList.contains('social-btn')) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  document.addEventListener('click', function(ev){
+    var link = findSocialAnchor(ev.target);
+    if (!link) return;
+
+    var platform = '';
+    if (link.classList.contains('instagram')) platform = 'instagram';
+    else if (link.classList.contains('facebook')) platform = 'facebook';
+    if (!platform) return;
+
+    var params = {
+      platform: platform,
+      link_url: link.href || '',
+      page_path: window.location.pathname,
+      page_hash: window.location.hash || ''
+    };
+
+    // One combined event for comparison + one explicit event for quick counting.
+    window.gtag('event', 'social_click', params);
+    window.gtag('event', platform + '_click', params);
+  }, true);
+})();
+</script>
+
 </body>
 </html>
