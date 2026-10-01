@@ -7406,6 +7406,27 @@ function cinematicHexAlpha(hex,a){
   const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
   return 'rgba('+r+','+g+','+b+','+a+')';
 }
+
+/* MICHELSON_VISUAL_SCALE_V1 */
+function drawSpecialVisualBinding(key,c,w,h,state,sim){
+  if(key!=='michelson_morley'||!state||!state.ctrl)return;
+  const L=Number(state.ctrl.L||1),lam=Number(state.ctrl.lam||550);
+  const pL=Math.max(0,Math.min(1,(L-1)/(20-1)));
+  const x=24,y=h-126,maxW=Math.min(270,w*.34),barW=55+(maxW-55)*pL;
+  const col=(lam>=380&&lam<=780)?wl2rgb(lam):'#fbbf24';
+  c.save();
+  c.fillStyle='rgba(7,11,20,.82)';c.strokeStyle='rgba(148,163,184,.25)';c.fillRect(x,y,maxW+26,92);c.strokeRect(x,y,maxW+26,92);
+  label(c,'مقياس بصري للذراع — المخطط غير مرسوم بمقياس حقيقي',x+12,y+17,'#94a3b8','left',8,true);
+  c.strokeStyle='#64748b';c.lineWidth=1;c.beginPath();c.moveTo(x+12,y+45);c.lineTo(x+12+barW,y+45);c.stroke();
+  c.beginPath();c.moveTo(x+12,y+39);c.lineTo(x+12,y+51);c.moveTo(x+12+barW,y+39);c.lineTo(x+12+barW,y+51);c.stroke();
+  label(c,'L='+L.toFixed(1)+' m',x+12+barW/2,y+62,'#cbd5e1','center',9,true);
+  c.strokeStyle=col;c.lineWidth=2;c.beginPath();
+  const cycles=5+Math.round(8*(700-Math.max(400,Math.min(700,lam)))/300);
+  for(let i=0;i<=100;i++){const xx=x+12+maxW*i/100,yy=y+78+5*Math.sin(i/100*Math.PI*2*cycles);i?c.lineTo(xx,yy):c.moveTo(xx,yy);}c.stroke();
+  label(c,'λ='+lam.toFixed(0)+' nm',x+maxW+18,y+78,col,'right',8,true);
+  c.restore();
+}
+
 function ensureCinematicSimWrapped(key){
   const sim=SIMS[key];
   if(!sim||sim.__cinematicWrapped||typeof sim.draw!=='function')return;
@@ -7424,6 +7445,7 @@ function ensureCinematicSimWrapped(key){
     c.restore();
 
     originalDraw.call(sim,c,w,h,state);
+    try{drawSpecialVisualBinding(key,c,w,h,state,sim);}catch(e){}
 
     c.save();
     const vig=c.createRadialGradient(w*.5,h*.47,Math.min(w,h)*.20,w*.5,h*.47,Math.max(w,h)*.70);
