@@ -5361,7 +5361,55 @@ laser_threshold_lab: {
   hints(s){const c=this.calc(s);return [c.on?'✅ الكسب يعوض الخسائر في رحلة كاملة؛ شرط بدء الليزر متحقق.':`زد g إلى نحو <span class="hl">${c.gth.toFixed(3)} m⁻¹</span> أو خفّض الخسائر.`,`رفع R₁ وR₂ يخفض عتبة الكسب، لكن المرآة الخارجة يجب أن تسمح ببعض النفاذ للحصول على قدرة خرج.`];},
   equations:['R_1R_2e^{2(g-\\alpha_i)L}=1','g_{th}=\\alpha_i+\\frac{1}{2L}\\ln\\frac{1}{R_1R_2}'],
   theory:'يُعامل R₁ وR₂ هنا كـانعكاسيات قدرة. شرط العتبة ينتج من مساواة تضخيم الرحلة الكاملة مع الخسائر. فوق العتبة لا يعني أن القدرة تنمو بلا حد؛ في الليزر الحقيقي يحدث تشبع للكسب وتثبت القدرة.',
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),y=H/2,x1=W*.18,x2=W*.82;ctx.fillStyle='#22d3ee';ctx.fillRect(x1-6,y-100,12,200);ctx.fillStyle='#fbbf24';ctx.fillRect(x2-6,y-100,12,200);ctx.strokeStyle=c.on?'#ef4444':'#64748b';ctx.lineWidth=6;ctx.shadowColor=c.on?'#ef4444':'transparent';ctx.shadowBlur=c.on?18:0;ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();ctx.shadowBlur=0;label(ctx,c.on?'LASING':'تحت العتبة',W/2,y-45,c.on?'#ef4444':'#94a3b8','center',18,true);label(ctx,`G_rt=${c.Grt.toFixed(3)}`,W/2,y+50,'#cbd5e1','center',13,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const c=this.calc(s),cy=H*.48;
+  const lp=(s.ctrl.L-5)/95;
+  const span=W*(.34+.44*Math.max(0,Math.min(1,lp)));
+  const x1=W/2-span/2,x2=W/2+span/2;
+  const R1=s.ctrl.R1/100,R2=s.ctrl.R2/100;
+  const gain=Math.max(0,s.ctrl.g-s.ctrl.alpha);
+  const beamStrength=Math.max(.08,Math.min(1.15,c.Grt));
+  const medY=cy-45,medH=90;
+  const mg=ctx.createLinearGradient(x1,0,x2,0);
+  mg.addColorStop(0,'rgba(34,211,238,.10)');
+  mg.addColorStop(.5,'rgba(239,68,68,'+(0.10+0.06*Math.min(10,s.ctrl.g))+')');
+  mg.addColorStop(1,'rgba(34,211,238,.10)');
+  ctx.fillStyle=mg;ctx.strokeStyle='rgba(148,163,184,.30)';ctx.lineWidth=1.5;
+  ctx.fillRect(x1+12,medY,x2-x1-24,medH);ctx.strokeRect(x1+12,medY,x2-x1-24,medH);
+  label(ctx,'الوسط الفعال  L = '+s.ctrl.L.toFixed(0)+' cm',W/2,medY-14,'#cbd5e1','center',11,true);
+  const dots=Math.round(6+Math.min(34,s.ctrl.g*3.2));
+  for(let k=0;k<dots;k++){
+    const px=x1+25+((k*47)%Math.max(35,(x2-x1-50)));
+    const py=medY+18+((k*29)%Math.max(25,medH-32));
+    ctx.fillStyle='rgba(251,191,36,'+(0.20+0.06*Math.min(10,s.ctrl.g))+')';
+    ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);ctx.fill();
+  }
+  const losses=Math.round(Math.min(18,s.ctrl.alpha*3));
+  for(let k=0;k<losses;k++){
+    const px=x1+30+((k*61)%Math.max(30,(x2-x1-60))),py=medY+15+((k*37)%Math.max(25,medH-30));
+    ctx.strokeStyle='rgba(148,163,184,.55)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(px-3,py-3);ctx.lineTo(px+3,py+3);ctx.moveTo(px+3,py-3);ctx.lineTo(px-3,py+3);ctx.stroke();
+  }
+  function mirror(x,R,color,name){
+    ctx.save();ctx.globalAlpha=.35+.65*R;ctx.strokeStyle=color;ctx.lineWidth=3+7*R;
+    ctx.beginPath();ctx.moveTo(x,cy-92);ctx.lineTo(x,cy+92);ctx.stroke();ctx.restore();
+    label(ctx,name+' '+(R*100).toFixed(1)+'%',x,cy+116,color,'center',10,true);
+  }
+  mirror(x1,R1,'#22d3ee','R₁');mirror(x2,R2,'#fbbf24','R₂');
+  ctx.save();ctx.strokeStyle=c.on?'#ef4444':'#64748b';ctx.lineWidth=3+5*Math.min(1,beamStrength);
+  ctx.globalAlpha=.28+.62*Math.min(1,beamStrength);ctx.shadowColor=c.on?'#ef4444':'transparent';ctx.shadowBlur=c.on?18+18*Math.min(1,gain/5):0;
+  ctx.beginPath();ctx.moveTo(x1,cy);ctx.lineTo(x2,cy);ctx.stroke();ctx.restore();
+  const out=(1-R2)*Math.min(1.3,Math.max(.15,c.Grt));
+  ctx.save();ctx.strokeStyle='#ef4444';ctx.lineWidth=2+14*out;ctx.globalAlpha=.18+Math.min(.82,out*3);ctx.shadowColor='#ef4444';ctx.shadowBlur=12+25*out;
+  ctx.beginPath();ctx.moveTo(x2,cy);ctx.lineTo(Math.min(W-20,x2+W*.16),cy);ctx.stroke();ctx.restore();
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x1,cy+150);ctx.lineTo(x2,cy+150);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x1,cy+143);ctx.lineTo(x1,cy+157);ctx.moveTo(x2,cy+143);ctx.lineTo(x2,cy+157);ctx.stroke();
+  label(ctx,s.ctrl.L.toFixed(0)+' cm',W/2,cy+170,'#94a3b8','center',10,true);
+  label(ctx,c.on?'LASING — فوق العتبة':'تحت العتبة',W/2,50,c.on?'#ef4444':'#94a3b8','center',18,true);
+  label(ctx,'G_rt='+c.Grt.toFixed(3)+'   g_th='+c.gth.toFixed(3)+' m⁻¹',W/2,76,'#cbd5e1','center',11,true);
+}
 },
 
 gaussian_beam_lab: {
