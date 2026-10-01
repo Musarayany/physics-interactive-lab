@@ -5514,7 +5514,28 @@ fabry_perot_laser: {
   hints(s){const c=this.calc(s);return [`T=<span class="hl">${c.T.toFixed(4)}</span>. يعود النفاذ إلى القمة كلما تغيّر L بمقدار λ/2 في الهواء.`,`زيادة R تجعل القمم أضيق وترفع الفينِس، لكنها تزيد زمن التخزين داخل التجويف.`,`صيغة الفينِس هنا تقريب المرآتين المتساويتين عديمتي الخسارة.`];},
   equations:['T=\\frac{1}{1+F\\sin^2(\\delta/2)}','F=\\frac{4R}{(1-R)^2}','\\delta=\\frac{4\\pi\\Delta L}{\\lambda}','\\mathcal F\\approx\\frac{\\pi\\sqrt R}{1-R}'],
   theory:'تعتمد دالة Airy لتجويف فابري–بيرو المتماثل عديم الخسارة على فرق طور الرحلة الكاملة. تحريك المرآة بمقدار λ/2 يعيد شرط الرنين. الفينِس المعروض هو التقريب الشائع للمرايا عالية الانعكاس نسبيًا.',
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),x1=W*.25,x2=W*.75,cy=H*.42;ctx.fillStyle='#22d3ee';ctx.fillRect(x1-5,cy-75,10,150);ctx.fillStyle='#fbbf24';ctx.fillRect(x2-5,cy-75,10,150);ctx.strokeStyle='#ef4444';ctx.lineWidth=4;ctx.globalAlpha=.25+.75*c.T;ctx.beginPath();ctx.moveTo(35,cy);ctx.lineTo(W-35,cy);ctx.stroke();ctx.globalAlpha=1;const y0=H*.78,w=W*.78,left=W*.11;ctx.strokeStyle='#64748b';ctx.beginPath();ctx.moveTo(left,y0);ctx.lineTo(left+w,y0);ctx.stroke();ctx.strokeStyle='#f472b6';ctx.beginPath();for(let i=0;i<=220;i++){const ph=4*Math.PI*i/220,F=c.F,T=1/(1+F*Math.sin(ph/2)**2),x=left+w*i/220,y=y0-T*H*.22;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();label(ctx,`T=${c.T.toFixed(3)}`,W/2,35,'#fbbf24','center',14,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const c=this.calc(s),cy=H*.34,lp=(s.ctrl.L-1)/49,baseSpan=W*(.28+.46*Math.max(0,Math.min(1,lp)));
+  const shiftPx=34*(s.ctrl.dL/1000),x1=W/2-baseSpan/2,x2=W/2+baseSpan/2+shiftPx,R=s.ctrl.R/100,lam=s.ctrl.lam;
+  const col=(lam>=380&&lam<=780)?wl2rgb(lam):(lam>780?'#ef4444':'#a78bfa');
+  ctx.save();ctx.globalAlpha=.30+.70*R;ctx.strokeStyle='#22d3ee';ctx.lineWidth=3+6*R;ctx.beginPath();ctx.moveTo(x1,cy-82);ctx.lineTo(x1,cy+82);ctx.stroke();
+  ctx.strokeStyle='#fbbf24';ctx.beginPath();ctx.moveTo(x2,cy-82);ctx.lineTo(x2,cy+82);ctx.stroke();ctx.restore();
+  ctx.save();ctx.strokeStyle=col;ctx.lineWidth=3+5*c.T;ctx.globalAlpha=.20+.75*c.T;ctx.shadowColor=col;ctx.shadowBlur=8+18*c.T;
+  ctx.beginPath();ctx.moveTo(x1,cy);ctx.lineTo(x2,cy);ctx.stroke();ctx.beginPath();ctx.moveTo(x2,cy);ctx.lineTo(Math.min(W-20,x2+W*.14),cy);ctx.stroke();ctx.restore();
+  label(ctx,'L='+s.ctrl.L.toFixed(0)+' cm',W/2,cy+112,'#cbd5e1','center',10,true);
+  label(ctx,'ΔL='+s.ctrl.dL.toFixed(0)+' nm  (الإزاحة مرسومة مكبّرة)',W/2,cy+132,'#94a3b8','center',9,false);
+  label(ctx,'R='+s.ctrl.R.toFixed(1)+'%',W/2,cy-105,'#fbbf24','center',10,true);
+  const y0=H*.82,w=W*.80,left=W*.10;
+  ctx.strokeStyle='#64748b';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,y0);ctx.lineTo(left+w,y0);ctx.stroke();
+  ctx.strokeStyle='#f472b6';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<=260;i++){const ph=4*Math.PI*i/260,F=c.F,T=1/(1+F*Math.sin(ph/2)**2),x=left+w*i/260,y=y0-T*H*.22;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();
+  const phaseNorm=((c.phase%(4*Math.PI))+4*Math.PI)%(4*Math.PI),opX=left+w*phaseNorm/(4*Math.PI),opY=y0-c.T*H*.22;
+  ctx.fillStyle='#fbbf24';ctx.shadowColor='#fbbf24';ctx.shadowBlur=10;ctx.beginPath();ctx.arc(opX,opY,5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  label(ctx,'T='+c.T.toFixed(3)+'   Finesse='+c.finesse.toFixed(1),W/2,38,'#fbbf24','center',14,true);
+  label(ctx,'λ='+lam.toFixed(1)+' nm',W/2,58,col,'center',10,true);
+}
 }
 
 
