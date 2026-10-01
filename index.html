@@ -1905,37 +1905,27 @@ double_slit: {
   equations:['d\\sin\\theta = m\\lambda','\\Delta y = \\dfrac{\\lambda L}{d}'],
   theory:'الضوء يسلك سلوك موجة.',
   
+
 draw(ctx,W,H,s){
   drawGrid(ctx,W,H);
-  const cy=H/2,slitX=W*.24;
-  const lp=(s.ctrl.L-.5)/(3-.5),screenX=W*(.56+.36*Math.max(0,Math.min(1,lp)));
+  const cy=H/2,slitX=W*.24,lp=(s.ctrl.L-.5)/2.5,screenX=W*(.56+.36*Math.max(0,Math.min(1,lp)));
   const lam=s.ctrl.lam,col=wl2rgb(lam),sep=Math.min(H*.30,28+s.ctrl.d*250),slitGap=Math.max(10,H*.035);
-  for(let i=0;i<5;i++){
-    const x=slitX-((s.t*80+i*40)%Math.max(40,slitX-20));
-    ctx.strokeStyle=col;ctx.globalAlpha=.55;ctx.beginPath();ctx.moveTo(x,20);ctx.lineTo(x,H-20);ctx.stroke();
-  }
+  for(let i=0;i<5;i++){const x=slitX-((s.t*80+i*40)%Math.max(40,slitX-20));ctx.strokeStyle=col;ctx.globalAlpha=.55;ctx.beginPath();ctx.moveTo(x,20);ctx.lineTo(x,H-20);ctx.stroke();}
   ctx.globalAlpha=1;ctx.fillStyle='#1c2540';
   ctx.fillRect(slitX-6,0,12,cy-sep/2-slitGap/2);
   ctx.fillRect(slitX-6,cy-sep/2+slitGap/2,12,sep-slitGap);
   ctx.fillRect(slitX-6,cy+sep/2+slitGap/2,12,H-(cy+sep/2+slitGap/2));
-  for(const sign of [-1,1]){
-    const sy=cy+sign*sep/2;
-    for(let r=1;r<9;r++){const rad=r*34+((s.t*55)%34);ctx.strokeStyle=col;ctx.globalAlpha=.28;ctx.beginPath();ctx.arc(slitX,sy,rad,0,Math.PI*2);ctx.stroke();}
-  }
+  for(const sign of [-1,1]){const sy=cy+sign*sep/2;for(let r=1;r<9;r++){const rad=r*34+((s.t*55)%34);ctx.strokeStyle=col;ctx.globalAlpha=.28;ctx.beginPath();ctx.arc(slitX,sy,rad,0,Math.PI*2);ctx.stroke();}}
   ctx.globalAlpha=1;ctx.fillStyle='#0a0e1a';ctx.fillRect(screenX,0,W-screenX,H);ctx.strokeStyle='#fbbf24';ctx.strokeRect(screenX,0,3,H);
-  const lamM=s.ctrl.lam*1e-9,dM=s.ctrl.d*1e-3,Lm=s.ctrl.L,scaleY=H*.42;
-  for(let y=0;y<H;y++){
-    const yy=(y-cy)/scaleY;
-    const phase=Math.PI*dM*(yy*0.012)/lamM;
-    const I=Math.pow(Math.cos(phase),2);
-    ctx.fillStyle=col;ctx.globalAlpha=I;ctx.fillRect(screenX+4,y,22,1);
-  }
+  const lamM=s.ctrl.lam*1e-9,dM=s.ctrl.d*1e-3,Lm=s.ctrl.L,fringeMm=lamM*Lm/dM*1000;
+  const pxPerMm=Math.max(4,Math.min(38,H*.018)),fringePx=Math.max(4,fringeMm*pxPerMm);
+  for(let y=0;y<H;y++){const phase=Math.PI*(y-cy)/fringePx,I=Math.pow(Math.cos(phase),2);ctx.fillStyle=col;ctx.globalAlpha=I;ctx.fillRect(screenX+4,y,22,1);}
   ctx.globalAlpha=1;
-  const fringe=lamM*Lm/dM*1000;
   ctx.strokeStyle='#94a3b8';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(slitX,H-38);ctx.lineTo(screenX,H-38);ctx.stroke();
   ctx.beginPath();ctx.moveTo(slitX,H-44);ctx.lineTo(slitX,H-32);ctx.moveTo(screenX,H-44);ctx.lineTo(screenX,H-32);ctx.stroke();
-  label(ctx,'L='+Lm.toFixed(1)+' m', (slitX+screenX)/2,H-18,'#94a3b8','center',9,true);
-  label(ctx,'Δy='+fringe.toFixed(2)+' mm',screenX-8,34,'#fbbf24','right',11,true);
+  label(ctx,'L='+Lm.toFixed(1)+' m',(slitX+screenX)/2,H-18,'#94a3b8','center',9,true);
+  label(ctx,'d='+s.ctrl.d.toFixed(2)+' mm',slitX,34,'#22d3ee','center',9,true);
+  label(ctx,'Δy='+fringeMm.toFixed(2)+' mm',screenX-8,34,'#fbbf24','right',11,true);
 }
 },
 
@@ -2219,24 +2209,23 @@ crystal: {
   equations:['2d\\sin\\theta = n\\lambda'],
   theory:'الأشعة المنعكسة من مستويات متتالية تتداخل بناءً إذا كان فرق المسار = nλ.',
   
+
 draw(ctx,W,H,s){
   drawGrid(ctx,W,H);
   const rows=7,cols=10,dx=W/(cols+1),baseDy=H*.055,dy=baseDy*(.65+1.05*(s.ctrl.d-1)/4),startY=H/2-dy*(rows-1)/2;
-  const col=wl2rgb(Math.max(380,Math.min(780,s.ctrl.lam*100)));
-  for(let r=0;r<rows;r++)for(let cc=0;cc<cols;cc++){
-    const x=dx*(cc+1),y=startY+dy*r;
-    const gr=ctx.createRadialGradient(x-2,y-2,1,x,y,7);gr.addColorStop(0,'#67e8f9');gr.addColorStop(1,'#0e7490');
-    ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();
-  }
+  const col='#a78bfa';
+  for(let r=0;r<rows;r++)for(let cc=0;cc<cols;cc++){const x=dx*(cc+1),y=startY+dy*r;const gr=ctx.createRadialGradient(x-2,y-2,1,x,y,7);gr.addColorStop(0,'#67e8f9');gr.addColorStop(1,'#0e7490');ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();}
   const th=deg2rad(s.ctrl.th),hitX=W/2,hitY=startY+dy*3,len=Math.min(W*.34,H*.48);
   const sx=hitX-len*Math.cos(th),sy=hitY+len*Math.sin(th),ex=hitX+len*Math.cos(th),ey=hitY-len*Math.sin(th);
   ctx.strokeStyle=col;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(hitX,hitY);ctx.stroke();
   ctx.strokeStyle='#22d3ee';ctx.beginPath();ctx.moveTo(hitX,hitY);ctx.lineTo(ex,ey);ctx.stroke();
+  const waveGap=10+22*(s.ctrl.lam-.5)/(3-.5),ux=Math.cos(th),uy=-Math.sin(th),nx=-uy,ny=ux;
+  for(let q=1;q<Math.floor(len/waveGap);q++){const px=hitX-q*waveGap*ux,py=hitY+q*waveGap*Math.sin(th);ctx.strokeStyle='rgba(167,139,250,.42)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px-9*nx,py-9*ny);ctx.lineTo(px+9*nx,py+9*ny);ctx.stroke();}
   ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(148,163,184,.5)';ctx.beginPath();ctx.moveTo(hitX,hitY);ctx.lineTo(hitX,H*.08);ctx.stroke();ctx.setLineDash([]);
   ctx.strokeStyle='#fbbf24';ctx.beginPath();ctx.arc(hitX,hitY,42,-Math.PI/2,-Math.PI/2+th);ctx.stroke();
   const n=(2*s.ctrl.d*Math.sin(th))/s.ctrl.lam,ok=Math.abs(n-Math.round(n))<.05;
   label(ctx,'d='+s.ctrl.d.toFixed(2)+' Å',W*.14,34,'#22d3ee','center',10,true);
-  label(ctx,'λ='+s.ctrl.lam.toFixed(2)+' Å',W*.35,34,col,'center',10,true);
+  label(ctx,'λ='+s.ctrl.lam.toFixed(2)+' Å  (تباعد الجبهات)',W*.39,34,'#a78bfa','center',10,true);
   label(ctx,'θ='+s.ctrl.th.toFixed(1)+'°',hitX+50,hitY-30,'#fbbf24','left',11,true);
   label(ctx,ok?'قمة براغ — تداخل بنّاء':'خارج شرط براغ',W*.78,34,ok?'#a3e635':'#94a3b8','center',11,true);
 }
