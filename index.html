@@ -8275,11 +8275,17 @@ function makeMobileCompactCanvasContext(base,w,h){
 
   function looksLikeHudCard(x,y,rw,rh){
     x=num(x);y=num(y);rw=num(rw);rh=num(rh);
-    if(rw<90||rh<58||rw>w*.46||rh>h*.27)return false;
-    const edgeX=x<=w*.12 || x+rw>=w*.88;
-    const edgeY=y<=h*.24 || y+rh>=h*.76;
-    if(!edgeX||!edgeY)return false;
-    return darkTranslucent(base.fillStyle);
+    // Informational HUD cards on phones are typically dark rectangles placed
+    // at the top corners (sometimes lower corners). Keep real plots, apparatus,
+    // touch controls and wide work areas intact.
+    if(rw<88||rh<52||rh>h*.36)return false;
+    if(!darkTranslucent(base.fillStyle))return false;
+
+    const topCard=y<=h*.32 && rw<=w*.76;
+    const bottomCornerCard=(y+rh>=h*.72) && rw<=w*.42 &&
+      (x<=w*.18 || x+rw>=w*.82);
+
+    return topCard || bottomCornerCard;
   }
 
   return new Proxy(base,{
@@ -9267,7 +9273,10 @@ window.addEventListener('load',()=>{
   `;
   document.getElementById('welcome-start').onclick=()=>{
     overlay.innerHTML='';
-    toast('استمتع بـ <b>121 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
+    // لا نعرض رسالة عائمة على الهاتف؛ لأنها كانت تغطي منزلقات التحكم.
+    if(window.innerWidth>=900){
+      toast('استمتع بـ <b>121 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',2200);
+    }
   };
   renderFilterTabs();
 });
