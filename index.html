@@ -7656,6 +7656,157 @@ function drawSpecialVisualBinding(key,c,w,h,state,sim){
   c.restore();
 }
 
+
+/* ============================================================
+   ALL_SECTIONS_VITALITY_ENGINE_V1
+   Decorative/interactive layer only. It does not change the model,
+   equations, readouts or physical state of any experiment.
+   ============================================================ */
+const cinematicProbe={
+  x:0,y:0,inside:false,down:false,pulses:[],lastMove:0
+};
+function vitalityTime(state){
+  const st=Number(state&&state.t);
+  return Number.isFinite(st)?st:(performance.now()/1000);
+}
+function vitalityCtrlEnergy(sim,state){
+  const cs=sim&&sim.controls||[];
+  if(!cs.length)return .45;
+  let acc=0,n=0;
+  for(const c of cs){
+    if(c.type==='buttons'||c.type==='number')continue;
+    const lo=Number(c.min),hi=Number(c.max),v=Number(state&&state.ctrl?state.ctrl[c.id]:c.value);
+    if(Number.isFinite(lo)&&Number.isFinite(hi)&&hi!==lo&&Number.isFinite(v)){
+      acc+=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));n++;
+    }
+  }
+  return n?(.18+.82*acc/n):.45;
+}
+function vitalityDot(c,x,y,r,color,a){
+  c.save();c.globalAlpha=a;c.fillStyle=color;c.shadowColor=color;c.shadowBlur=8;
+  c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();c.restore();
+}
+function drawVitalityWave(c,w,h,t,accent,amp,cycles,y0,alpha){
+  c.save();c.strokeStyle=cinematicHexAlpha(accent,alpha);c.lineWidth=1.5;c.beginPath();
+  for(let i=0;i<=100;i++){
+    const x=w*i/100,y=y0+amp*Math.sin(i/100*Math.PI*2*cycles-t*2.2);
+    i?c.lineTo(x,y):c.moveTo(x,y);
+  }
+  c.stroke();c.restore();
+}
+function drawCategoryVitalityLayer(key,c,w,h,state,sim){
+  if(!c||!sim||w<120||h<120)return;
+  const meta=CATEGORIES[sim.category]||{},accent=meta.color||'#22d3ee';
+  const t=vitalityTime(state),energy=vitalityCtrlEnergy(sim,state);
+  const cat=sim.category;
+
+  c.save();
+  c.globalCompositeOperation='source-over';
+
+  if(cat==='كهرباء'){
+    const y=h*.15, count=8;
+    for(let i=0;i<count;i++){
+      const u=((t*(.08+.20*energy)+i/count)%1);
+      vitalityDot(c,22+u*(w-44),y+7*Math.sin(u*Math.PI*4),2.2,accent,.13+.18*energy);
+    }
+    c.strokeStyle=cinematicHexAlpha(accent,.09+.08*energy);c.lineWidth=1;
+    c.beginPath();c.moveTo(18,y);c.bezierCurveTo(w*.35,y-16,w*.65,y+16,w-18,y);c.stroke();
+  }else if(cat==='بصريات'||cat==='الليزر'){
+    const y=cat==='الليزر'?h*.14:h*.12;
+    for(let i=0;i<7;i++){
+      const u=((t*(.10+.14*energy)+i/7)%1);
+      c.strokeStyle=cinematicHexAlpha(accent,.10+.12*energy);c.lineWidth=1.2;
+      c.beginPath();c.moveTo(u*w-24,y+i*3);c.lineTo(u*w+24,y+i*3);c.stroke();
+    }
+  }else if(cat==='موجات'){
+    drawVitalityWave(c,w,h,t,accent,9+10*energy,2+3*energy,h*.16,.15);
+    drawVitalityWave(c,w,h,t+.8,accent,5+7*energy,3+2*energy,h*.19,.08);
+  }else if(cat==='ميكانيكا'){
+    for(let i=0;i<7;i++){
+      const u=((t*(.035+.065*energy)+i/7)%1),x=20+u*(w-40),y=h*.13;
+      c.strokeStyle=cinematicHexAlpha(accent,.10);c.lineWidth=1.4;
+      c.beginPath();c.moveTo(x-10-16*energy,y);c.lineTo(x,y);c.stroke();
+      vitalityDot(c,x,y,1.8,accent,.18);
+    }
+  }else if(cat==='ميكانيكا الكم'){
+    for(let i=0;i<14;i++){
+      const a=t*.35+i*2.399,rr=(.04+.035*(i%5))*Math.min(w,h);
+      const x=w*.5+rr*Math.cos(a+i),y=h*.13+rr*.18*Math.sin(a*1.7+i);
+      vitalityDot(c,x,y,1.5+(i%3)*.4,accent,.08+.06*Math.sin(a)*Math.sin(a));
+    }
+  }else if(cat==='الفيزياء الذرية'||cat==='الفيزياء الجزيئية'){
+    const cx=w*.88,cy=h*.13;
+    for(let i=0;i<3;i++){
+      const rr=10+i*9,a=t*(.5+.18*i)+i*2.1;
+      c.strokeStyle=cinematicHexAlpha(accent,.08);c.beginPath();c.ellipse(cx,cy,rr,rr*.42,a*.08,0,Math.PI*2);c.stroke();
+      vitalityDot(c,cx+rr*Math.cos(a),cy+rr*.42*Math.sin(a),1.8,accent,.20);
+    }
+  }else if(cat==='الأطياف'){
+    const x0=w*.18,x1=w*.82,y=h*.13,colors=['#ef4444','#fb923c','#facc15','#22c55e','#22d3ee','#3b82f6','#8b5cf6'];
+    colors.forEach((col,i)=>{
+      const x=x0+(x1-x0)*i/(colors.length-1),pulse=.10+.12*(.5+.5*Math.sin(t*2+i));
+      c.strokeStyle=cinematicHexAlpha(col,pulse);c.lineWidth=2;c.beginPath();c.moveTo(x,y-8);c.lineTo(x,y+8);c.stroke();
+    });
+  }else if(cat==='فيزياء الصلبة'||cat==='النانوتكنولوجي'){
+    const step=24,yy=h*.13;
+    for(let i=0;i<Math.min(22,Math.floor(w/step));i++){
+      const x=18+i*step+2.8*Math.sin(t*2+i*.7)*energy;
+      vitalityDot(c,x,yy+3*Math.sin(t*1.5+i),1.8,accent,.12);
+      if(i){c.strokeStyle=cinematicHexAlpha(accent,.055);c.beginPath();c.moveTo(x-step,yy);c.lineTo(x,yy);c.stroke();}
+    }
+  }else if(cat==='النماذج النووية'||cat==='الفيزياء النووية'){
+    const cx=w*.88,cy=h*.13;
+    for(let i=0;i<10;i++){
+      const a=i*2.399+t*.08,rr=4+3.3*Math.sqrt(i);
+      vitalityDot(c,cx+rr*Math.cos(a),cy+rr*Math.sin(a),2.0,i%2?accent:'#fbbf24',.13+.05*energy);
+    }
+  }else if(cat==='الإلكترونيات التماثلية'){
+    drawVitalityWave(c,w,h,t,accent,7+8*energy,2+4*energy,h*.14,.16);
+  }else if(cat==='الإلكترونيات الرقمية'){
+    c.strokeStyle=cinematicHexAlpha(accent,.16);c.lineWidth=1.6;c.beginPath();
+    const y0=h*.14,segments=18;
+    for(let i=0;i<=segments;i++){
+      const x=15+(w-30)*i/segments,y=y0+(((i+Math.floor(t*3))%3)===0?-7:7);
+      if(i===0)c.moveTo(x,y);else{c.lineTo(x,y);if(i<segments)c.lineTo(x+(w-30)/(segments*2),y);}
+    }c.stroke();
+  }else if(cat==='الموائع والحرارة'){
+    for(let i=0;i<10;i++){
+      const u=((t*(.025+.06*energy)+i/10)%1),x=w*.12+(i%5)*w*.19+6*Math.sin(t+i),y=h*.20-u*h*.14;
+      vitalityDot(c,x,y,1.5+(i%3),accent,.08+.08*energy);
+    }
+  }else if(cat==='النسبية'){
+    c.strokeStyle=cinematicHexAlpha(accent,.055);c.lineWidth=1;
+    const shift=(t*12)%34;
+    for(let x=-34+shift;x<w;x+=34){c.beginPath();c.moveTo(x,0);c.lineTo(x+18,h*.24);c.stroke();}
+    for(let y=18;y<h*.24;y+=28){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}
+  }
+  c.restore();
+}
+function drawInteractiveProbeLayer(c,w,h,state,sim){
+  const p=cinematicProbe;
+  const now=performance.now()/1000;
+  p.pulses=p.pulses.filter(q=>now-q.t<.85);
+  if(!p.inside&&!p.pulses.length)return;
+  const meta=CATEGORIES[sim&&sim.category]||{},accent=meta.color||'#22d3ee';
+
+  c.save();
+  if(p.inside){
+    c.strokeStyle=cinematicHexAlpha(accent,p.down?.38:.18);c.lineWidth=1;
+    c.beginPath();c.moveTo(p.x-11,p.y);c.lineTo(p.x+11,p.y);c.moveTo(p.x,p.y-11);c.lineTo(p.x,p.y+11);c.stroke();
+    c.fillStyle=cinematicHexAlpha(accent,.10);c.beginPath();c.arc(p.x,p.y,18,0,Math.PI*2);c.fill();
+  }
+  for(const q of p.pulses){
+    const age=now-q.t,progress=age/.85,r=12+64*progress;
+    c.strokeStyle=cinematicHexAlpha(accent,.34*(1-progress));c.lineWidth=2*(1-progress)+.5;
+    c.beginPath();c.arc(q.x,q.y,r,0,Math.PI*2);c.stroke();
+    for(let i=0;i<5;i++){
+      const a=i*Math.PI*2/5+age*2,x=q.x+(16+38*progress)*Math.cos(a),y=q.y+(16+38*progress)*Math.sin(a);
+      vitalityDot(c,x,y,1.5,accent,.22*(1-progress));
+    }
+  }
+  c.restore();
+}
+
 function ensureCinematicSimWrapped(key){
   const sim=SIMS[key];
   if(!sim||sim.__cinematicWrapped||typeof sim.draw!=='function')return;
@@ -7673,8 +7824,10 @@ function ensureCinematicSimWrapped(key){
     c.fillStyle=bg;c.fillRect(0,0,w,h);
     c.restore();
 
+    try{drawCategoryVitalityLayer(key,c,w,h,state,sim);}catch(e){}
     originalDraw.call(sim,c,w,h,state);
     try{drawSpecialVisualBinding(key,c,w,h,state,sim);}catch(e){}
+    try{drawInteractiveProbeLayer(c,w,h,state,sim);}catch(e){}
 
     c.save();
     const vig=c.createRadialGradient(w*.5,h*.47,Math.min(w,h)*.20,w*.5,h*.47,Math.max(w,h)*.70);
@@ -8272,6 +8425,9 @@ function bindCanvasInteractions(){
   canvasEl.addEventListener('pointerdown',(e)=>{
     if(!currentSim||!currentState)return;
     const p=canvasPointerPayload(e);if(!p)return;
+    cinematicProbe.x=p.x;cinematicProbe.y=p.y;cinematicProbe.inside=true;cinematicProbe.down=true;
+    cinematicProbe.pulses.push({x:p.x,y:p.y,t:performance.now()/1000});
+    if(cinematicProbe.pulses.length>5)cinematicProbe.pulses.shift();
     try{
       let used=LabWorkbench.pointerDown(currentSim,currentState,p);
       if(!used&&typeof currentSim.pointerDown==='function')used=currentSim.pointerDown(currentState,p);
@@ -8281,6 +8437,7 @@ function bindCanvasInteractions(){
   canvasEl.addEventListener('pointermove',(e)=>{
     if(!currentSim||!currentState)return;
     const p=canvasPointerPayload(e);if(!p)return;
+    cinematicProbe.x=p.x;cinematicProbe.y=p.y;cinematicProbe.inside=true;cinematicProbe.lastMove=performance.now();
     try{
       let used=LabWorkbench.pointerMove(currentSim,currentState,p);
       if(!used&&typeof currentSim.pointerMove==='function')used=currentSim.pointerMove(currentState,p);
@@ -8290,6 +8447,7 @@ function bindCanvasInteractions(){
   const finish=(e)=>{
     if(!currentSim||!currentState)return;
     const p=canvasPointerPayload(e);if(!p)return;
+    cinematicProbe.x=p.x;cinematicProbe.y=p.y;cinematicProbe.down=false;
     try{
       let used=LabWorkbench.pointerUp(currentSim,currentState,p);
       if(!used&&typeof currentSim.pointerUp==='function')used=currentSim.pointerUp(currentState,p);
@@ -8297,6 +8455,7 @@ function bindCanvasInteractions(){
     }catch(err){console.error(err);}
   };
   canvasEl.addEventListener('pointerup',finish);
+  canvasEl.addEventListener('pointerleave',()=>{cinematicProbe.inside=false;cinematicProbe.down=false;});
   canvasEl.addEventListener('pointercancel',(e)=>{
     if(currentState){
       if(currentState._workbench)currentState._workbench.drag=null;
