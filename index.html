@@ -485,6 +485,19 @@ body.lab-cinematic-active #view-sim.professor-mode #sim-canvas-wrap{height:min(8
   #cinematic-hud{display:none!important}
 }
 
+
+/* VISUAL_CONTROL_GLYPHS_V1 — every numeric control has a non-text visual response */
+.cin-control-chip .cin-glyph{display:block;position:relative;margin-top:5px;height:5px;border-radius:999px;background:rgba(148,163,184,.15);overflow:hidden}
+.cin-control-chip .cin-glyph>i{display:block;height:100%;width:var(--p,50%);min-width:3px;border-radius:999px;background:linear-gradient(90deg,var(--cin-accent,#22d3ee),#fbbf24);box-shadow:0 0 8px rgba(34,211,238,.25)}
+.cin-control-chip .cin-glyph.length{height:8px;background:none;overflow:visible;border-bottom:1px solid rgba(148,163,184,.45);border-radius:0}
+.cin-control-chip .cin-glyph.length>i{position:absolute;left:0;bottom:-2px;height:4px;width:var(--p,50%);background:var(--cin-accent,#22d3ee);border-radius:2px;box-shadow:0 0 7px var(--cin-accent,#22d3ee)}
+.cin-control-chip .cin-glyph.length:before,.cin-control-chip .cin-glyph.length:after{content:"";position:absolute;bottom:-4px;width:1px;height:8px;background:#94a3b8}
+.cin-control-chip .cin-glyph.length:before{left:0}.cin-control-chip .cin-glyph.length:after{left:var(--p,50%)}
+.cin-control-chip .cin-glyph.angle{height:13px;background:none;overflow:visible}
+.cin-control-chip .cin-glyph.angle:before{content:"";position:absolute;left:7px;bottom:1px;width:30px;height:1px;background:#64748b}
+.cin-control-chip .cin-glyph.angle>i{position:absolute;left:7px;bottom:1px;width:27px;height:2px;min-width:0;transform-origin:left center;transform:rotate(var(--ang,-20deg));background:#fbbf24;border-radius:2px}
+.cin-control-chip .cin-glyph.count{height:7px;background:repeating-linear-gradient(90deg,rgba(34,211,238,.8) 0 2px,transparent 2px var(--gap,8px));border:1px solid rgba(148,163,184,.14)}
+
 </style>
 <script src="./analytics-config.js"></script>
 </head>
@@ -7010,6 +7023,31 @@ function ensureCinematicSimWrapped(key){
   };
   sim.__cinematicWrapped=true;
 }
+
+function cinematicControlGlyph(control){
+  if(!control||control.type==='buttons'||control.type==='number')return '';
+  const raw=Number(currentSim&&currentSim.ctrl?currentSim.ctrl[control.id]:control.value);
+  const lo=Number(control.min),hi=Number(control.max);
+  let p=(Number.isFinite(raw)&&Number.isFinite(lo)&&Number.isFinite(hi)&&hi!==lo)?(raw-lo)/(hi-lo):.5;
+  p=Math.max(0,Math.min(1,p));
+  const pct=(8+84*p).toFixed(1)+'%';
+  const label=String(control.label||'');
+  const unit=String(control.unit||'');
+  const angle=/زاوية|θ|angle/i.test(label);
+  const count=/عدد|لفات|خطوط|رتبة|مقاطع|Nₚ|Nₛ/i.test(label);
+  const length=/طول|مسافة|بعد|قطر|نصف قطر|ارتفاع|عرض|سمك|فجوة|إزاحة|cm|mm|µm|nm|km|Å/i.test(label+' '+unit) && !angle;
+  if(angle){
+    const deg=(-65+130*p).toFixed(1)+'deg';
+    return '<span class="cin-glyph angle" style="--ang:'+deg+'"><i></i></span>';
+  }
+  if(count){
+    const gap=(14-9*p).toFixed(1)+'px';
+    return '<span class="cin-glyph count" style="--gap:'+gap+'"></span>';
+  }
+  if(length)return '<span class="cin-glyph length" style="--p:'+pct+'"><i></i></span>';
+  return '<span class="cin-glyph" style="--p:'+pct+'"><i></i></span>';
+}
+
 function cinematicControlValue(control){
   if(!currentSim||!control)return '';
   const raw=currentSim.ctrl?currentSim.ctrl[control.id]:control.value;
@@ -7060,7 +7098,7 @@ function updateCinematicHUD(items){
   const cbox=document.getElementById('cinematic-controls');
   if(cbox){
     cbox.innerHTML=controls.map(c=>
-      '<div class="cin-control-chip"><span class="k">'+pedagogyEsc(String(c.label||c.id||''))+'</span><span class="v">'+pedagogyEsc(cinematicControlValue(c))+'</span></div>'
+      '<div class="cin-control-chip"><span class="k">'+pedagogyEsc(String(c.label||c.id||''))+'</span><span class="v">'+pedagogyEsc(cinematicControlValue(c))+'</span>'+cinematicControlGlyph(c)+'</div>'
     ).join('');
   }
 }
