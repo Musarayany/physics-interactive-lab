@@ -5,7 +5,8 @@
 */
 window.PHYSICS_ANALYTICS = Object.freeze({
   enabled: true,
-  measurementId: "",
+  measurementId: "G-R8GE83PQQ7",
+  googleTagId: "GT-WBZPSQ7F",
   firebaseConfig: Object.freeze({
     apiKey: "AIzaSyCeJuG2qpvLRkmG323SlFWwad5VGfI5BZQ",
     authDomain: "attendance-system-3b8a7.firebaseapp.com",
