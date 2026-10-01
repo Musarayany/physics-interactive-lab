@@ -984,8 +984,8 @@ pendulum: {
 
 projectile: {
   title:'حركة المقذوفات', icon:'🎯', category:'ميكانيكا',
-  desc:'المسار والمدى وأقصى ارتفاع لمقذوف.',
-  welcome:{title:'🎯 حركة المقذوفات',steps:['حركة أفقية بسرعة ثابتة + رأسية بتسارع g.','جرّب الزوايا 30°, 45°, 60°.','<b>سؤال:</b> أي زاوية تعطي أقصى مدى؟']},
+  desc:'مسار حي مع محاور قياس ومتجهات السرعة والمدى وأقصى ارتفاع في مشهد واحد.',
+  welcome:{title:'🎯 حركة المقذوفات',steps:['راقب تفكيك السرعة إلى مركبتين أفقية ورأسية.','غيّر الزاوية والسرعة وقارن المسار المتوقع بالمسار الحي.','جرّب 30° و45° و60° وقارن المدى.']},
   controls:[
     {id:'v0',label:'السرعة الابتدائية v₀',min:5,max:60,step:1,value:30,unit:'m/s',help:'<b>v₀</b><br>R ∝ v₀².'},
     {id:'ang',label:'زاوية الإطلاق θ',min:5,max:85,step:1,value:45,unit:'°',help:'<b>θ</b><br>R = v₀²sin(2θ)/g.'},
@@ -998,42 +998,97 @@ projectile: {
   readouts(s){const R=s.ctrl.v0**2*Math.sin(2*deg2rad(s.ctrl.ang))/s.ctrl.g;
     const Hm=s.ctrl.v0**2*Math.sin(deg2rad(s.ctrl.ang))**2/(2*s.ctrl.g);
     const T=2*s.ctrl.v0*Math.sin(deg2rad(s.ctrl.ang))/s.ctrl.g;
-    return [{l:'المدى R',v:R.toFixed(2),u:'m',c:'gold'},{l:'أقصى ارتفاع',v:Hm.toFixed(2),u:'m'},
-      {l:'زمن التحليق',v:T.toFixed(2),u:'s'},{l:'الموضع',v:`${s.x.toFixed(1)}, ${s.y.toFixed(1)}`,u:'m'}];},
+    return [{l:'المدى R',v:R.toFixed(2),u:'m',c:'gold'},{l:'أقصى ارتفاع',v:Hm.toFixed(2),u:'m',c:'cyan'},
+      {l:'زمن التحليق',v:T.toFixed(2),u:'s'},{l:'الموضع',v:s.x.toFixed(1)+', '+s.y.toFixed(1),u:'m'}];},
   hints(s){const h=[];const ang=s.ctrl.ang;const R=s.ctrl.v0**2*Math.sin(2*deg2rad(ang))/s.ctrl.g;
-    h.push(`R = <span class="hl">${R.toFixed(2)} m</span> عند الزاوية ${ang}°.`);
-    if(ang===45)h.push('🎯 الزاوية 45° تعطي أقصى مدى.');
-    if(Math.abs(ang-30)<2)h.push('تذكّر: 60° تعطي نفس المدى.');return h;},
+    h.push('R = <span class="hl">'+R.toFixed(2)+' m</span> عند الزاوية '+ang+'°.');
+    if(ang===45)h.push('🎯 عند نفس الارتفاع الابتدائي والنهائي ومن دون مقاومة هواء، 45° تعطي أقصى مدى.');
+    if(Math.abs(ang-30)<2)h.push('في النموذج المثالي: الزاويتان 30° و60° تعطيان المدى نفسه.');return h;},
   equations:['x = v_0\\cos\\theta \\cdot t','y = v_0\\sin\\theta \\cdot t - \\tfrac{1}{2}g t^2','R = \\dfrac{v_0^2 \\sin 2\\theta}{g}'],
-  theory:'حركة المقذوف = حركة مستقلة أفقية + رأسية.',
+  theory:'في النموذج المثالي ومن دون مقاومة هواء، تتحلل الحركة إلى مركبة أفقية بسرعة ثابتة ومركبة رأسية بتسارع ثابت −g. عندما يكون موضع الهبوط عند ارتفاع الإطلاق نفسه يكون R=v₀²sin(2θ)/g.',
   draw(ctx,W,H,s){
-    drawGrid(ctx,W,H);
-    const groundY=H-60,launchX=70;
-    const rangeEst=Math.max(1,s.ctrl.v0**2/s.ctrl.g);
-    const scale=(W-140)/rangeEst;
-    const toX=x=>launchX+x*scale,toY=y=>groundY-y*scale;
-    ctx.fillStyle='#1c2540';ctx.fillRect(0,groundY,W,H-groundY);
-    ctx.strokeStyle='#334155';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(0,groundY);ctx.lineTo(W,groundY);ctx.stroke();
-    ctx.strokeStyle='rgba(34,211,238,.35)';ctx.lineWidth=2;ctx.setLineDash([6,6]);
-    ctx.beginPath();
-    const Tf=2*s.ctrl.v0*Math.sin(deg2rad(s.ctrl.ang))/s.ctrl.g;
-    let first=true;
-    for(let t=0;t<=Tf+0.01;t+=Tf/120){
-      const x=s.ctrl.v0*Math.cos(deg2rad(s.ctrl.ang))*t;
-      const y=s.ctrl.v0*Math.sin(deg2rad(s.ctrl.ang))*t-0.5*s.ctrl.g*t*t;
-      if(first){ctx.moveTo(toX(x),toY(y));first=false;}else ctx.lineTo(toX(x),toY(y));
+    const pad={l:72,r:38,t:64,b:58};
+    const plotW=Math.max(120,W-pad.l-pad.r),plotH=Math.max(120,H-pad.t-pad.b);
+    const groundY=H-pad.b,leftX=pad.l;
+    const aa=deg2rad(s.ctrl.ang);
+    const R=Math.max(.001,s.ctrl.v0**2*Math.sin(2*aa)/s.ctrl.g);
+    const Hm=Math.max(.001,s.ctrl.v0**2*Math.sin(aa)**2/(2*s.ctrl.g));
+    const Tf=2*s.ctrl.v0*Math.sin(aa)/s.ctrl.g;
+    const xMax=Math.max(10,R*1.12),yMax=Math.max(8,Hm*1.35);
+    const X=x=>leftX+(x/xMax)*plotW;
+    const Y=y=>groundY-(y/yMax)*plotH;
+
+    ctx.fillStyle='#07101d';ctx.fillRect(0,0,W,H);
+
+    ctx.strokeStyle='rgba(148,163,184,.10)';ctx.lineWidth=1;
+    for(let i=0;i<=10;i++){
+      const xx=leftX+plotW*i/10;ctx.beginPath();ctx.moveTo(xx,pad.t);ctx.lineTo(xx,groundY);ctx.stroke();
     }
-    ctx.stroke();ctx.setLineDash([]);
-    if(s.trail.length>1){ctx.strokeStyle='#22d3ee';ctx.lineWidth=2.5;
-      ctx.beginPath();ctx.moveTo(toX(s.trail[0].x),toY(s.trail[0].y));
-      for(let i=1;i<s.trail.length;i++)ctx.lineTo(toX(s.trail[i].x),toY(s.trail[i].y));ctx.stroke();}
-    const px=toX(s.x),py=toY(s.y);
-    const gr=ctx.createRadialGradient(px-4,py-4,1,px,py,12);
-    gr.addColorStop(0,'#fde68a');gr.addColorStop(0.5,'#fbbf24');gr.addColorStop(1,'#b45309');
-    ctx.fillStyle=gr;ctx.beginPath();ctx.arc(px,py,11,0,7);ctx.fill();
-    const R=s.ctrl.v0**2*Math.sin(2*deg2rad(s.ctrl.ang))/s.ctrl.g;
-    label(ctx,`R = ${R.toFixed(1)} m`,W-20,30,'#fbbf24','right',14,true);
+    for(let i=0;i<=8;i++){
+      const yy=pad.t+plotH*i/8;ctx.beginPath();ctx.moveTo(leftX,yy);ctx.lineTo(leftX+plotW,yy);ctx.stroke();
+    }
+    arrow(ctx,leftX,groundY,leftX+plotW+8,groundY,'#94a3b8',1.7,8);
+    arrow(ctx,leftX,groundY,leftX,pad.t-8,'#94a3b8',1.7,8);
+    label(ctx,'x (m)',leftX+plotW,groundY+28,'#94a3b8','right',10,true);
+    label(ctx,'y (m)',leftX-18,pad.t-8,'#94a3b8','right',10,true);
+
+    for(let i=0;i<=5;i++){
+      const xv=xMax*i/5,xx=X(xv);
+      label(ctx,xv.toFixed(xMax<30?1:0),xx,groundY+19,'#64748b','center',9,false);
+    }
+    for(let i=1;i<=5;i++){
+      const yv=yMax*i/5,yy=Y(yv);
+      label(ctx,yv.toFixed(yMax<30?1:0),leftX-10,yy,'#64748b','right',9,false);
+    }
+
+    ctx.save();
+    ctx.strokeStyle='rgba(148,163,184,.55)';ctx.lineWidth=2;ctx.setLineDash([7,7]);
+    ctx.beginPath();
+    for(let i=0;i<=160;i++){
+      const t=Tf*i/160,x=s.ctrl.v0*Math.cos(aa)*t,y=Math.max(0,s.ctrl.v0*Math.sin(aa)*t-.5*s.ctrl.g*t*t);
+      if(i===0)ctx.moveTo(X(x),Y(y));else ctx.lineTo(X(x),Y(y));
+    }
+    ctx.stroke();ctx.restore();
+
+    if(s.trail.length>1){
+      ctx.save();ctx.shadowColor='#2563eb';ctx.shadowBlur=12;
+      ctx.strokeStyle='#3b82f6';ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(X(s.trail[0].x),Y(s.trail[0].y));
+      for(let i=1;i<s.trail.length;i++)ctx.lineTo(X(s.trail[i].x),Y(s.trail[i].y));
+      ctx.stroke();ctx.restore();
+    }
+
+    ctx.save();ctx.translate(leftX,groundY);ctx.rotate(-aa);
+    ctx.fillStyle='#334155';ctx.fillRect(-12,-10,54,20);
+    ctx.strokeStyle='#94a3b8';ctx.strokeRect(-12,-10,54,20);ctx.restore();
+    ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.beginPath();ctx.arc(leftX,groundY,38,-aa,0);ctx.stroke();
+    label(ctx,s.ctrl.ang.toFixed(0)+'°',leftX+45*Math.cos(aa/2),groundY-45*Math.sin(aa/2),'#fbbf24','center',10,true);
+
+    const px=X(s.x),py=Y(Math.max(0,s.y));
+    ctx.save();ctx.shadowColor='#ef4444';ctx.shadowBlur=18;
+    ctx.fillStyle='#ef4444';ctx.strokeStyle='#fecaca';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(px,py,10,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();
+
+    const vScale=Math.min(2.5,84/Math.max(1,s.ctrl.v0));
+    const vxLen=s.vx*vScale,vyLen=s.vy*vScale;
+    arrow(ctx,px,py,px+vxLen,py,'#22d3ee',2.5,8);
+    label(ctx,'Vx='+s.vx.toFixed(1),px+vxLen+6,py-10,'#22d3ee','left',9,true);
+    arrow(ctx,px,py,px,py-vyLen,'#a3e635',2.5,8);
+    label(ctx,'Vy='+s.vy.toFixed(1),px+8,py-vyLen-6,'#a3e635','left',9,true);
+
+    ctx.save();ctx.setLineDash([4,5]);ctx.strokeStyle='rgba(251,191,36,.35)';
+    ctx.beginPath();ctx.moveTo(X(R/2),Y(Hm));ctx.lineTo(X(R/2),groundY);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(leftX,Y(Hm));ctx.lineTo(X(R/2),Y(Hm));ctx.stroke();ctx.restore();
+    label(ctx,'Hmax='+Hm.toFixed(1)+' m',X(R/2)+8,Y(Hm)-10,'#fbbf24','left',10,true);
+    label(ctx,'R='+R.toFixed(1)+' m',X(R),groundY-12,'#fbbf24','right',11,true);
+
+    const bw=Math.min(270,W*.33),bh=88,bx=W-bw-18,by=16;
+    ctx.fillStyle='rgba(7,11,20,.86)';ctx.strokeStyle='rgba(148,163,184,.24)';
+    ctx.fillRect(bx,by,bw,bh);ctx.strokeRect(bx,by,bw,bh);
+    label(ctx,'حركة المقذوفات',bx+14,by+21,'#e2e8f0','left',12,true);
+    label(ctx,'v₀='+s.ctrl.v0.toFixed(1)+' m/s   θ='+s.ctrl.ang.toFixed(0)+'°',bx+14,by+42,'#22d3ee','left',10,true);
+    label(ctx,'t='+Math.min(s.t,Tf).toFixed(2)+' s   T='+Tf.toFixed(2)+' s',bx+14,by+61,'#cbd5e1','left',10,false);
+    label(ctx,s.landed?'● وصل المقذوف إلى الأرض':'● الحركة جارية',bx+14,by+79,s.landed?'#fbbf24':'#a3e635','left',9,true);
   }
 },
 
