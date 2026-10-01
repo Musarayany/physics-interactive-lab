@@ -441,6 +441,50 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
 #sim-stage-card:fullscreen #sim-canvas-wrap,#sim-stage-card:-webkit-full-screen #sim-canvas-wrap{width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;aspect-ratio:auto!important;border-radius:8px!important}
 body.lab-cinematic-active #view-sim.professor-mode #sim-canvas-wrap{height:min(80vh,900px)!important}
 
+
+/* ============================================================
+   GLOBAL_CINEMATIC_ALL_LABS_V1
+   Applied to every physics experiment without changing its model.
+   ============================================================ */
+#cinematic-hud{position:absolute;inset:0;z-index:4;pointer-events:none;font-family:Cairo,sans-serif}
+.cin-hud-top{position:absolute;top:12px;left:12px;right:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.cin-live-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;background:rgba(5,9,20,.78);border:1px solid rgba(148,163,184,.26);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-size:9px;font-weight:900;letter-spacing:.7px;color:#e2e8f0;box-shadow:0 8px 28px -18px rgba(0,0,0,.9)}
+.cin-live-dot{width:7px;height:7px;border-radius:50%;background:var(--cin-accent,#22d3ee);box-shadow:0 0 12px var(--cin-accent,#22d3ee);animation:cinPulse 1.7s ease-in-out infinite}
+@keyframes cinPulse{0%,100%{opacity:.55;transform:scale(.85)}50%{opacity:1;transform:scale(1.2)}}
+.cin-scene-label{max-width:52%;padding:6px 10px;border-radius:10px;background:rgba(5,9,20,.70);border:1px solid rgba(148,163,184,.18);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-size:9px;color:#94a3b8;text-align:left;direction:rtl}
+.cin-hud-bottom{position:absolute;left:12px;right:12px;bottom:12px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:10px;align-items:end}
+.cin-readout-strip,.cin-control-strip{display:flex;gap:6px;flex-wrap:wrap;align-items:stretch}
+.cin-readout-chip,.cin-control-chip{min-width:0;border-radius:10px;padding:6px 9px;background:rgba(5,9,20,.77);border:1px solid rgba(148,163,184,.22);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 8px 24px -18px rgba(0,0,0,.9)}
+.cin-readout-chip{flex:1 1 92px}
+.cin-control-chip{flex:1 1 90px}
+.cin-readout-chip .k,.cin-control-chip .k{display:block;font-size:8px;line-height:1.2;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cin-readout-chip .v{display:block;margin-top:3px;font-size:11px;line-height:1.25;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:900;color:var(--cin-accent,#22d3ee);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cin-control-chip .v{display:block;margin-top:3px;font-size:10px;line-height:1.25;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:800;color:#fbbf24;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cinematic-hint{position:absolute;left:50%;transform:translateX(-50%);top:48px;max-width:min(650px,72%);padding:6px 11px;border-radius:10px;background:rgba(5,9,20,.68);border:1px solid rgba(148,163,184,.16);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);font-size:9px;line-height:1.45;color:#cbd5e1;text-align:center;opacity:.92}
+.cin-frame-corner{position:absolute;width:28px;height:28px;opacity:.72}
+.cin-frame-corner.tl{top:8px;left:8px;border-top:2px solid var(--cin-accent,#22d3ee);border-left:2px solid var(--cin-accent,#22d3ee)}
+.cin-frame-corner.tr{top:8px;right:8px;border-top:2px solid var(--cin-accent,#22d3ee);border-right:2px solid var(--cin-accent,#22d3ee)}
+.cin-frame-corner.bl{bottom:8px;left:8px;border-bottom:2px solid var(--cin-accent,#22d3ee);border-left:2px solid var(--cin-accent,#22d3ee)}
+.cin-frame-corner.br{bottom:8px;right:8px;border-bottom:2px solid var(--cin-accent,#22d3ee);border-right:2px solid var(--cin-accent,#22d3ee)}
+.cin-scan{position:absolute;inset:0;opacity:.055;background:repeating-linear-gradient(0deg,rgba(255,255,255,.13) 0,rgba(255,255,255,.13) 1px,transparent 1px,transparent 4px);mix-blend-mode:screen}
+@media (min-width:900px){
+  body.lab-cinematic-active #experiment-learning-shell{display:none!important}
+  body.lab-cinematic-active #lab-grid{grid-template-columns:minmax(0,1fr) 300px!important;gap:12px!important}
+  body.lab-cinematic-active #sim-canvas-wrap{height:clamp(560px,74vh,850px)!important;min-height:560px!important}
+  body.lab-cinematic-active #sim-side{top:66px!important;max-height:calc(100vh - 78px)!important}
+  body.lab-cinematic-active #sim-side>[data-mobile-panel]{border-color:rgba(148,163,184,.18)!important;background:rgba(10,15,28,.86)!important}
+  body.lab-cinematic-active #sim-side h3{font-size:12px!important}
+  body.lab-cinematic-active #controls input[type=range]{height:8px!important}
+  body.lab-cinematic-active #controls input[type=range]::-webkit-slider-thumb{width:20px!important;height:20px!important}
+}
+@media (min-width:1320px){
+  body.lab-cinematic-active #lab-grid{grid-template-columns:minmax(0,1fr) 315px!important}
+  body.lab-cinematic-active #sim-canvas-wrap{height:clamp(610px,77vh,900px)!important;min-height:610px!important}
+}
+@media (max-width:899px){
+  #cinematic-hud{display:none!important}
+}
+
 </style>
 <script src="./analytics-config.js"></script>
 </head>
@@ -561,6 +605,20 @@ body.lab-cinematic-active #view-sim.professor-mode #sim-canvas-wrap{height:min(8
         <div id="sim-stage-card" class="glass rounded-2xl p-3">
           <div id="sim-canvas-wrap" class="relative rounded-xl overflow-hidden" style="aspect-ratio:16/10;background:#0a0e1a">
             <canvas id="sim-canvas"></canvas>
+            <div id="cinematic-hud" aria-hidden="true">
+              <div class="cin-scan"></div>
+              <div class="cin-frame-corner tl"></div><div class="cin-frame-corner tr"></div>
+              <div class="cin-frame-corner bl"></div><div class="cin-frame-corner br"></div>
+              <div class="cin-hud-top">
+                <div class="cin-live-badge"><span class="cin-live-dot"></span><span id="cinematic-mode-label">LIVE PHYSICS LAB</span></div>
+                <div id="cinematic-scene-label" class="cin-scene-label">—</div>
+              </div>
+              <div id="cinematic-hint"></div>
+              <div class="cin-hud-bottom">
+                <div id="cinematic-readouts" class="cin-readout-strip"></div>
+                <div id="cinematic-controls" class="cin-control-strip"></div>
+              </div>
+            </div>
           </div>
         </div>
         <div id="mobile-live-summary" aria-live="polite">
@@ -6891,6 +6949,128 @@ const MeasurementLab={
     c.fillStyle='#64748b';c.font='9px monospace';c.textAlign='left';c.fillText(xmin.toPrecision(3),pad.l,Hc-8);c.textAlign='right';c.fillText(xmax.toPrecision(3),Wc-pad.r,Hc-8);c.textAlign='right';c.fillText(ymax.toPrecision(3),pad.l-4,pad.t+5);c.fillText(ymin.toPrecision(3),pad.l-4,Hc-pad.b);
   }
 };
+
+/* ============================================================
+   GLOBAL_CINEMATIC_ENGINE_V1
+   One rendering layer for every SIMS entry.
+   ============================================================ */
+const CINEMATIC_SCENE_NAMES={
+  'ميكانيكا':'MOTION LAB',
+  'موجات':'WAVE LAB',
+  'كهرباء':'ELECTROMAGNETIC LAB',
+  'بصريات':'OPTICS LAB',
+  'الليزر':'LASER LAB',
+  'ميكانيكا الكم':'QUANTUM LAB',
+  'الفيزياء الذرية':'ATOMIC LAB',
+  'الفيزياء الجزيئية':'MOLECULAR LAB',
+  'فيزياء الصلبة':'SOLID STATE LAB',
+  'النانوتكنولوجي':'NANO LAB',
+  'الأطياف':'SPECTROSCOPY LAB',
+  'النماذج النووية':'NUCLEAR MODELS LAB',
+  'الفيزياء النووية':'NUCLEAR LAB',
+  'الإلكترونيات التماثلية':'ANALOG ELECTRONICS LAB',
+  'الإلكترونيات الرقمية':'DIGITAL ELECTRONICS LAB',
+  'الموائع والحرارة':'THERMAL & FLUID LAB',
+  'النسبية':'RELATIVITY LAB'
+};
+let cinematicHudSignature='';
+function cinematicHexAlpha(hex,a){
+  const h=String(hex||'#22d3ee').replace('#','');
+  if(h.length!==6)return 'rgba(34,211,238,'+a+')';
+  const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+function ensureCinematicSimWrapped(key){
+  const sim=SIMS[key];
+  if(!sim||sim.__cinematicWrapped||typeof sim.draw!=='function')return;
+  const originalDraw=sim.draw;
+  sim.__cinematicOriginalDraw=originalDraw;
+  sim.draw=function(c,w,h,state){
+    const meta=CATEGORIES[sim.category]||{};
+    const accent=meta.color||'#22d3ee';
+
+    c.save();
+    const bg=c.createRadialGradient(w*.54,h*.43,20,w*.54,h*.43,Math.max(w,h)*.75);
+    bg.addColorStop(0,cinematicHexAlpha(accent,.075));
+    bg.addColorStop(.56,'rgba(6,12,24,.025)');
+    bg.addColorStop(1,'rgba(2,6,15,.22)');
+    c.fillStyle=bg;c.fillRect(0,0,w,h);
+    c.restore();
+
+    originalDraw.call(sim,c,w,h,state);
+
+    c.save();
+    const vig=c.createRadialGradient(w*.5,h*.47,Math.min(w,h)*.20,w*.5,h*.47,Math.max(w,h)*.70);
+    vig.addColorStop(.48,'rgba(0,0,0,0)');
+    vig.addColorStop(1,'rgba(0,0,0,.24)');
+    c.fillStyle=vig;c.fillRect(0,0,w,h);
+    c.strokeStyle=cinematicHexAlpha(accent,.20);c.lineWidth=1;
+    c.strokeRect(5.5,5.5,w-11,h-11);
+    c.restore();
+  };
+  sim.__cinematicWrapped=true;
+}
+function cinematicControlValue(control){
+  if(!currentSim||!control)return '';
+  const raw=currentSim.ctrl?currentSim.ctrl[control.id]:control.value;
+  if(control.type==='buttons'){
+    const op=(control.options||[]).find(o=>String(o.value)===String(raw));
+    return op?op.label:String(raw);
+  }
+  const n=Number(raw);
+  const shown=Number.isFinite(n)?(Math.abs(n)>=100?Math.round(n):String(Math.round(n*1000)/1000)):String(raw??'');
+  return shown+(control.unit?' '+control.unit:'');
+}
+function prepareCinematicHUD(){
+  if(!currentSim)return;
+  const meta=CATEGORIES[currentSim.category]||{};
+  const accent=meta.color||'#22d3ee';
+  const hud=document.getElementById('cinematic-hud');
+  if(hud)hud.style.setProperty('--cin-accent',accent);
+  const mode=document.getElementById('cinematic-mode-label');
+  if(mode)mode.textContent=CINEMATIC_SCENE_NAMES[currentSim.category]||'LIVE PHYSICS LAB';
+  const scene=document.getElementById('cinematic-scene-label');
+  if(scene)scene.textContent=(currentSim.icon||'⚛️')+' '+currentSim.title+' · '+currentSim.category;
+  cinematicHudSignature='';
+  updateCinematicHUD();
+}
+function updateCinematicHUD(items){
+  if(!currentSim||!currentState)return;
+  let readings=items;
+  if(!readings&&currentSim.readouts){
+    try{readings=currentSim.readouts(currentState);}catch(e){readings=[];}
+  }
+  readings=Array.isArray(readings)?readings:[];
+  const controls=(currentSim.controls||[]).slice(0,3);
+  const signature=JSON.stringify([
+    currentSimKey,
+    readings.slice(0,4).map(r=>[r.l,r.v,r.u]),
+    controls.map(c=>[c.id,currentSim.ctrl?currentSim.ctrl[c.id]:c.value]),
+    running
+  ]);
+  if(signature===cinematicHudSignature)return;
+  cinematicHudSignature=signature;
+
+  const rbox=document.getElementById('cinematic-readouts');
+  if(rbox){
+    rbox.innerHTML=readings.slice(0,4).map(r=>
+      '<div class="cin-readout-chip"><span class="k">'+pedagogyEsc(String(r.l||''))+'</span><span class="v">'+pedagogyEsc(String(r.v??''))+(r.u?' '+pedagogyEsc(String(r.u)):'')+'</span></div>'
+    ).join('');
+  }
+  const cbox=document.getElementById('cinematic-controls');
+  if(cbox){
+    cbox.innerHTML=controls.map(c=>
+      '<div class="cin-control-chip"><span class="k">'+pedagogyEsc(String(c.label||c.id||''))+'</span><span class="v">'+pedagogyEsc(cinematicControlValue(c))+'</span></div>'
+    ).join('');
+  }
+}
+function updateCinematicHint(text){
+  const el=document.getElementById('cinematic-hint');
+  if(!el)return;
+  el.textContent=text||'';
+  el.style.display=text?'block':'none';
+}
+
 function openSim(key){
   document.body.classList.add('lab-cinematic-active');
   document.body.dataset.activeSim=key;
@@ -6899,6 +7079,7 @@ function openSim(key){
   document.getElementById('view-sim').classList.remove('hidden');
   currentSimKey=key;
   currentSim=SIMS[key];
+  ensureCinematicSimWrapped(key);
   if(!currentSim.ctrl){
     currentSim.ctrl={};
     currentSim.controls.forEach(c=>currentSim.ctrl[c.id]=c.value);
@@ -6912,6 +7093,7 @@ function openSim(key){
   const back=document.getElementById('sim-back-link');
   if(back){back.href=currentSim.category==='النسبية'?'#/relativity':'#/';back.textContent=currentSim.category==='النسبية'?'→ عالم النسبية':'→ كل التجارب';}
   renderControls();
+  prepareCinematicHUD();
   renderPedagogyShell();
   setProfessorMode(false);
   renderEquations();
@@ -7345,6 +7527,7 @@ function updateHintBox(){
   const box=document.getElementById('hint-box');
   try{
     const hints=currentSim.hints(currentState);
+    if(!hints||!hints.length)updateCinematicHint('');
     box.innerHTML=hints.map(h=>`<div class="hint-item">${h}</div>`).join('');
     /* On phones show one clear conceptual sentence beside the live measurements,
        instead of the noisy event log. */
@@ -7353,7 +7536,7 @@ function updateHintBox(){
       const tmp=document.createElement('div');
       tmp.innerHTML=String(hints[0]);
       const clean=(tmp.textContent||tmp.innerText||'').replace(/\s+/g,' ').trim();
-      if(clean)mobileNote.textContent='🧭 '+clean;
+      if(clean){mobileNote.textContent='🧭 '+clean;updateCinematicHint(clean);}
     }
   }catch(e){console.error(e);}
 }
@@ -7453,6 +7636,7 @@ function updateReadouts(){
         </span>
       </div>
     `).join('');
+    updateCinematicHUD(items);
     const mobile=document.getElementById('mobile-readouts-summary');
     if(mobile){
       const keyItems=items.slice(0,3);
