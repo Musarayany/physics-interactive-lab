@@ -736,6 +736,55 @@ body.lab-cinematic-active #view-sim.professor-mode #sim-canvas-wrap{height:min(8
   #view-sim > .mb-5 .btn{min-height:31px!important;padding:5px 6px!important}
 }
 
+
+/* ============================================================
+   GLOBAL_MOBILE_COMPACT_HUD_V1
+   One slim title line for every experiment; no large in-canvas HUD cards.
+   ============================================================ */
+@media (max-width:899px){
+  #cinematic-hud{
+    display:block!important;
+    inset:0!important;
+    z-index:5!important;
+  }
+  #cinematic-hud .cin-live-badge,
+  #cinematic-hud .cin-hud-bottom,
+  #cinematic-hud #cinematic-hint,
+  #cinematic-hud .cin-frame-corner,
+  #cinematic-hud .cin-scan{
+    display:none!important;
+  }
+  #cinematic-hud .cin-hud-top{
+    display:block!important;
+    position:absolute!important;
+    top:4px!important;
+    left:6px!important;
+    right:6px!important;
+    height:24px!important;
+  }
+  #cinematic-hud .cin-scene-label{
+    display:block!important;
+    width:100%!important;
+    max-width:none!important;
+    height:24px!important;
+    padding:4px 10px!important;
+    border-radius:7px!important;
+    background:linear-gradient(90deg,rgba(5,9,20,.76),rgba(5,9,20,.58),rgba(5,9,20,.76))!important;
+    border:1px solid rgba(148,163,184,.18)!important;
+    color:#e2e8f0!important;
+    font-size:9.5px!important;
+    font-weight:800!important;
+    line-height:14px!important;
+    text-align:center!important;
+    direction:rtl!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    -webkit-backdrop-filter:blur(5px);
+    backdrop-filter:blur(5px);
+  }
+}
+
 </style>
 <script src="./analytics-config.js"></script>
 </head>
@@ -8199,6 +8248,79 @@ function drawInteractiveProbeLayer(c,w,h,state,sim){
   c.restore();
 }
 
+
+/* GLOBAL_MOBILE_COMPACT_HUD_V1
+   On phones, suppress only small dark readout/title cards near canvas edges.
+   The same information is already available in the shared top strip and live readouts.
+   Physics apparatus, graphs, controls and central scene geometry are left untouched. */
+function makeMobileCompactCanvasContext(base,w,h){
+  let mobile=false;
+  try{mobile=!!(window.matchMedia&&window.matchMedia('(max-width: 899px)').matches);}catch(_){}
+  if(!mobile||!base||typeof Proxy==='undefined')return base;
+
+  const hidden=[];
+  const num=v=>Number.isFinite(Number(v))?Number(v):0;
+  const near=(a,b)=>Math.abs(num(a)-num(b))<1.25;
+  const sameRect=(r,x,y,rw,rh)=>near(r.x,x)&&near(r.y,y)&&near(r.w,rw)&&near(r.h,rh);
+  const inside=(r,x,y)=>x>=r.x-2&&x<=r.x+r.w+2&&y>=r.y-2&&y<=r.y+r.h+2;
+
+  function darkTranslucent(style){
+    if(typeof style!=='string')return false;
+    const s=style.replace(/\s+/g,'').toLowerCase();
+    const m=s.match(/^rgba\((\d+),(\d+),(\d+),([\d.]+)\)$/);
+    if(!m)return false;
+    const rr=+m[1],gg=+m[2],bb=+m[3],aa=+m[4];
+    return rr<=28&&gg<=34&&bb<=48&&aa>=0.70;
+  }
+
+  function looksLikeHudCard(x,y,rw,rh){
+    x=num(x);y=num(y);rw=num(rw);rh=num(rh);
+    if(rw<90||rh<58||rw>w*.46||rh>h*.27)return false;
+    const edgeX=x<=w*.12 || x+rw>=w*.88;
+    const edgeY=y<=h*.24 || y+rh>=h*.76;
+    if(!edgeX||!edgeY)return false;
+    return darkTranslucent(base.fillStyle);
+  }
+
+  return new Proxy(base,{
+    get(target,prop){
+      if(prop==='fillRect'){
+        return function(x,y,rw,rh){
+          if(looksLikeHudCard(x,y,rw,rh)){
+            hidden.push({x:num(x),y:num(y),w:num(rw),h:num(rh)});
+            return;
+          }
+          return target.fillRect(x,y,rw,rh);
+        };
+      }
+      if(prop==='strokeRect'){
+        return function(x,y,rw,rh){
+          if(hidden.some(r=>sameRect(r,x,y,rw,rh)))return;
+          return target.strokeRect(x,y,rw,rh);
+        };
+      }
+      if(prop==='fillText'){
+        return function(text,x,y,maxWidth){
+          if(hidden.some(r=>inside(r,num(x),num(y))))return;
+          return maxWidth===undefined?target.fillText(text,x,y):target.fillText(text,x,y,maxWidth);
+        };
+      }
+      if(prop==='strokeText'){
+        return function(text,x,y,maxWidth){
+          if(hidden.some(r=>inside(r,num(x),num(y))))return;
+          return maxWidth===undefined?target.strokeText(text,x,y):target.strokeText(text,x,y,maxWidth);
+        };
+      }
+      const v=target[prop];
+      return typeof v==='function'?v.bind(target):v;
+    },
+    set(target,prop,value){
+      target[prop]=value;
+      return true;
+    }
+  });
+}
+
 function ensureCinematicSimWrapped(key){
   const sim=SIMS[key];
   if(!sim||sim.__cinematicWrapped||typeof sim.draw!=='function')return;
@@ -8217,7 +8339,8 @@ function ensureCinematicSimWrapped(key){
     c.restore();
 
     try{drawCategoryVitalityLayer(key,c,w,h,state,sim);}catch(e){}
-    originalDraw.call(sim,c,w,h,state);
+    const sceneCtx=makeMobileCompactCanvasContext(c,w,h);
+    originalDraw.call(sim,sceneCtx,w,h,state);
     try{drawSpecialVisualBinding(key,c,w,h,state,sim);}catch(e){}
     try{drawInteractiveProbeLayer(c,w,h,state,sim);}catch(e){}
 
@@ -8277,7 +8400,7 @@ function prepareCinematicHUD(){
   const mode=document.getElementById('cinematic-mode-label');
   if(mode)mode.textContent=CINEMATIC_SCENE_NAMES[currentSim.category]||'LIVE PHYSICS LAB';
   const scene=document.getElementById('cinematic-scene-label');
-  if(scene)scene.textContent=(currentSim.icon||'⚛️')+' '+currentSim.title+' · '+currentSim.category;
+  if(scene)scene.textContent=(currentSim.icon||'⚛️')+' '+currentSim.title;
   cinematicHudSignature='';
   updateCinematicHUD();
 }
