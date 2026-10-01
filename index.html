@@ -1270,12 +1270,12 @@ ohm: {
 
 refraction: {
   title:'انكسار الضوء', icon:'🔦', category:'بصريات',
-  desc:'قانون سنيل والانعكاس الكلي.',
-  welcome:{title:'🔦 انكسار الضوء',steps:['n₁ sin θ₁ = n₂ sin θ₂.','اجعل n₁ > n₂ وزد الزاوية ⇒ انعكاس كلي.','أساس الألياف البصرية.']},
+  desc:'شاهد الشعاع والعمود المقام وزاويتي السقوط والانكسار بصريًا مع قانون سنيل والانعكاس الكلي.',
+  welcome:{title:'🔦 انكسار الضوء',steps:['غيّر زاوية السقوط وشاهِد الشعاع ينحني مباشرة.','غيّر معاملي الانكسار وقارن θ₁ وθ₂.','اجعل n₁ > n₂ وزد الزاوية حتى تصل إلى الانعكاس الكلي.']},
   controls:[
-    {id:'n1',label:'n₁ (وسط 1)',min:1,max:2.5,step:0.05,value:1,unit:'',help:'<b>n₁</b><br>هواء=1، ماء=1.33.'},
+    {id:'n1',label:'n₁ (وسط 1)',min:1,max:2.5,step:0.05,value:1,unit:'',help:'<b>n₁</b><br>هواء≈1، ماء≈1.33.'},
     {id:'n2',label:'n₂ (وسط 2)',min:1,max:2.5,step:0.05,value:1.5,unit:'',help:'<b>n₂</b>'},
-    {id:'th',label:'زاوية السقوط θ₁',min:0,max:85,step:1,value:45,unit:'°',help:'<b>θ₁</b>'}
+    {id:'th',label:'زاوية السقوط θ₁',min:0,max:85,step:1,value:45,unit:'°',help:'تقاس من العمود المقام على السطح.'}
   ],
   reset(s){s.t=0;},update(s,dt){s.t+=dt;},
   readouts(s){
@@ -1285,49 +1285,88 @@ refraction: {
     let th2=null,tir=false;
     if(s2<=1)th2=rad2deg(Math.asin(s2));else tir=true;
     return [{l:'θ₂',v:tir?'—':th2.toFixed(1),u:'°',c:'gold'},
-      {l:'الزاوية الحرجة',v:critical?critical.toFixed(1):'—',u:'°'},
+      {l:'الزاوية الحرجة',v:critical?critical.toFixed(1):'—',u:'°',c:'cyan'},
       {l:'انعكاس كلي',v:tir?'نعم':(critical?'لا':'—'),u:''}];},
   hints(s){
     const h=[];const n1=s.ctrl.n1,n2=s.ctrl.n2;
     const s2=(n1/n2)*Math.sin(deg2rad(s.ctrl.th));
-    if(s2>1)h.push('🚨 <b>انعكاس كلي!</b>');
-    else if(s2>0.9)h.push('⚠️ اقتربت من الزاوية الحرجة.');
-    else if(n1<n2)h.push('الضوء ينحني نحو العمود.');
-    else h.push('الضوء ينحني بعيدًا عن العمود.');
+    if(s2>1)h.push('🚨 <b>انعكاس كلي:</b> لا يوجد شعاع منكسر في الوسط الثاني.');
+    else if(s2>0.9)h.push('⚠️ الشعاع يقترب من الحالة الحرجة.');
+    else if(n1<n2)h.push('الضوء يدخل وسطًا أعلى معامل انكسار، لذلك ينحني نحو العمود.');
+    else h.push('الضوء ينتقل إلى وسط أقل معامل انكسار، لذلك ينحني بعيدًا عن العمود.');
     return h;},
   equations:['n_1 \\sin\\theta_1 = n_2 \\sin\\theta_2','\\sin\\theta_c = \\dfrac{n_2}{n_1}'],
-  theory:'قانون سنيل + الانعكاس الكلي الداخلي.',
+  theory:'يطبق المشهد قانون سنيل عند سطح فاصل مستوٍ. الزوايا تقاس من العمود المقام. عندما ينتقل الضوء من وسط أعلى معامل انكسار إلى وسط أقل، ويصبح n₁sinθ₁>n₂، لا يوجد حل حقيقي لشعاع نافذ ويحدث الانعكاس الكلي الداخلي.',
   draw(ctx,W,H,s){
+    const midY=H*.53,cx=W*.54;
+    const n1=s.ctrl.n1,n2=s.ctrl.n2,th1=deg2rad(s.ctrl.th);
+    const s2=(n1/n2)*Math.sin(th1),tir=s2>1;
+    const th2=tir?null:Math.asin(s2);
+
+    let g1=ctx.createLinearGradient(0,0,0,midY);
+    g1.addColorStop(0,'#07111f');g1.addColorStop(1,'#0b2740');
+    ctx.fillStyle=g1;ctx.fillRect(0,0,W,midY);
+    let g2=ctx.createLinearGradient(0,midY,0,H);
+    g2.addColorStop(0,'#17213b');g2.addColorStop(1,'#090f1c');
+    ctx.fillStyle=g2;ctx.fillRect(0,midY,W,H-midY);
     drawGrid(ctx,W,H);
-    const midY=H/2,cx=W/2;
-    ctx.fillStyle='rgba(34,211,238,.06)';ctx.fillRect(0,0,W,midY);
-    ctx.fillStyle='rgba(251,191,36,.06)';ctx.fillRect(0,midY,W,H-midY);
-    ctx.strokeStyle='#475569';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(0,midY);ctx.lineTo(W,midY);ctx.stroke();
-    label(ctx,`n₁ = ${s.ctrl.n1.toFixed(2)}`,20,24,'#22d3ee','left',13,true);
-    label(ctx,`n₂ = ${s.ctrl.n2.toFixed(2)}`,20,H-18,'#fbbf24','left',13,true);
-    ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(148,163,184,.4)';
-    ctx.beginPath();ctx.moveTo(cx,20);ctx.lineTo(cx,H-20);ctx.stroke();ctx.setLineDash([]);
-    const rayLen=Math.min(W,H)*0.42;
-    const th1=deg2rad(s.ctrl.th);
-    const n1=s.ctrl.n1,n2=s.ctrl.n2;
-    const s2=(n1/n2)*Math.sin(th1);
-    const tir=s2>1;
-    const ix=cx-rayLen*Math.sin(th1),iy=midY-rayLen*Math.cos(th1);
-    ctx.strokeStyle='#22d3ee';ctx.lineWidth=3;
-    ctx.beginPath();ctx.moveTo(ix,iy);ctx.lineTo(cx,midY);ctx.stroke();
-    if(!tir){
-      const th2=Math.asin(s2);
-      const ex=cx+rayLen*Math.sin(th2),ey=midY+rayLen*Math.cos(th2);
-      ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;
-      ctx.beginPath();ctx.moveTo(cx,midY);ctx.lineTo(ex,ey);ctx.stroke();
-    }else{
-      ctx.strokeStyle='#ef4444';ctx.lineWidth=3;
-      ctx.beginPath();ctx.moveTo(cx,midY);
-      ctx.lineTo(cx+rayLen*Math.sin(th1),midY-rayLen*Math.cos(th1));ctx.stroke();
-      label(ctx,'انعكاس كلي!',cx+90,midY-100,'#ef4444','left',14,true);
+
+    ctx.fillStyle='rgba(34,211,238,.08)';ctx.fillRect(0,0,W,midY);
+    ctx.fillStyle='rgba(251,191,36,.055)';ctx.fillRect(0,midY,W,H-midY);
+    ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,midY);ctx.lineTo(W,midY);ctx.stroke();
+
+    label(ctx,'الوسط 1   n₁='+n1.toFixed(2),24,34,'#67e8f9','left',12,true);
+    label(ctx,'الوسط 2   n₂='+n2.toFixed(2),24,H-26,'#fbbf24','left',12,true);
+    label(ctx,'السطح الفاصل',W-24,midY-12,'#94a3b8','right',9,false);
+
+    ctx.save();ctx.setLineDash([7,7]);ctx.strokeStyle='rgba(226,232,240,.55)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(cx,38);ctx.lineTo(cx,H-38);ctx.stroke();ctx.restore();
+    label(ctx,'العمود المقام',cx+10,58,'#cbd5e1','left',9,false);
+
+    const L=Math.min(W*.42,H*.42);
+    const ix=cx-L*Math.sin(th1),iy=midY-L*Math.cos(th1);
+
+    function beam(xa,ya,xb,yb,color,width,blur){
+      ctx.save();ctx.shadowColor=color;ctx.shadowBlur=blur||14;ctx.strokeStyle=color;ctx.lineWidth=width||4;
+      ctx.beginPath();ctx.moveTo(xa,ya);ctx.lineTo(xb,yb);ctx.stroke();ctx.restore();
     }
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,midY,4,0,7);ctx.fill();
+
+    ctx.save();ctx.translate(ix,iy);ctx.rotate(Math.atan2(midY-iy,cx-ix));
+    ctx.fillStyle='#334155';ctx.strokeStyle='#cbd5e1';ctx.lineWidth=1.5;ctx.fillRect(-34,-13,34,26);ctx.strokeRect(-34,-13,34,26);
+    ctx.fillStyle='#f8fafc';ctx.fillRect(-3,-8,8,16);ctx.restore();
+    label(ctx,'مصدر الضوء',ix-18,iy-24,'#cbd5e1','center',9,true);
+
+    beam(ix,iy,cx,midY,'#f8fafc',4.5,18);
+
+    const rx=cx+L*Math.sin(th1),ry=midY-L*Math.cos(th1);
+    beam(cx,midY,rx,ry,tir?'#fb7185':'rgba(248,250,252,.30)',tir?4.5:2,tir?18:4);
+
+    if(!tir){
+      const ex=cx+L*Math.sin(th2),ey=midY+L*Math.cos(th2);
+      beam(cx,midY,ex,ey,'#fbbf24',4.5,18);
+      label(ctx,'الشعاع المنكسر',ex-10,ey+22,'#fbbf24','right',10,true);
+      ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,midY,54,Math.PI/2-th2,Math.PI/2);ctx.stroke();
+      label(ctx,'θ₂='+rad2deg(th2).toFixed(1)+'°',cx+62,midY+40,'#fbbf24','left',10,true);
+    }else{
+      label(ctx,'انعكاس كلي داخلي',rx-8,ry-20,'#fb7185','right',11,true);
+      label(ctx,'لا يوجد شعاع نافذ',cx+18,midY+42,'#fb7185','left',10,true);
+    }
+
+    ctx.strokeStyle='#22d3ee';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,midY,54,-Math.PI/2,-Math.PI/2+th1);ctx.stroke();
+    label(ctx,'θ₁='+s.ctrl.th.toFixed(0)+'°',cx-62,midY-40,'#22d3ee','right',10,true);
+    label(ctx,'الشعاع الساقط',ix+18,iy+18,'#e2e8f0','left',10,true);
+
+    ctx.save();ctx.fillStyle='#fff';ctx.shadowColor='#fff';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(cx,midY,5,0,Math.PI*2);ctx.fill();ctx.restore();
+    label(ctx,'نقطة السقوط',cx+10,midY-14,'#e2e8f0','left',9,true);
+
+    const critical=n1>n2?rad2deg(Math.asin(n2/n1)):null;
+    const bw=Math.min(260,W*.31),bx=W-bw-20,by=18,bh=84;
+    ctx.fillStyle='rgba(7,11,20,.82)';ctx.strokeStyle='rgba(148,163,184,.25)';
+    ctx.fillRect(bx,by,bw,bh);ctx.strokeRect(bx,by,bw,bh);
+    label(ctx,'قانون سنيل',bx+14,by+21,'#e2e8f0','left',11,true);
+    label(ctx,'n₁ sinθ₁ = '+(n1*Math.sin(th1)).toFixed(3),bx+14,by+42,'#22d3ee','left',10,false);
+    label(ctx,tir?'الحالة: انعكاس كلي':'θ₂ = '+rad2deg(th2).toFixed(1)+'°',bx+14,by+61,tir?'#fb7185':'#fbbf24','left',10,true);
+    label(ctx,critical?'θc = '+critical.toFixed(1)+'°':'لا توجد زاوية حرجة لهذا الاتجاه',bx+14,by+78,'#94a3b8','left',9,false);
   }
 },
 
