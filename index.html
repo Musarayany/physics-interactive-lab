@@ -7837,25 +7837,91 @@ function drawCategoryVitalityLayer(key,c,w,h,state,sim){
   c.restore();
 }
 function drawInteractiveProbeLayer(c,w,h,state,sim){
-  const p=cinematicProbe;
-  const now=performance.now()/1000;
-  p.pulses=p.pulses.filter(q=>now-q.t<.85);
+  const p=cinematicProbe,now=performance.now()/1000;
+  p.pulses=p.pulses.filter(q=>now-q.t<.95);
   if(!p.inside&&!p.pulses.length)return;
-  const meta=CATEGORIES[sim&&sim.category]||{},accent=meta.color||'#22d3ee';
+  const meta=CATEGORIES[sim&&sim.category]||{},accent=meta.color||'#22d3ee',cat=sim&&sim.category||'';
 
   c.save();
   if(p.inside){
-    c.strokeStyle=cinematicHexAlpha(accent,p.down?.38:.18);c.lineWidth=1;
+    c.strokeStyle=cinematicHexAlpha(accent,p.down?.40:.17);c.lineWidth=1;
     c.beginPath();c.moveTo(p.x-11,p.y);c.lineTo(p.x+11,p.y);c.moveTo(p.x,p.y-11);c.lineTo(p.x,p.y+11);c.stroke();
-    c.fillStyle=cinematicHexAlpha(accent,.10);c.beginPath();c.arc(p.x,p.y,18,0,Math.PI*2);c.fill();
+    c.fillStyle=cinematicHexAlpha(accent,.075);c.beginPath();c.arc(p.x,p.y,18,0,Math.PI*2);c.fill();
   }
+
   for(const q of p.pulses){
-    const age=now-q.t,progress=age/.85,r=12+64*progress;
-    c.strokeStyle=cinematicHexAlpha(accent,.34*(1-progress));c.lineWidth=2*(1-progress)+.5;
-    c.beginPath();c.arc(q.x,q.y,r,0,Math.PI*2);c.stroke();
-    for(let i=0;i<5;i++){
-      const a=i*Math.PI*2/5+age*2,x=q.x+(16+38*progress)*Math.cos(a),y=q.y+(16+38*progress)*Math.sin(a);
-      vitalityDot(c,x,y,1.5,accent,.22*(1-progress));
+    const age=now-q.t,progress=Math.max(0,Math.min(1,age/.95)),fade=1-progress,r=10+68*progress;
+
+    if(cat==='موجات'){
+      for(let k=0;k<3;k++){
+        c.strokeStyle=cinematicHexAlpha(accent,.24*fade/(k+1));c.lineWidth=1.5;
+        c.beginPath();c.arc(q.x,q.y,r+k*16,0,Math.PI*2);c.stroke();
+      }
+    }else if(cat==='كهرباء'){
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4+age*3*(i%2?1:-1),rr=16+42*progress;
+        vitalityDot(c,q.x+rr*Math.cos(a),q.y+rr*Math.sin(a),2.2,i%2?accent:'#fbbf24',.25*fade);
+        label(c,i%2?'+':'−',q.x+rr*Math.cos(a),q.y+rr*Math.sin(a),'#e2e8f0','center',7,true);
+      }
+      c.strokeStyle=cinematicHexAlpha(accent,.22*fade);c.beginPath();c.arc(q.x,q.y,r,0,Math.PI*2);c.stroke();
+    }else if(cat==='بصريات'||cat==='الليزر'){
+      for(let i=0;i<10;i++){
+        const a=i*Math.PI/5,rr=18+55*progress;
+        c.strokeStyle=cinematicHexAlpha(accent,.20*fade);c.lineWidth=1.5;
+        c.beginPath();c.moveTo(q.x+10*Math.cos(a),q.y+10*Math.sin(a));c.lineTo(q.x+rr*Math.cos(a),q.y+rr*Math.sin(a));c.stroke();
+      }
+      vitalityDot(c,q.x,q.y,3.5,accent,.36*fade);
+    }else if(cat==='ميكانيكا'){
+      const len=18+55*progress;
+      arrow(c,q.x,q.y,q.x+len,q.y,accent,2,7);
+      arrow(c,q.x,q.y,q.x,q.y-len,'#fbbf24',2,7);
+      c.strokeStyle=cinematicHexAlpha(accent,.15*fade);c.setLineDash([4,4]);c.beginPath();c.arc(q.x,q.y,r*.8,0,Math.PI*1.5);c.stroke();c.setLineDash([]);
+    }else if(cat==='ميكانيكا الكم'){
+      for(let i=0;i<16;i++){
+        const a=i*2.399+age*.7,rr=(8+58*progress)*((i%5+1)/5);
+        vitalityDot(c,q.x+rr*Math.cos(a),q.y+rr*.65*Math.sin(a),1.5+(i%3)*.35,accent,.16*fade);
+      }
+    }else if(cat==='الفيزياء الذرية'||cat==='الفيزياء الجزيئية'){
+      for(let k=0;k<3;k++){
+        const rr=14+k*12+24*progress,a=age*(1+k*.35);
+        c.strokeStyle=cinematicHexAlpha(accent,.13*fade);c.beginPath();c.ellipse(q.x,q.y,rr,rr*.45,a*.25,0,Math.PI*2);c.stroke();
+        vitalityDot(c,q.x+rr*Math.cos(a+k),q.y+rr*.45*Math.sin(a+k),1.8,accent,.22*fade);
+      }
+    }else if(cat==='الأطياف'){
+      const cols=['#ef4444','#fb923c','#facc15','#22c55e','#22d3ee','#3b82f6','#8b5cf6'];
+      cols.forEach((col,i)=>{
+        const a=-.9+i*.3,rr=18+62*progress;c.strokeStyle=cinematicHexAlpha(col,.26*fade);c.lineWidth=1.8;
+        c.beginPath();c.moveTo(q.x,q.y);c.lineTo(q.x+rr*Math.cos(a),q.y+rr*Math.sin(a));c.stroke();
+      });
+    }else if(cat==='فيزياء الصلبة'||cat==='النانوتكنولوجي'){
+      const step=14;
+      for(let ix=-2;ix<=2;ix++)for(let iy=-2;iy<=2;iy++){
+        const rr=Math.hypot(ix,iy),kick=progress*10*Math.exp(-rr*.55);
+        vitalityDot(c,q.x+ix*step+kick*Math.cos(rr+age),q.y+iy*step+kick*Math.sin(rr+age),1.6,accent,.16*fade);
+      }
+    }else if(cat==='النماذج النووية'||cat==='الفيزياء النووية'){
+      for(let i=0;i<12;i++){
+        const a=i*Math.PI/6+age*.25,rr=12+65*progress;
+        c.strokeStyle=cinematicHexAlpha(i%2?accent:'#fbbf24',.17*fade);c.lineWidth=1.2;
+        c.beginPath();c.moveTo(q.x+8*Math.cos(a),q.y+8*Math.sin(a));c.lineTo(q.x+rr*Math.cos(a),q.y+rr*Math.sin(a));c.stroke();
+      }
+      vitalityDot(c,q.x,q.y,5,accent,.28*fade);
+    }else if(cat==='الإلكترونيات التماثلية'||cat==='الإلكترونيات الرقمية'){
+      const ww=90*progress,hh=18;
+      c.strokeStyle=cinematicHexAlpha(accent,.22*fade);c.lineWidth=1.7;c.beginPath();
+      for(let i=0;i<=10;i++){const x=q.x-ww/2+ww*i/10,y=q.y+((cat==='الإلكترونيات الرقمية'&&i%2)?-hh:hh)*(cat==='الإلكترونيات الرقمية'?1:.45*Math.sin(i+age*5));i?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();
+    }else if(cat==='الموائع والحرارة'){
+      for(let i=0;i<9;i++){
+        const a=i*.9,xx=q.x+18*Math.sin(a+age*2),yy=q.y-(12+56*progress)*(i+1)/9;
+        vitalityDot(c,xx,yy,1.5+(i%3),accent,.15*fade);
+      }
+    }else if(cat==='النسبية'){
+      for(let k=0;k<3;k++){
+        c.save();c.translate(q.x,q.y);c.scale(1+progress*.55,1-progress*.18);c.strokeStyle=cinematicHexAlpha(accent,.18*fade/(k+1));c.lineWidth=1.3;c.beginPath();c.arc(0,0,r+k*15,0,Math.PI*2);c.stroke();c.restore();
+      }
+      c.strokeStyle=cinematicHexAlpha(accent,.10*fade);c.beginPath();c.moveTo(q.x-r,q.y);c.lineTo(q.x+r,q.y);c.moveTo(q.x,q.y-r*.6);c.lineTo(q.x,q.y+r*.6);c.stroke();
+    }else{
+      c.strokeStyle=cinematicHexAlpha(accent,.30*fade);c.lineWidth=1.5;c.beginPath();c.arc(q.x,q.y,r,0,Math.PI*2);c.stroke();
     }
   }
   c.restore();
