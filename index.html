@@ -5801,7 +5801,36 @@ step_up_transformer_lab: {
   equations:['\\frac{V_s}{V_p}=\\frac{N_s}{N_p}','\\frac{I_s}{I_p}=\\frac{N_p}{N_s}','V_pI_p=V_sI_s\\quad(\\text{مثالية})'],
   theory:'في المحولة المثالية ذات الاقتران الكامل والخسائر المهملة، تتناسب الجهود مع عدد اللفات وتتناسب التيارات عكسيًا معها. لأن Nₛ>Nₚ هنا فهي محولة رافعة للجهد.',
   hints(s){const c=this.calc(s);return[c.ratio>1?'الشرط Nₛ>Nₚ متحقق: الجهد مرفوع.':'اجعل Nₛ أكبر من Nₚ لتكون المحولة رافعة.','رفع الجهد يقابله خفض التيار عند القدرة نفسها في النموذج المثالي.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;ctx.fillStyle='#64748b';ctx.fillRect(cx-15,cy-105,30,210);ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;for(let k=0;k<8;k++){ctx.beginPath();ctx.ellipse(cx-70+k*2,cy,30,85,0,0,Math.PI*2);ctx.stroke();}ctx.strokeStyle='#22d3ee';for(let k=0;k<13;k++){ctx.beginPath();ctx.ellipse(cx+70+k*1.4,cy,30,85,0,0,Math.PI*2);ctx.stroke();}label(ctx,'P',cx-80,cy+110,'#fbbf24','center',14,true);label(ctx,'S',cx+80,cy+110,'#22d3ee','center',14,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const c=this.calc(s),cx=W/2,cy=H/2;
+  const npCfg=this.controls.find(x=>x.id==='Np'),nsCfg=this.controls.find(x=>x.id==='Ns');
+  const pNorm=(s.ctrl.Np-npCfg.min)/(npCfg.max-npCfg.min),sNorm=(s.ctrl.Ns-nsCfg.min)/(nsCfg.max-nsCfg.min);
+  const pTurns=Math.max(4,Math.min(20,Math.round(4+16*pNorm))),sTurns=Math.max(4,Math.min(20,Math.round(4+16*sNorm)));
+  const vpNorm=Math.max(.08,Math.min(1,s.ctrl.Vp/240));
+  ctx.fillStyle='#475569';ctx.fillRect(cx-18,cy-120,36,240);ctx.strokeStyle='#94a3b8';ctx.strokeRect(cx-18,cy-120,36,240);
+  function coil(centerX,turns,color,glow){
+    ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2.2;ctx.shadowColor=color;ctx.shadowBlur=glow;
+    const spread=Math.min(70,4.2*(turns-1));
+    for(let k=0;k<turns;k++){
+      const ox=(k-(turns-1)/2)*(spread/Math.max(1,turns-1));
+      ctx.beginPath();ctx.ellipse(centerX+ox,cy,28,88,0,0,Math.PI*2);ctx.stroke();
+    }
+    ctx.restore();
+  }
+  coil(cx-92,pTurns,'#fbbf24',4+10*vpNorm);coil(cx+92,sTurns,'#22d3ee',4+8*Math.min(1,Math.abs(c.Vs)/Math.max(1,s.ctrl.Vp)));
+  label(ctx,'Nₚ='+s.ctrl.Np,cx-92,cy+122,'#fbbf24','center',11,true);
+  label(ctx,'Nₛ='+s.ctrl.Ns,cx+92,cy+122,'#22d3ee','center',11,true);
+  label(ctx,'Vₚ='+s.ctrl.Vp.toFixed(0)+' V',cx-92,cy-120,'#fbbf24','center',10,true);
+  label(ctx,'Vₛ='+c.Vs.toFixed(1)+' V',cx+92,cy-120,'#22d3ee','center',10,true);
+  const loadX=W*.86,loadW=28+52*(s.ctrl.RL-(this.controls.find(x=>x.id==='RL').min))/(this.controls.find(x=>x.id==='RL').max-this.controls.find(x=>x.id==='RL').min);
+  ctx.strokeStyle='#f472b6';ctx.lineWidth=3;ctx.strokeRect(loadX-loadW/2,cy-28,loadW,56);
+  ctx.strokeStyle='#22d3ee';ctx.lineWidth=1.5+Math.min(7,Math.abs(c.Is)*12);ctx.beginPath();ctx.moveTo(cx+122,cy);ctx.lineTo(loadX-loadW/2,cy);ctx.stroke();
+  label(ctx,'R_L='+s.ctrl.RL.toFixed(0)+' Ω',loadX,cy+52,'#f472b6','center',9,true);
+  label(ctx,'Iₛ='+c.Is.toFixed(3)+' A',loadX,cy-48,'#cbd5e1','center',9,true);
+  label(ctx,'Nₛ/Nₚ='+c.ratio.toFixed(3),W/2,38,'#fbbf24','center',13,true);
+}
 },
 
 step_down_transformer_lab: {
@@ -5815,7 +5844,36 @@ step_down_transformer_lab: {
   equations:['\\frac{V_s}{V_p}=\\frac{N_s}{N_p}','\\frac{I_s}{I_p}=\\frac{N_p}{N_s}','P_p=P_s\\quad(\\text{مثالية})'],
   theory:'عندما يكون Nₛ<Nₚ تخفض المحولة الجهد. في المحولة المثالية تبقى القدرة ثابتة، لذلك قد يكون تيار الثانوي أكبر من تيار الرئيسي بحسب الحمل.',
   hints(s){const c=this.calc(s);return[c.ratio<1?'الشرط Nₛ<Nₚ متحقق: الجهد منخفض.':'اجعل Nₛ أقل من Nₚ.','العلاقات المعروضة مثالية ولا تتضمن خسائر النحاس أو القلب.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;ctx.fillStyle='#64748b';ctx.fillRect(cx-15,cy-105,30,210);ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;for(let k=0;k<13;k++){ctx.beginPath();ctx.ellipse(cx-70+k*1.4,cy,30,85,0,0,Math.PI*2);ctx.stroke();}ctx.strokeStyle='#22d3ee';for(let k=0;k<7;k++){ctx.beginPath();ctx.ellipse(cx+70+k*2,cy,30,85,0,0,Math.PI*2);ctx.stroke();}label(ctx,'P',cx-80,cy+110,'#fbbf24','center',14,true);label(ctx,'S',cx+80,cy+110,'#22d3ee','center',14,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const c=this.calc(s),cx=W/2,cy=H/2;
+  const npCfg=this.controls.find(x=>x.id==='Np'),nsCfg=this.controls.find(x=>x.id==='Ns');
+  const pNorm=(s.ctrl.Np-npCfg.min)/(npCfg.max-npCfg.min),sNorm=(s.ctrl.Ns-nsCfg.min)/(nsCfg.max-nsCfg.min);
+  const pTurns=Math.max(4,Math.min(20,Math.round(4+16*pNorm))),sTurns=Math.max(4,Math.min(20,Math.round(4+16*sNorm)));
+  const vpNorm=Math.max(.08,Math.min(1,s.ctrl.Vp/240));
+  ctx.fillStyle='#475569';ctx.fillRect(cx-18,cy-120,36,240);ctx.strokeStyle='#94a3b8';ctx.strokeRect(cx-18,cy-120,36,240);
+  function coil(centerX,turns,color,glow){
+    ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2.2;ctx.shadowColor=color;ctx.shadowBlur=glow;
+    const spread=Math.min(70,4.2*(turns-1));
+    for(let k=0;k<turns;k++){
+      const ox=(k-(turns-1)/2)*(spread/Math.max(1,turns-1));
+      ctx.beginPath();ctx.ellipse(centerX+ox,cy,28,88,0,0,Math.PI*2);ctx.stroke();
+    }
+    ctx.restore();
+  }
+  coil(cx-92,pTurns,'#fbbf24',4+10*vpNorm);coil(cx+92,sTurns,'#22d3ee',4+8*Math.min(1,Math.abs(c.Vs)/Math.max(1,s.ctrl.Vp)));
+  label(ctx,'Nₚ='+s.ctrl.Np,cx-92,cy+122,'#fbbf24','center',11,true);
+  label(ctx,'Nₛ='+s.ctrl.Ns,cx+92,cy+122,'#22d3ee','center',11,true);
+  label(ctx,'Vₚ='+s.ctrl.Vp.toFixed(0)+' V',cx-92,cy-120,'#fbbf24','center',10,true);
+  label(ctx,'Vₛ='+c.Vs.toFixed(1)+' V',cx+92,cy-120,'#22d3ee','center',10,true);
+  const loadX=W*.86,loadW=28+52*(s.ctrl.RL-(this.controls.find(x=>x.id==='RL').min))/(this.controls.find(x=>x.id==='RL').max-this.controls.find(x=>x.id==='RL').min);
+  ctx.strokeStyle='#f472b6';ctx.lineWidth=3;ctx.strokeRect(loadX-loadW/2,cy-28,loadW,56);
+  ctx.strokeStyle='#22d3ee';ctx.lineWidth=1.5+Math.min(7,Math.abs(c.Is)*12);ctx.beginPath();ctx.moveTo(cx+122,cy);ctx.lineTo(loadX-loadW/2,cy);ctx.stroke();
+  label(ctx,'R_L='+s.ctrl.RL.toFixed(0)+' Ω',loadX,cy+52,'#f472b6','center',9,true);
+  label(ctx,'Iₛ='+c.Is.toFixed(3)+' A',loadX,cy-48,'#cbd5e1','center',9,true);
+  label(ctx,'Nₛ/Nₚ='+c.ratio.toFixed(3),W/2,38,'#fbbf24','center',13,true);
+}
 },
 
 self_induction_lab: {
