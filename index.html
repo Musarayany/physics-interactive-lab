@@ -897,6 +897,7 @@ inclined_plane: {
     {id:'m',label:'الكتلة m',min:1,max:15,step:0.5,value:5,unit:'kg',help:'<b>m</b><br>لا تؤثر على التسارع!'}
   ],
   reset(s){s.t=0;s.v=0;s.x=0;},
+  onControlChange(s,id){this.reset(s);},
   update(s,dt){
     const rad=s.ctrl.th*Math.PI/180;
     const g=9.81;
@@ -939,43 +940,37 @@ inclined_plane: {
   theory:'يمنع الاحتكاك السكوني بدء الحركة ما دام mg sinθ≤μsN. بعد بدء الانزلاق يستخدم الاحتكاك الحركي fk=μkN، فيكون a=g(sinθ−μk cosθ). التسارع مستقل عن الكتلة.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);
-    const rad=s.ctrl.th*Math.PI/180;
-    const cx=W*0.12,cy=H*0.8;
-    const L=Math.min(W*0.65,500);
+    const rad=s.ctrl.th*Math.PI/180,g=9.81;
+    const cx=W*0.12,cy=H*0.80,L=Math.min(W*0.65,500);
+    const N=s.ctrl.m*g*Math.cos(rad),drive=s.ctrl.m*g*Math.sin(rad),fsMax=s.ctrl.mus*N;
+    const starts=drive>fsMax;
+    const friction=starts?s.ctrl.muk*N:Math.min(drive,fsMax);
+    const a=starts?Math.max(0,g*(Math.sin(rad)-s.ctrl.muk*Math.cos(rad))):0;
+
     ctx.strokeStyle='#475569';ctx.lineWidth=4;
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+L*Math.cos(rad),cy-L*Math.sin(rad));ctx.stroke();
     ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(148,163,184,.5)';
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+L+40,cy);ctx.stroke();ctx.setLineDash([]);
-    ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(cx,cy,80,-rad,0);ctx.stroke();
-    label(ctx,`θ=${s.ctrl.th}°`,cx+90,cy-15,'#fbbf24','left',13,true);
-    const slideOff=Math.min(s.x*60,L*0.55);
-    const bx=cx+(L*0.4+slideOff)*Math.cos(rad);
-    const by=cy-(L*0.4+slideOff)*Math.sin(rad);
-    const bs=45;
+    ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,80,-rad,0);ctx.stroke();
+    label(ctx,'θ='+s.ctrl.th+'°',cx+90,cy-15,'#fbbf24','left',13,true);
+
+    const slideOff=Math.min(s.x*60,L*0.55),bx=cx+(L*0.4+slideOff)*Math.cos(rad),by=cy-(L*0.4+slideOff)*Math.sin(rad);
+    const bs=38+5*Math.sqrt(s.ctrl.m);
     ctx.save();ctx.translate(bx,by);ctx.rotate(-rad);
-    const gr=ctx.createLinearGradient(-bs/2,-bs,bs/2,0);
-    gr.addColorStop(0,'#22d3ee');gr.addColorStop(1,'#0e7490');
-    ctx.fillStyle=gr;ctx.fillRect(-bs/2,-bs,bs,bs);
-    ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2;ctx.strokeRect(-bs/2,-bs,bs,bs);
-    label(ctx,`${s.ctrl.m}kg`,0,-bs/2,'#0a0e1a','center',12,true);
-    ctx.restore();
-    const g=9.81;
-    const vs=6;
-    arrow(ctx,bx,by-bs/2,bx,by-bs/2+s.ctrl.m*g*vs,'#ef4444',2.5,10);
-    label(ctx,'mg',bx+15,by-bs/2+s.ctrl.m*g*vs+10,'#ef4444','left',11,true);
-    const Fp=s.ctrl.m*g*Math.sin(rad);
-    arrow(ctx,bx,by-bs/2,bx-Fp*vs*Math.cos(rad),by-bs/2+Fp*vs*Math.sin(rad),'#fbbf24',2.5,10);
-    label(ctx,'mg sinθ',bx-Fp*vs*Math.cos(rad),by-bs/2+Fp*vs*Math.sin(rad)-15,'#fbbf24','center',11,true);
-    if(s.ctrl.muk>0){
-      const N=s.ctrl.m*g*Math.cos(rad);
-      const Ff=s.ctrl.muk*N;
-      arrow(ctx,bx,by-bs/2,bx+Ff*vs*Math.cos(rad),by-bs/2-Ff*vs*Math.sin(rad),'#22d3ee',2.5,10);
-      label(ctx,'f',bx+Ff*vs*Math.cos(rad)+10,by-bs/2-Ff*vs*Math.sin(rad),'#22d3ee','left',11,true);
-    }
-    const starts=Math.sin(rad)>s.ctrl.mus*Math.cos(rad);
-    const a=starts?g*(Math.sin(rad)-s.ctrl.muk*Math.cos(rad)):0;
-    label(ctx,`a = ${Math.max(0,a).toFixed(2)} m/s²`,W-20,30,'#fbbf24','right',15,true);
+    const gr=ctx.createLinearGradient(-bs/2,-bs,bs/2,0);gr.addColorStop(0,'#22d3ee');gr.addColorStop(1,'#0e7490');
+    ctx.fillStyle=gr;ctx.fillRect(-bs/2,-bs,bs,bs);ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2;ctx.strokeRect(-bs/2,-bs,bs,bs);
+    label(ctx,s.ctrl.m.toFixed(1)+'kg',0,-bs/2,'#0a0e1a','center',11,true);ctx.restore();
+
+    const scale=Math.min(3.5,120/Math.max(1,Math.max(s.ctrl.m*g,drive,fsMax)));
+    arrow(ctx,bx,by-bs/2,bx,by-bs/2+s.ctrl.m*g*scale,'#ef4444',2.5,10);
+    arrow(ctx,bx,by-bs/2,bx-drive*scale*Math.cos(rad),by-bs/2+drive*scale*Math.sin(rad),'#fbbf24',2.5,10);
+    if(friction>0)arrow(ctx,bx,by-bs/2,bx+friction*scale*Math.cos(rad),by-bs/2-friction*scale*Math.sin(rad),starts?'#22d3ee':'#a3e635',2.5,10);
+
+    label(ctx,starts?'احتكاك حركي μkN':'احتكاك سكوني فعلي',W-25,105,starts?'#22d3ee':'#a3e635','right',10,true);
+    label(ctx,'f = '+friction.toFixed(1)+' N',W-25,125,starts?'#22d3ee':'#a3e635','right',11,true);
+    label(ctx,'fs,max = '+fsMax.toFixed(1)+' N',W-25,145,'#94a3b8','right',10,true);
+    label(ctx,starts?'🏃 ينزلق':'✋ ثابت',W-25,36,starts?'#ef4444':'#a3e635','right',15,true);
+    label(ctx,'a = '+a.toFixed(2)+' m/s²',W-25,62,'#fbbf24','right',13,true);
   }
 },
 
@@ -996,7 +991,15 @@ pendulum: {
   ],
   hardReset(s){s.t=0;s.theta=deg2rad(s.ctrl.a0);s.omega=0;s.dragPend=false;s.prevTheta=s.theta;s.stopwatch={active:false,armed:false,start:0,count:0,measured:null,elapsed:0};},
   reset(s){this.hardReset(s);},
-  onControlChange(s,id){if(id==='a0'){s.theta=deg2rad(s.ctrl.a0);s.omega=0;}if(id==='L')s.omega=0;if(!s.stopwatch)s.stopwatch={active:false,armed:false,start:0,count:0,measured:null,elapsed:0};},
+  onControlChange(s,id){
+    if(id==='m')return;
+    s.t=0;
+    s.theta=deg2rad(s.ctrl.a0);
+    s.omega=0;
+    s.dragPend=false;
+    s.prevTheta=s.theta;
+    s.stopwatch={active:false,armed:false,start:0,count:0,measured:null,elapsed:0};
+  },
   _period(s){const T0=2*Math.PI*Math.sqrt(s.ctrl.L/s.ctrl.g),th=deg2rad(s.ctrl.a0);return T0*(1+th*th/16+11*Math.pow(th,4)/3072+173*Math.pow(th,6)/737280);},
   update(s,dt){
     if(s.dragPend)return;
@@ -1063,6 +1066,7 @@ projectile: {
     {id:'g',label:'تسارع الجاذبية g',min:1,max:25,step:0.1,value:9.81,unit:'m/s²',help:'<b>g</b><br>R ∝ 1/g.'}
   ],
   reset(s){s.t=0;s.x=0;s.y=0;const a=deg2rad(s.ctrl.ang);s.vx=s.ctrl.v0*Math.cos(a);s.vy0=s.ctrl.v0*Math.sin(a);s.vy=s.vy0;s.trail=[];s.landed=false;},
+  onControlChange(s,id){this.reset(s);},
   update(s,dt){if(s.landed)return;s.t+=dt;s.x=s.vx*s.t;s.y=s.vy0*s.t-0.5*s.ctrl.g*s.t*s.t;s.vy=s.vy0-s.ctrl.g*s.t;
     if(s.y<=0&&s.t>0.01){s.y=0;s.landed=true;}else s.trail.push({x:s.x,y:s.y});
     if(s.trail.length>1200)s.trail.shift();},
@@ -1173,6 +1177,7 @@ spring: {
     {id:'A',label:'السعة A',min:0.1,max:1.5,step:0.05,value:0.6,unit:'m',help:'<b>A</b><br>لا تؤثر على T.'}
   ],
   reset(s){s.t=0;s.x=s.ctrl.A;s.v=0;},
+  onControlChange(s,id){this.reset(s);},
   update(s,dt){s.t+=dt;const w=Math.sqrt(s.ctrl.k/s.ctrl.m);s.x=s.ctrl.A*Math.cos(w*s.t);s.v=-s.ctrl.A*w*Math.sin(w*s.t);},
   readouts(s){const w=Math.sqrt(s.ctrl.k/s.ctrl.m),T=2*Math.PI/w;
     return [{l:'T',v:T.toFixed(3),u:'s',c:'gold'},{l:'f',v:(1/T).toFixed(3),u:'Hz'},{l:'ω',v:w.toFixed(2),u:'rad/s'},
@@ -1190,9 +1195,10 @@ spring: {
     ctx.fillStyle='#1c2540';ctx.fillRect(W/2-160,ceilY-14,320,10);
     ctx.setLineDash([6,6]);ctx.strokeStyle='rgba(148,163,184,.3)';
     ctx.beginPath();ctx.moveTo(W/2-180,eqY);ctx.lineTo(W/2+180,eqY);ctx.stroke();ctx.setLineDash([]);
-    const coils=10,springTop=ceilY,springBottom=massY-massSize/2;
+    const kCfg=this.controls.find(c=>c.id==='k'),kNorm=(s.ctrl.k-kCfg.min)/(kCfg.max-kCfg.min);
+    const coils=Math.round(7+9*Math.max(0,Math.min(1,kNorm))),springTop=ceilY,springBottom=massY-massSize/2;
     const coilH=(springBottom-springTop)/coils;
-    ctx.strokeStyle='#94a3b8';ctx.lineWidth=2.5;
+    ctx.strokeStyle=kNorm>.66?'#cbd5e1':(kNorm>.33?'#94a3b8':'#64748b');ctx.lineWidth=1.8+2.4*kNorm;
     ctx.beginPath();ctx.moveTo(W/2,springTop);
     for(let i=0;i<coils;i++){
       ctx.lineTo(W/2+26,springTop+i*coilH+coilH*0.25);
@@ -1209,7 +1215,8 @@ spring: {
     ctx.fill();
     label(ctx,`${s.ctrl.m.toFixed(1)} kg`,W/2,massY,'#0a0e1a','center',14,true);
     const T=2*Math.PI*Math.sqrt(s.ctrl.m/s.ctrl.k);
-    label(ctx,`T = ${T.toFixed(3)} s`,W/2,H-24,'#fbbf24','center',15,true);
+    label(ctx,'k = '+s.ctrl.k.toFixed(0)+' N/m',W-24,34,'#cbd5e1','right',10,true);
+    label(ctx,'T = '+T.toFixed(3)+' s',W/2,H-24,'#fbbf24','center',15,true);
   }
 },
 
@@ -1264,9 +1271,10 @@ circular_motion: {
     label(ctx,'المركز',cx,cy+25,'#94a3b8','center',11,true);
     const bx=cx+R*Math.cos(s.angle);
     const by=cy+R*Math.sin(s.angle);
-    const gr=ctx.createRadialGradient(bx-4,by-4,1,bx,by,15);
+    const bodyR=10+12*(s.ctrl.m-.5)/(10-.5);
+    const gr=ctx.createRadialGradient(bx-bodyR*.3,by-bodyR*.3,1,bx,by,bodyR);
     gr.addColorStop(0,'#a5f3fc');gr.addColorStop(0.5,'#22d3ee');gr.addColorStop(1,'#0891b2');
-    ctx.fillStyle=gr;ctx.beginPath();ctx.arc(bx,by,14,0,7);ctx.fill();
+    ctx.fillStyle=gr;ctx.beginPath();ctx.arc(bx,by,bodyR,0,7);ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=2;ctx.stroke();
     const vlen=s.ctrl.v*3;
     const vx=-Math.sin(s.angle)*vlen;
@@ -1546,16 +1554,21 @@ collision: {
     {id:'v2',label:'سرعة 2',min:-6,max:6,step:0.1,value:-1,unit:'m/s',help:'<b>v₂</b>'}
   ],
   reset(s){s.x1=0;s.x2=6;s.v1=s.ctrl.v1;s.v2=s.ctrl.v2;s.collided=false;s.t=0;},
+  onControlChange(s,id){this.reset(s);},
   update(s,dt){
-    if(s.collided){s.t+=dt;return;}
-    s.x1+=s.v1*dt;s.x2+=s.v2*dt;s.t+=dt;
-    const r1=0.25+s.ctrl.m1*0.06,r2=0.25+s.ctrl.m2*0.06;
-    if(s.x2-s.x1<=r1+r2&&s.v1-s.v2>0){
-      const m1=s.ctrl.m1,m2=s.ctrl.m2,u1=s.v1,u2=s.v2;
-      s.v1=((m1-m2)*u1+2*m2*u2)/(m1+m2);
-      s.v2=((m2-m1)*u2+2*m1*u1)/(m1+m2);
-      s.collided=true;
-      const ov=(r1+r2)-(s.x2-s.x1);s.x1-=ov/2;s.x2+=ov/2;
+    s.x1+=s.v1*dt;
+    s.x2+=s.v2*dt;
+    s.t+=dt;
+    if(!s.collided){
+      const r1=0.25+s.ctrl.m1*0.06,r2=0.25+s.ctrl.m2*0.06;
+      if(s.x2-s.x1<=r1+r2&&s.v1-s.v2>0){
+        const m1=s.ctrl.m1,m2=s.ctrl.m2,u1=s.v1,u2=s.v2;
+        s.v1=((m1-m2)*u1+2*m2*u2)/(m1+m2);
+        s.v2=((m2-m1)*u2+2*m1*u1)/(m1+m2);
+        s.collided=true;
+        const ov=(r1+r2)-(s.x2-s.x1);
+        s.x1-=ov/2;s.x2+=ov/2;
+      }
     }
   },
   readouts(s){const m1=s.ctrl.m1,m2=s.ctrl.m2;return[
@@ -1648,6 +1661,7 @@ freefall: {
     {id:'g',label:'تسارع الجاذبية g',min:1,max:25,step:0.1,value:9.81,unit:'m/s²',help:'<b>g</b>'}
   ],
   reset(s){s.t=0;s.yVac=s.ctrl.h;s.vVac=0;s.yAir=s.ctrl.h;s.vAir=0;s.done=false;},
+  onControlChange(s,id){this.reset(s);},
   update(s,dt){
     if(s.done)return;
     if(s.yVac>0){s.vVac+=s.ctrl.g*dt;s.yVac-=s.vVac*dt;if(s.yVac<=0)s.yVac=0;}
@@ -1696,6 +1710,7 @@ work_energy: {
     {id:'muk',label:'معامل الاحتكاك الحركي μk',min:0,max:0.5,step:0.05,value:0.10,unit:'',help:'يحدد الاحتكاك بعد بدء الحركة.'}
   ],
   reset(s){s.t=0;s.x=0;s.v=0;},
+  onControlChange(s,id){this.reset(s);},
   update(s,dt){
     const g=9.81,fsMax=s.ctrl.mus*s.ctrl.m*g;
     if(s.ctrl.F<=fsMax){s.v=0;s.x=0;s.t+=dt;return;}
@@ -3039,6 +3054,7 @@ friction: {
     {id:'m',label:'الكتلة m',min:1,max:10,step:0.5,value:5,unit:'kg',help:'<b>m</b>'}
   ],
   reset(s){s.t=0;s.v=0;s.x=0;},
+  onControlChange(s,id){this.reset(s);},
   update(s,dt){
     const rad=s.ctrl.th*Math.PI/180;
     const g=9.81;
@@ -3081,37 +3097,34 @@ friction: {
   theory:'يبدأ الانزلاق عندما تتجاوز mg sinθ قيمة الاحتكاك السكوني القصوى μsN. بعد بدء الحركة يتحدد التسارع بمعامل الاحتكاك الحركي μk، وليس μs.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);
-    const rad=s.ctrl.th*Math.PI/180;
-    const cx=W*0.15,cy=H*0.75;
-    const L=Math.min(W*0.6,450);
-    ctx.strokeStyle='#475569';ctx.lineWidth=4;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+L*Math.cos(rad),cy-L*Math.sin(rad));ctx.stroke();
-    ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(148,163,184,.5)';
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+L+30,cy);ctx.stroke();ctx.setLineDash([]);
-    ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(cx,cy,70,-rad,0);ctx.stroke();
-    label(ctx,`θ=${s.ctrl.th}°`,cx+80,cy-15,'#fbbf24','left',13,true);
-    const slideOff=Math.min(s.x*40,L*0.6);
-    const bx=cx+(L*0.5+slideOff)*Math.cos(rad);
-    const by=cy-(L*0.5+slideOff)*Math.sin(rad);
-    const bs=40;
+    const rad=s.ctrl.th*Math.PI/180,g=9.81,cx=W*.15,cy=H*.75,L=Math.min(W*.60,450);
+    const Fp=s.ctrl.m*g*Math.sin(rad),N=s.ctrl.m*g*Math.cos(rad),fsMax=s.ctrl.mu*N;
+    const slides=Fp>fsMax;
+    const Ff=slides?s.ctrl.muk*N:Math.min(Fp,fsMax);
+    const ak=g*(Math.sin(rad)-s.ctrl.muk*Math.cos(rad));
+
+    ctx.strokeStyle='#475569';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+L*Math.cos(rad),cy-L*Math.sin(rad));ctx.stroke();
+    ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(148,163,184,.5)';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+L+30,cy);ctx.stroke();ctx.setLineDash([]);
+    ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,70,-rad,0);ctx.stroke();
+    label(ctx,'θ='+s.ctrl.th+'°',cx+80,cy-15,'#fbbf24','left',13,true);
+
+    const slideOff=Math.min(s.x*40,L*.60),bx=cx+(L*.50+slideOff)*Math.cos(rad),by=cy-(L*.50+slideOff)*Math.sin(rad),bs=38+4*Math.sqrt(s.ctrl.m);
     ctx.save();ctx.translate(bx,by);ctx.rotate(-rad);
-    const gr=ctx.createLinearGradient(-bs/2,-bs,bs/2,0);
-    gr.addColorStop(0,'#22d3ee');gr.addColorStop(1,'#0e7490');
-    ctx.fillStyle=gr;ctx.fillRect(-bs/2,-bs,bs,bs);
-    ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2;ctx.strokeRect(-bs/2,-bs,bs,bs);
-    label(ctx,`${s.ctrl.m}kg`,0,-bs/2,'#0a0e1a','center',12,true);
-    ctx.restore();
-    const g=9.81;
-    const Fp=s.ctrl.m*g*Math.sin(rad);
-    const N=s.ctrl.m*g*Math.cos(rad);
-    const vs=4;
-    arrow(ctx,bx,by-bs/2,bx,by-bs/2+s.ctrl.m*g*vs,'#ef4444',2.5,10);
-    arrow(ctx,bx,by-bs/2,bx-Fp*vs*Math.cos(rad),by-bs/2+Fp*vs*Math.sin(rad),'#fbbf24',2.5,10);
-    const Ff=Math.min(s.ctrl.mu*N,Fp);
-    arrow(ctx,bx,by-bs/2,bx+Ff*vs*Math.cos(rad),by-bs/2-Ff*vs*Math.sin(rad),'#22d3ee',2.5,10);
-    const slides=Fp>s.ctrl.mu*N;
-    label(ctx,slides?'🏃 ينزلق':'✋ ثابت',W-70,40,slides?'#ef4444':'#22d3ee','center',16,true);
+    const gr=ctx.createLinearGradient(-bs/2,-bs,bs/2,0);gr.addColorStop(0,'#22d3ee');gr.addColorStop(1,'#0e7490');
+    ctx.fillStyle=gr;ctx.fillRect(-bs/2,-bs,bs,bs);ctx.strokeStyle='rgba(255,255,255,.4)';ctx.strokeRect(-bs/2,-bs,bs,bs);
+    label(ctx,s.ctrl.m.toFixed(1)+'kg',0,-bs/2,'#0a0e1a','center',11,true);ctx.restore();
+
+    const scale=Math.min(3.5,120/Math.max(1,Math.max(s.ctrl.m*g,Fp,fsMax)));
+    arrow(ctx,bx,by-bs/2,bx,by-bs/2+s.ctrl.m*g*scale,'#ef4444',2.5,10);
+    arrow(ctx,bx,by-bs/2,bx-Fp*scale*Math.cos(rad),by-bs/2+Fp*scale*Math.sin(rad),'#fbbf24',2.5,10);
+    if(Ff>0)arrow(ctx,bx,by-bs/2,bx+Ff*scale*Math.cos(rad),by-bs/2-Ff*scale*Math.sin(rad),slides?'#22d3ee':'#a3e635',2.5,10);
+
+    const critical=Math.atan(s.ctrl.mu)*180/Math.PI;
+    label(ctx,slides?'🏃 ينزلق':'✋ ثابت',W-30,34,slides?'#ef4444':'#a3e635','right',15,true);
+    label(ctx,'θc = '+critical.toFixed(1)+'°',W-30,58,'#fbbf24','right',11,true);
+    label(ctx,(slides?'fk=μkN = ':'fs = ')+Ff.toFixed(1)+' N',W-30,82,slides?'#22d3ee':'#a3e635','right',11,true);
+    label(ctx,'fs,max='+fsMax.toFixed(1)+' N',W-30,104,'#94a3b8','right',9,true);
+    if(slides)label(ctx,'a='+ak.toFixed(2)+' m/s²',W-30,126,'#cbd5e1','right',10,true);
   }
 },
 
@@ -3147,33 +3160,31 @@ lever: {
   theory:'العتلة رافعة بسيطة. الفائدة الميكانيكية = نسبة الذراعين.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);
-    const cy=H/2;
-    const totalLen=Math.min(W*0.85,700);
-    const cx=W/2;
-    const L1px=(s.ctrl.L1/4)*(totalLen*0.45);
-    const L2px=(s.ctrl.L2/2)*(totalLen*0.45);
+    const cy=H/2,totalLen=Math.min(W*.85,700),cx=W/2;
+    const L1px=(s.ctrl.L1/4)*(totalLen*.45),L2px=(s.ctrl.L2/2)*(totalLen*.45);
     const F1=s.ctrl.F2*s.ctrl.L2/s.ctrl.L1;
     let fx,lx,ex;
     if(s.ctrl.type===1){fx=cx;lx=cx+L2px;ex=cx-L1px;}
-    else{fx=cx-totalLen*0.4;lx=fx+L2px;ex=fx+L2px+L1px;}
-    ctx.strokeStyle='#94a3b8';ctx.lineWidth=8;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(ex-20,cy);ctx.lineTo(lx+20,cy);ctx.stroke();
-    ctx.fillStyle='#fbbf24';
-    ctx.beginPath();ctx.moveTo(fx,cy);ctx.lineTo(fx-25,cy+50);ctx.lineTo(fx+25,cy+50);ctx.closePath();ctx.fill();
+    else{fx=cx-totalLen*.40;lx=fx+L2px;ex=fx+L2px+L1px;}
+
+    ctx.strokeStyle='#94a3b8';ctx.lineWidth=8;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(Math.min(ex,lx)-20,cy);ctx.lineTo(Math.max(ex,lx)+20,cy);ctx.stroke();
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.moveTo(fx,cy);ctx.lineTo(fx-25,cy+50);ctx.lineTo(fx+25,cy+50);ctx.closePath();ctx.fill();
     label(ctx,'نقطة الارتكاز',fx,cy+65,'#fbbf24','center',12,true);
-    arrow(ctx,ex,cy-80,ex,cy-10,'#22d3ee',3,12);
-    label(ctx,`F₁=${F1.toFixed(1)}N`,ex,cy-95,'#22d3ee','center',12,true);
-    arrow(ctx,lx,cy-80,lx,cy-10,'#ef4444',3,12);
-    label(ctx,`F₂=${s.ctrl.F2}N`,lx,cy-95,'#ef4444','center',12,true);
+
+    const maxF=Math.max(F1,s.ctrl.F2,1),f1Len=45+75*F1/maxF,f2Len=45+75*s.ctrl.F2/maxF;
+    arrow(ctx,ex,cy-f1Len-10,ex,cy-10,'#22d3ee',3,12);label(ctx,'F₁='+F1.toFixed(1)+'N',ex,cy-f1Len-25,'#22d3ee','center',11,true);
+    arrow(ctx,lx,cy-f2Len-10,lx,cy-10,'#ef4444',3,12);label(ctx,'F₂='+s.ctrl.F2.toFixed(1)+'N',lx,cy-f2Len-25,'#ef4444','center',11,true);
+
+    const loadSize=22+28*(s.ctrl.F2-5)/95;
+    ctx.fillStyle='rgba(239,68,68,.22)';ctx.strokeStyle='#ef4444';ctx.lineWidth=2;
+    ctx.fillRect(lx-loadSize/2,cy+14,loadSize,loadSize);ctx.strokeRect(lx-loadSize/2,cy+14,loadSize,loadSize);
+
     ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(148,163,184,.4)';
-    ctx.beginPath();ctx.moveTo(ex,cy+20);ctx.lineTo(fx,cy+20);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(fx,cy+20);ctx.lineTo(lx,cy+20);ctx.stroke();
-    ctx.setLineDash([]);
-    label(ctx,`L₁=${s.ctrl.L1}m`,(ex+fx)/2,cy+35,'#22d3ee','center',12,true);
-    label(ctx,`L₂=${s.ctrl.L2}m`,(fx+lx)/2,cy+35,'#ef4444','center',12,true);
-    label(ctx,`النوع ${s.ctrl.type}`,W/2,40,'#fbbf24','center',16,true);
-    const MA=s.ctrl.L1/s.ctrl.L2;
-    label(ctx,`MA = ${MA.toFixed(2)}`,W/2,65,'#22d3ee','center',14,true);
+    ctx.beginPath();ctx.moveTo(ex,cy+20);ctx.lineTo(fx,cy+20);ctx.stroke();ctx.beginPath();ctx.moveTo(fx,cy+20);ctx.lineTo(lx,cy+20);ctx.stroke();ctx.setLineDash([]);
+    label(ctx,'L₁='+s.ctrl.L1.toFixed(1)+'m',(ex+fx)/2,cy+35,'#22d3ee','center',11,true);
+    label(ctx,'L₂='+s.ctrl.L2.toFixed(1)+'m',(fx+lx)/2,cy+35,'#ef4444','center',11,true);
+    label(ctx,'النوع '+s.ctrl.type,W/2,40,'#fbbf24','center',15,true);
+    label(ctx,'MA = '+(s.ctrl.L1/s.ctrl.L2).toFixed(2),W/2,64,'#22d3ee','center',13,true);
   }
 },
 
@@ -3469,7 +3480,33 @@ cavendish: {
   equations:['F=G\\frac{Mm}{r^2}','\\tau=\\kappa\\theta'],
   theory:'استخدم كافنديش ميزان التواء شديد الحساسية لقياس التجاذب بين كتل مختبرية، ومنه أمكن تحديد ثابت الجاذبية.',
   hints(s){const F=CONST.G*s.ctrl.M*s.ctrl.m/(s.ctrl.r*s.ctrl.r);return[`القوة صغيرة جدًا: <b>${F.toExponential(2)} N</b>.`,`تقليل المسافة إلى النصف يزيد القوة أربع مرات.`];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;const F=CONST.G*s.ctrl.M*s.ctrl.m/(s.ctrl.r*s.ctrl.r),tau=F*s.ctrl.ell,th=tau/s.ctrl.k;const arm=clamp(110*s.ctrl.ell/.10,60,210),ang=clamp(th*18,-.45,.45);ctx.save();ctx.translate(cx,cy);ctx.rotate(ang);ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-arm,0);ctx.lineTo(arm,0);ctx.stroke();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(-arm,0,16,0,Math.PI*2);ctx.arc(arm,0,16,0,Math.PI*2);ctx.fill();ctx.restore();ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(cx,55);ctx.lineTo(cx,cy);ctx.stroke();ctx.fillStyle='#f87171';ctx.beginPath();ctx.arc(cx-165,cy-35,30,0,Math.PI*2);ctx.arc(cx+165,cy+35,30,0,Math.PI*2);ctx.fill();label(ctx,'ذراع الميزان ℓ = '+s.ctrl.ell.toFixed(2)+' m',cx,H-52,'#22d3ee','center',11,true);label(ctx,'الدوران مكبّر بصريًا ×18',cx,H-32,'#64748b','center',9,false);}
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);
+    const cx=W/2,cy=H/2,G=CONST.G,F=G*s.ctrl.M*s.ctrl.m/(s.ctrl.r*s.ctrl.r),tau=F*s.ctrl.ell,th=tau/s.ctrl.k;
+    const arm=clamp(110*s.ctrl.ell/.10,60,210),ang=clamp(th*18,-.45,.45);
+    const bigR=20+24*(s.ctrl.M-1)/9,smallR=10+16*(s.ctrl.m-.02)/(.5-.02);
+    const rNorm=(s.ctrl.r-.03)/(.30-.03),offset=arm+bigR+smallR+(16+70*rNorm);
+
+    ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,55);ctx.lineTo(cx,cy);ctx.stroke();
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(ang);
+    ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-arm,0);ctx.lineTo(arm,0);ctx.stroke();
+    ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(-arm,0,smallR,0,Math.PI*2);ctx.arc(arm,0,smallR,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+
+    ctx.fillStyle='#f87171';
+    ctx.beginPath();ctx.arc(cx-offset,cy-35,bigR,0,Math.PI*2);ctx.arc(cx+offset,cy+35,bigR,0,Math.PI*2);ctx.fill();
+
+    ctx.setLineDash([5,4]);ctx.strokeStyle='rgba(148,163,184,.45)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(cx-arm-smallR,cy-35);ctx.lineTo(cx-offset+bigR,cy-35);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx+arm+smallR,cy+35);ctx.lineTo(cx+offset-bigR,cy+35);ctx.stroke();ctx.setLineDash([]);
+
+    label(ctx,'M='+s.ctrl.M.toFixed(1)+' kg',cx-offset,cy-35-bigR-18,'#f87171','center',9,true);
+    label(ctx,'m='+s.ctrl.m.toFixed(2)+' kg',cx-arm,cy+smallR+22,'#22d3ee','center',9,true);
+    label(ctx,'r='+s.ctrl.r.toFixed(3)+' m',cx-offset/2,cy-54,'#94a3b8','center',9,true);
+    label(ctx,'ℓ='+s.ctrl.ell.toFixed(2)+' m',cx,H-66,'#22d3ee','center',10,true);
+    label(ctx,'θ='+(th*180/Math.PI).toFixed(4)+'°  (الدوران مكبّر بصريًا ×18)',cx,H-42,'#64748b','center',9,false);
+    label(ctx,'F='+F.toExponential(2)+' N',cx,34,'#fbbf24','center',11,true);
+  }
 },
 
 foucault: {
@@ -3477,7 +3514,8 @@ foucault: {
   desc:'محاكاة تغير مستوى اهتزاز البندول بفعل دوران الأرض.',
   welcome:{title:'🧭 نواس فوكو',steps:['اختر خط العرض.','راقب دوران مستوى الاهتزاز مع الزمن.','المعدل: Ωₑ sinφ.']},
   controls:[{id:'lat',label:'خط العرض φ',min:0,max:90,step:1,value:33,unit:'°'},{id:'speed',label:'تسريع الزمن',min:1,max:500,step:1,value:120,unit:'×'}],
-  reset(s){s.t=0;}, update(s,dt){s.t+=dt*s.ctrl.speed;},
+  reset(s){s.t=0;},
+  onControlChange(s,id){if(id==='lat')s.t=0;}, update(s,dt){s.t+=dt*s.ctrl.speed;},
   readouts(s){const omega=(360/23.9344696)*Math.sin(s.ctrl.lat*Math.PI/180);return[{l:'معدل سبق المستوى',v:omega.toFixed(2),u:'°/h',c:'gold'},{l:'زمن المحاكاة',v:(s.t/3600).toFixed(2),u:'h',c:'cyan'}];},
   equations:['\\Omega_p=\\Omega_E\\sin\\varphi'],
   theory:'معدل السبق المثالي Ωp=ΩE sinφ، مع ΩE≈15.041°/h بالنسبة إلى اليوم النجمي؛ يساوي صفرًا عند خط الاستواء ويبلغ ΩE عند القطب.',
