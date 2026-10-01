@@ -1383,77 +1383,38 @@ newton_prism: {
   },
   equations:['n=\\dfrac{\\sin i}{\\sin r_1}','A=r_1+r_2','\\delta=i+e-A'],
   theory:'تحسب المحاكاة مسار كل لون باستخدام قانون سنيل على وجهي المنشور وعلاقة هندسة المنشور A=r₁+r₂. استُخدمت معاملات انكسار نموذجية قريبة من زجاج crown في المجال المرئي (تقريب تعليمي). الفصل اللوني مرسوم مكبّرًا بصريًا ليسهل رؤيته، بينما قيم زوايا الانحراف المعروضة تحسب من المعادلات.',
-  draw(ctx,W,H,s){
-    ctx.fillStyle='#050914';ctx.fillRect(0,0,W,H);drawGrid(ctx,W,H);
-    const apex={x:W*.53,y:H*.18},L={x:W*.34,y:H*.76},R={x:W*.70,y:H*.76};
-    const entry={x:L.x+(apex.x-L.x)*.43,y:L.y+(apex.y-L.y)*.43};
-    const exit={x:R.x+(apex.x-R.x)*.48,y:R.y+(apex.y-R.y)*.48};
+  
+draw(ctx,W,H,s){
+  ctx.fillStyle='#050914';ctx.fillRect(0,0,W,H);drawGrid(ctx,W,H);
+  const A=deg2rad(s.ctrl.A),baseY=H*.77,half=Math.min(W*.19,H*.28*Math.tan(A/2)+W*.08);
+  const centerX=W*.53,height=Math.min(H*.55,half/Math.max(.15,Math.tan(A/2)));
+  const apex={x:centerX,y:baseY-height},L={x:centerX-half,y:baseY},R={x:centerX+half,y:baseY};
+  const entry={x:L.x+(apex.x-L.x)*.45,y:L.y+(apex.y-L.y)*.45};
+  const exit={x:R.x+(apex.x-R.x)*.50,y:R.y+(apex.y-R.y)*.50};
+  label(ctx,'محاكاة منشور نيوتن',W/2,34,'#a78bfa','center',18,true);
+  const pg=ctx.createLinearGradient(L.x,L.y,apex.x,apex.y);pg.addColorStop(0,'rgba(59,130,246,.18)');pg.addColorStop(.5,'rgba(147,197,253,.28)');pg.addColorStop(1,'rgba(255,255,255,.08)');
+  ctx.save();ctx.fillStyle=pg;ctx.strokeStyle='#bfdbfe';ctx.lineWidth=2.4;ctx.shadowColor='#60a5fa';ctx.shadowBlur=16;ctx.beginPath();ctx.moveTo(apex.x,apex.y);ctx.lineTo(L.x,L.y);ctx.lineTo(R.x,R.y);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
 
-    label(ctx,'محاكاة منشور نيوتن',W/2,34,'#a78bfa','center',18,true);
-    label(ctx,'اسحب المتغيرات من لوحة التحكم وقارن مقدار انحراف كل لون',W/2,56,'#94a3b8','center',10,false);
+  const faceDx=entry.x-apex.x,faceDy=entry.y-apex.y,fl=Math.hypot(faceDx,faceDy),tx=faceDx/fl,ty=faceDy/fl;
+  const nx=-ty,ny=tx;
+  const inc=deg2rad(s.ctrl.i);
+  const ca=Math.cos(inc),sa=Math.sin(inc);
+  const dx=(-nx)*ca+(-tx)*sa,dy=(-ny)*ca+(-ty)*sa;
+  const srcLen=Math.min(W*.28,H*.34),sx=entry.x-dx*srcLen,sy=entry.y-dy*srcLen;
+  ctx.save();ctx.strokeStyle='#fff';ctx.lineWidth=4.5;ctx.shadowColor='#fff';ctx.shadowBlur=18;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(entry.x,entry.y);ctx.lineTo(exit.x,exit.y);ctx.stroke();ctx.restore();
+  ctx.setLineDash([6,5]);ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(entry.x+nx*55,entry.y+ny*55);ctx.lineTo(entry.x-nx*55,entry.y-ny*55);ctx.stroke();ctx.setLineDash([]);
+  label(ctx,'i='+s.ctrl.i.toFixed(0)+'°',entry.x-22,entry.y-32,'#22d3ee','right',10,true);
 
-    ctx.save();
-    const pg=ctx.createLinearGradient(L.x,L.y,apex.x,apex.y);
-    pg.addColorStop(0,'rgba(59,130,246,.18)');pg.addColorStop(.5,'rgba(147,197,253,.28)');pg.addColorStop(1,'rgba(255,255,255,.08)');
-    ctx.fillStyle=pg;ctx.strokeStyle='#bfdbfe';ctx.lineWidth=2.4;ctx.shadowColor='#60a5fa';ctx.shadowBlur=16;
-    ctx.beginPath();ctx.moveTo(apex.x,apex.y);ctx.lineTo(L.x,L.y);ctx.lineTo(R.x,R.y);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
-
-    ctx.save();ctx.shadowColor='#fff';ctx.shadowBlur=18;ctx.strokeStyle='#fff';ctx.lineWidth=4.5;
-    ctx.beginPath();ctx.moveTo(22,entry.y+68);ctx.lineTo(entry.x,entry.y);ctx.lineTo(exit.x,exit.y);ctx.stroke();ctx.restore();
-    ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.3;ctx.setLineDash([6,5]);
-    ctx.beginPath();ctx.moveTo(entry.x-70,entry.y-55);ctx.lineTo(entry.x+80,entry.y+60);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(exit.x-70,exit.y+45);ctx.lineTo(exit.x+78,exit.y-50);ctx.stroke();ctx.setLineDash([]);
-
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(entry.x,entry.y,5,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(exit.x,exit.y,5,0,Math.PI*2);ctx.fill();
-    label(ctx,'نقطة الدخول',entry.x-18,entry.y-28,'#e2e8f0','right',10,true);
-    label(ctx,'نقطة الخروج',exit.x-14,exit.y+28,'#e2e8f0','right',10,true);
-
-    const colors=[
-      {name:'أحمر',wl:656,n:1.5143,c:'#ef4444'},
-      {name:'برتقالي',wl:610,n:1.5159,c:'#fb923c'},
-      {name:'أصفر',wl:589,n:1.5167,c:'#facc15'},
-      {name:'أخضر',wl:546,n:1.5187,c:'#22c55e'},
-      {name:'سماوي',wl:500,n:1.5214,c:'#22d3ee'},
-      {name:'أزرق',wl:486,n:1.5224,c:'#3b82f6'},
-      {name:'بنفسجي',wl:436,n:1.5267,c:'#8b5cf6'}
-    ];
-    const rays=colors.map(q=>({q:q,r:this._ray(q.n,s)}));
-    const valid=rays.filter(z=>!z.r.tir);
-    if(!valid.length){
-      label(ctx,'انعكاس كلي داخلي عند الوجه الثاني',W*.80,H*.48,'#fb7185','center',15,true);
-      return;
-    }
-    const base=valid[0].r.d;
-    const outLen=Math.max(160,W-exit.x-30);
-    valid.forEach((z,idx)=>{
-      const physical=z.r.d-base;
-      const visualAngle=.04+physical*8.0;
-      const ex=W-24,ey=exit.y+outLen*Math.tan(visualAngle);
-      ctx.save();ctx.shadowColor=z.q.c;ctx.shadowBlur=16;ctx.strokeStyle=z.q.c;ctx.lineWidth=4;
-      ctx.beginPath();ctx.moveTo(exit.x,exit.y);ctx.lineTo(ex,ey);ctx.stroke();ctx.restore();
-      if(W>820&&idx!==1&&idx!==3&&idx!==4){
-        label(ctx,z.q.name,ex-8,ey-8,z.q.c,'right',9,true);
-      }
-    });
-
-    const red=this._ray(1.5143,s),violet=this._ray(1.5267,s);
-    if(red.tir||violet.tir){
-      label(ctx,'بعض الألوان وصلت إلى الانعكاس الكلي',W*.78,H*.46,'#fb7185','center',13,true);
-    }else{
-      const spread=rad2deg(violet.d-red.d);
-      const bw=Math.min(285,W*.32),bx=22,by=18,bh=92;
-      ctx.fillStyle='rgba(7,11,20,.84)';ctx.strokeStyle='rgba(148,163,184,.25)';
-      ctx.fillRect(bx,by,bw,bh);ctx.strokeRect(bx,by,bw,bh);
-      label(ctx,'تحليل الضوء الأبيض',bx+14,by+21,'#e2e8f0','left',11,true);
-      label(ctx,'δ الأحمر = '+rad2deg(red.d).toFixed(2)+'°',bx+14,by+43,'#ef4444','left',10,true);
-      label(ctx,'δ البنفسجي = '+rad2deg(violet.d).toFixed(2)+'°',bx+14,by+63,'#a78bfa','left',10,true);
-      label(ctx,'Δδ = '+spread.toFixed(2)+'°  (الفصل مرسوم مكبّرًا)',bx+14,by+83,'#fbbf24','left',9,true);
-    }
-
-    ctx.save();ctx.strokeStyle='#a78bfa';ctx.lineWidth=2;ctx.beginPath();ctx.arc(apex.x,apex.y+3,48,.99,2.15);ctx.stroke();ctx.restore();
-    label(ctx,'A='+s.ctrl.A.toFixed(0)+'°',apex.x,apex.y+62,'#a78bfa','center',10,true);
-  }
+  const colors=[{name:'أحمر',n:1.5143,c:'#ef4444'},{name:'برتقالي',n:1.5159,c:'#fb923c'},{name:'أصفر',n:1.5167,c:'#facc15'},{name:'أخضر',n:1.5187,c:'#22c55e'},{name:'سماوي',n:1.5214,c:'#22d3ee'},{name:'أزرق',n:1.5224,c:'#3b82f6'},{name:'بنفسجي',n:1.5267,c:'#8b5cf6'}];
+  const rays=colors.map(q=>({q:q,r:this._ray(q.n,s)})),valid=rays.filter(z=>!z.r.tir);
+  if(valid.length){
+    const red=valid[0].r,baseSlope=.06+Math.max(-.18,Math.min(.26,red.d*.45)),outLen=Math.max(120,W-exit.x-30);
+    valid.forEach((z,idx)=>{const visual=baseSlope+(z.r.d-red.d)*8,ex=W-24,ey=exit.y+outLen*Math.tan(visual);ctx.save();ctx.shadowColor=z.q.c;ctx.shadowBlur=15;ctx.strokeStyle=z.q.c;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(exit.x,exit.y);ctx.lineTo(ex,ey);ctx.stroke();ctx.restore();if(W>820&&(idx===0||idx===3||idx===6))label(ctx,z.q.name,ex-8,ey-8,z.q.c,'right',9,true);});
+  }else label(ctx,'انعكاس كلي داخلي',W*.79,H*.48,'#fb7185','center',14,true);
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(entry.x,entry.y,5,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(exit.x,exit.y,5,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#a78bfa';ctx.lineWidth=2;ctx.beginPath();ctx.arc(apex.x,apex.y+3,44,.96,2.18);ctx.stroke();
+  label(ctx,'A='+s.ctrl.A.toFixed(0)+'°',apex.x,apex.y+58,'#a78bfa','center',10,true);
+}
 },
 
 refraction: {
@@ -3942,7 +3903,21 @@ millikan: {
   equations:['qE\\approx(\\rho_{oil}-\\rho_{air})Vg','F_d=6\\pi\\eta rv','q=ne'],
   theory:'عند تعليق القطرة ساكنة يكون qE=(ρoil−ρair)Vg بعد احتساب الطفو. وعند الحركة البطيئة يدخل تقريب ستوكس Fd=6πηrv. التجربة الدقيقة تستنتج نصف القطر من السرعة الحدية وتحتاج تصحيح كننغهام للقطرات الصغيرة؛ هذه التفاصيل خارج النموذج الحالي.',
   hints(s){const rhoOil=860,rhoAir=1.225,r=s.ctrl.r*1e-6,V=4/3*Math.PI*r*r*r,q=s.ctrl.n*CONST.e,eq=(rhoOil-rhoAir)*V*9.80665/q;return[`مجال التعليق التقريبي بعد تصحيح الطفو ≈ <b>${eq.toFixed(0)} V/m</b>.`,`الشحنة المختارة = <b>${s.ctrl.n}e</b>.`,'المحاكاة لا تعيد بناء إجراء ميليكان الكامل؛ تحديد q تجريبيًا يتطلب أيضًا مقاومة اللزوجة (قانون ستوكس وتصحيحاته).'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);ctx.fillStyle='#334155';ctx.fillRect(80,70,W-160,12);ctx.fillRect(80,H-80,W-160,12);label(ctx,'لوح +',W/2,52,'#fbbf24','center',13,true);label(ctx,'لوح −',W/2,H-52,'#22d3ee','center',13,true);const y=H/2-Math.max(-120,Math.min(120,s.y*40));ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(W/2,y,12,0,Math.PI*2);ctx.fill();arrow(ctx,W/2+40,H-95,W/2+40,85,'#22d3ee',2,8);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const plateX=80,plateW=W-160,topY=70,botY=H-80;
+  ctx.fillStyle='#334155';ctx.fillRect(plateX,topY,plateW,12);ctx.fillRect(plateX,botY,plateW,12);
+  label(ctx,'لوح +',W/2,52,'#fbbf24','center',13,true);label(ctx,'لوح −',W/2,H-52,'#22d3ee','center',13,true);
+  const eNorm=(s.ctrl.E-10000)/(120000-10000),arrows=Math.round(3+8*eNorm);
+  for(let k=0;k<arrows;k++){const x=plateX+plateW*(k+.5)/arrows;arrow(ctx,x,botY-10,x,topY+22,'rgba(34,211,238,.70)',1.5+2*eNorm,6);}
+  const y=H/2-Math.max(-120,Math.min(120,s.y*40)),rad=7+12*(s.ctrl.r-.4)/(.8);
+  ctx.fillStyle='#fbbf24';ctx.shadowColor='#fbbf24';ctx.shadowBlur=8;ctx.beginPath();ctx.arc(W/2,y,rad,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  const marks=Math.max(1,Math.min(8,Math.round(s.ctrl.n)));
+  for(let k=0;k<marks;k++){const a=2*Math.PI*k/marks;label(ctx,'−',W/2+Math.cos(a)*rad*.55,y+Math.sin(a)*rad*.55,'#7c2d12','center',7,true);}
+  label(ctx,'r='+s.ctrl.r.toFixed(2)+' µm   q='+s.ctrl.n+'e',W/2,y+rad+24,'#cbd5e1','center',9,true);
+  label(ctx,'E='+(s.ctrl.E/1000).toFixed(0)+' kV/m',W/2,32,'#22d3ee','center',10,true);
+}
 },
 
 franck_hertz: {
@@ -4487,7 +4462,22 @@ arago_spot: {
   equations:['I(r)\\approx I_0J_0^2\\!\\left(\\frac{\\pi Dr}{\\lambda L}\\right)','r_1\\approx0.7655\\frac{\\lambda L}{D}'],
   theory:'عند حيود موجة مستوية حول قرص دائري معتم تتراكب الموجات تراكبًا بنّاءً على المحور. قرب المركز وفي تقريب فريسنل المناسب يمكن تمثيل الشدة تقريبًا بـ J₀²، وأول صفر يعطي r₁≈0.7655λL/D. العامل 1.22 يخص قرص أيري لفتحة دائرية، لا قرص بواسون/أراغو.',
   hints(s){return['وجود جسم معتم لا يعني أن مركز الظل سيكون مظلمًا تمامًا عندما يكون الحيود مهمًا.','زيادة λ أو L توسّع بنية الحيود.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W*.58,cy=H/2;ctx.fillStyle='#111827';ctx.beginPath();ctx.arc(W*.35,cy,46,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#94a3b8';ctx.stroke();for(let i=0;i<5;i++){ctx.strokeStyle=`rgba(244,114,182,${.22+i*.12})`;ctx.beginPath();ctx.arc(cx,cy,18+i*26,0,Math.PI*2);ctx.stroke();}ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,9,0,Math.PI*2);ctx.fill();arrow(ctx,45,cy,W*.29,cy,'#fbbf24',3,9);label(ctx,'قرص معتم',W*.35,cy+70,'#cbd5e1','center',12,true);label(ctx,'بقعة أراغو',cx,cy-18,'#fff','center',12,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const cy=H/2,dNorm=(s.ctrl.D-.2)/1.8,discR=18+52*dNorm,lNorm=(s.ctrl.L-.5)/2.5;
+  const discX=W*.27,screenX=W*(.60+.30*Math.max(0,Math.min(1,lNorm))),col=wl2rgb(s.ctrl.lam);
+  arrow(ctx,35,cy,discX-discR-12,cy,col,3,9);
+  ctx.fillStyle='#111827';ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;ctx.beginPath();ctx.arc(discX,cy,discR,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#0a0e1a';ctx.fillRect(screenX,50,18,H-100);ctx.strokeStyle='#64748b';ctx.strokeRect(screenX,50,18,H-100);
+  const rmm=.7655*s.ctrl.lam*1e-9*s.ctrl.L/(s.ctrl.D*1e-3)*1e3,px=Math.max(5,Math.min(H*.18,rmm*90));
+  for(let k=4;k>=0;k--){ctx.strokeStyle=col;ctx.globalAlpha=.12+.13*(4-k);ctx.lineWidth=2;ctx.beginPath();ctx.arc(screenX+9,cy,px+k*px*.75,0,Math.PI*2);ctx.stroke();}
+  ctx.globalAlpha=1;ctx.fillStyle='#fff';ctx.shadowColor='#fff';ctx.shadowBlur=16;ctx.beginPath();ctx.arc(screenX+9,cy,Math.max(3,px*.18),0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(discX,cy+discR+42);ctx.lineTo(screenX,cy+discR+42);ctx.stroke();
+  label(ctx,'D='+s.ctrl.D.toFixed(1)+' mm',discX,cy+discR+24,'#cbd5e1','center',9,true);
+  label(ctx,'L='+s.ctrl.L.toFixed(1)+' m',(discX+screenX)/2,cy+discR+60,'#94a3b8','center',9,true);
+  label(ctx,'λ='+s.ctrl.lam.toFixed(0)+' nm',W/2,36,col,'center',10,true);
+}
 },
 
 fizeau_light: {
@@ -4540,7 +4530,23 @@ joule_heat: {
   equations:['W=mgh','Q=mc\\Delta T','W\\approx Q'],
   theory:'بيّن جول أن الشغل والحرارة صورتان للطاقة نفسها. بتحريك مجاديف داخل الماء بواسطة أثقال ساقطة يمكن قياس الارتفاع الصغير في درجة الحرارة الناتج عن شغل ميكانيكي معلوم.',
   hints(s){const Wm=s.ctrl.m*9.81*s.ctrl.h;return[`الشغل المتاح <b>${Wm.toFixed(1)} J</b>.`,'تقليل كمية الماء يجعل الارتفاع الحراري أوضح.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;ctx.strokeStyle='#94a3b8';ctx.lineWidth=3;ctx.strokeRect(cx-80,cy-100,160,200);ctx.fillStyle='rgba(34,211,238,.25)';ctx.fillRect(cx-75,cy-20,150,115);ctx.save();ctx.translate(cx,cy+20);ctx.rotate(s.t*3);ctx.strokeStyle='#fbbf24';ctx.lineWidth=7;for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(55,0);ctx.stroke();}ctx.restore();ctx.fillStyle='#f87171';ctx.fillRect(60,cy+25,45,55);label(ctx,'ثقل ساقط',82,cy+95,'#cbd5e1','center',12,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const cx=W*.58,cy=H/2,waterNorm=(s.ctrl.mw-.2)/1.8,waterH=55+95*waterNorm;
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=3;ctx.strokeRect(cx-90,cy-110,180,220);
+  ctx.fillStyle='rgba(34,211,238,.25)';ctx.fillRect(cx-84,cy+102-waterH,168,waterH);
+  ctx.save();ctx.translate(cx,cy+28);ctx.rotate(s.t*3);ctx.strokeStyle='#fbbf24';ctx.lineWidth=7;for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(58,0);ctx.stroke();}ctx.restore();
+  const hNorm=(s.ctrl.h-.2)/2.8,top=H*.18,bottom=H*.80,weightY=bottom-(bottom-top)*hNorm;
+  const wSize=26+34*(s.ctrl.m-1)/19,wx=W*.16;
+  ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(wx,top-20);ctx.lineTo(wx,bottom+25);ctx.stroke();
+  ctx.fillStyle='#f87171';ctx.fillRect(wx-wSize/2,weightY-wSize/2,wSize,wSize);
+  ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(wx+45,weightY);ctx.lineTo(wx+45,bottom);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(wx+39,weightY);ctx.lineTo(wx+51,weightY);ctx.moveTo(wx+39,bottom);ctx.lineTo(wx+51,bottom);ctx.stroke();
+  label(ctx,'h='+s.ctrl.h.toFixed(1)+' m',wx+58,(weightY+bottom)/2,'#94a3b8','left',9,true);
+  label(ctx,'m='+s.ctrl.m.toFixed(1)+' kg',wx,weightY+wSize/2+20,'#f87171','center',9,true);
+  label(ctx,'ماء '+s.ctrl.mw.toFixed(1)+' kg',cx,cy+126,'#22d3ee','center',10,true);
+}
 },
 
 oersted: {
@@ -4827,7 +4833,20 @@ mach_zehnder: {
   equations:['\\Delta\\phi=\\frac{2\\pi\\Delta L}{\\lambda}','I_{1,2}=\\frac{I_0}{2}(1\\pm\\cos\\Delta\\phi)'],
   theory:'يفصل مقياس ماخ–زندر الضوء إلى مسارين ثم يعيد دمجهما. أي تغير صغير في فرق المسار يتحول إلى تغير واضح في شدة الخرج.',
   hints(s){return['غيّر ΔL بمقدار λ/2 فتتبادل شدتا المخرجين تقريبًا.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const x1=W*.25,x2=W*.72,y1=H*.3,y2=H*.7;ctx.strokeStyle='#22d3ee';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(45,H/2);ctx.lineTo(x1,H/2);ctx.lineTo(x1,y1);ctx.lineTo(x2,y1);ctx.lineTo(x2,H/2);ctx.stroke();ctx.strokeStyle='#f472b6';ctx.beginPath();ctx.moveTo(x1,H/2);ctx.lineTo(x1,y2);ctx.lineTo(x2,y2);ctx.lineTo(x2,H/2);ctx.stroke();label(ctx,'BS',x1,H/2-18,'#fbbf24','center',12,true);label(ctx,'BS',x2,H/2-18,'#fbbf24','center',12,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const x1=W*.25,x2=W*.72,y1=H*.30,y2Base=H*.70,shift=36*(s.ctrl.dl/2000),y2=y2Base+shift;
+  const col=wl2rgb(s.ctrl.lam),ph=2*Math.PI*s.ctrl.dl/s.ctrl.lam,I1=(1+Math.cos(ph))/2;
+  ctx.strokeStyle=col;ctx.lineWidth=4;ctx.globalAlpha=.35+.65*I1;ctx.beginPath();ctx.moveTo(45,H/2);ctx.lineTo(x1,H/2);ctx.lineTo(x1,y1);ctx.lineTo(x2,y1);ctx.lineTo(x2,H/2);ctx.stroke();
+  ctx.strokeStyle='#f472b6';ctx.globalAlpha=.35+.65*(1-I1);ctx.beginPath();ctx.moveTo(x1,H/2);ctx.lineTo(x1,y2);ctx.lineTo(x2,y2);ctx.lineTo(x2,H/2);ctx.stroke();ctx.globalAlpha=1;
+  ctx.fillStyle='#a78bfa';ctx.save();ctx.translate(x1,H/2);ctx.rotate(Math.PI/4);ctx.fillRect(-4,-24,8,48);ctx.restore();ctx.save();ctx.translate(x2,H/2);ctx.rotate(Math.PI/4);ctx.fillRect(-4,-24,8,48);ctx.restore();
+  ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(W*.86,H*.43,12+18*I1,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(W*.86,H*.63,12+18*(1-I1),0,Math.PI*2);ctx.fill();
+  label(ctx,'ΔL='+s.ctrl.dl.toFixed(0)+' nm  (المسار مرسوم مكبّراً)',W/2,H-32,'#94a3b8','center',9,true);
+  label(ctx,'λ='+s.ctrl.lam.toFixed(0)+' nm',W/2,34,col,'center',10,true);
+  label(ctx,'I₁='+I1.toFixed(2),W*.86,H*.43-34,'#fbbf24','center',9,true);label(ctx,'I₂='+(1-I1).toFixed(2),W*.86,H*.63-34,'#22d3ee','center',9,true);
+}
 },
 
 eotvos: {
@@ -4853,7 +4872,19 @@ hertz_em: {
   equations:['c=f\\lambda','I\\propto\\frac{1}{r^2}'],
   theory:'العلاقة I∝1/r² المستخدمة هنا تقريب للحقل البعيد؛ قرب الهوائي توجد حقول قريبة لا تتبعها ببساطة. برهن هرتز عمليًا وجود الموجات الكهرومغناطيسية في الفضاء، مؤكدًا تنبؤات معادلات ماكسويل.',
   hints(s){return['رفع التردد يقصر الطول الموجي.','إبعاد المستقبل يخفض الشدة بسرعة.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cy=H/2;for(let k=0;k<7;k++){ctx.strokeStyle=`rgba(34,211,238,${.85-k*.1})`;ctx.beginPath();ctx.arc(80,cy,35+k*45+20*Math.sin(s.t*4),-.8,.8);ctx.stroke();}ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;ctx.strokeRect(W-100,cy-55,45,110);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const cy=H/2,rNorm=(s.ctrl.r-.5)/4.5,rx=W*(.45+.43*Math.max(0,Math.min(1,rNorm)));
+  const lam=300/s.ctrl.f,waveGap=Math.max(24,Math.min(82,lam*30));
+  ctx.strokeStyle='#fbbf24';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(80,cy-55);ctx.lineTo(80,cy+55);ctx.stroke();
+  for(let rr=waveGap;80+rr<rx;rr+=waveGap){ctx.strokeStyle='rgba(34,211,238,'+(0.75*.7)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(80,cy,rr,-.75,.75);ctx.stroke();}
+  ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;ctx.strokeRect(rx-22,cy-55,44,110);
+  const strength=1/(s.ctrl.r*s.ctrl.r);ctx.fillStyle='rgba(163,230,53,'+Math.min(.8,.12+strength*.35)+')';ctx.fillRect(rx-16,cy-38,32,76);
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(80,H-55);ctx.lineTo(rx,H-55);ctx.stroke();
+  label(ctx,'r='+s.ctrl.r.toFixed(1)+' m',(80+rx)/2,H-35,'#94a3b8','center',9,true);
+  label(ctx,'f='+s.ctrl.f.toFixed(0)+' MHz   λ='+lam.toFixed(2)+' m',W/2,34,'#22d3ee','center',10,true);
+}
 },
 
 rubens_tube: {
@@ -5299,7 +5330,21 @@ single_slit_diffraction: {
   hints(s){const c=this.calc(s);return [`a sinθ₁ = λ ⇒ θ₁ = <span class="hl">${rad2deg(c.th).toFixed(3)}°</span>.`,`العرض المركزي بين الحدين الأولين ≈ ${(c.w*1000).toFixed(2)} mm.`,`تقليل a أو زيادة λ يوسّع نمط الحيود.`];},
   equations:['a\\sin\\theta_m=m\\lambda','I(\\theta)=I_0\\left(\\frac{\\sin\\beta}{\\beta}\\right)^2','\\beta=\\frac{\\pi a\\sin\\theta}{\\lambda}'],
   theory:'لنمط فراونهوفر لشق منتظم، تقع الحدود الدنيا عند a sinθ=mλ. الرسم يستخدم دالة sinc²، والعرض المركزي محسوب هندسيًا كـ 2L tanθ₁ دون افتراض الزاوية الصغيرة.',
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const sx=W*.26,screen=W*.84,cy=H/2,col=wl2rgb(s.ctrl.lam);ctx.fillStyle='#334155';ctx.fillRect(sx-5,30,10,H*.38);ctx.fillRect(sx-5,H*.62,10,H*.38-30);ctx.fillStyle=col;ctx.globalAlpha=.35;ctx.beginPath();ctx.moveTo(sx,cy);ctx.lineTo(screen,35);ctx.lineTo(screen,H-35);ctx.closePath();ctx.fill();ctx.globalAlpha=1;ctx.fillStyle='#0a0e1a';ctx.fillRect(screen,20,25,H-40);const lam=s.ctrl.lam*1e-9,a=s.ctrl.a*1e-6;for(let y=25;y<H-25;y++){const theta=Math.atan2(y-cy,screen-sx),beta=Math.PI*a*Math.sin(theta)/lam,I=Math.abs(beta)<1e-9?1:Math.pow(Math.sin(beta)/beta,2);ctx.fillStyle=col;ctx.globalAlpha=Math.min(1,I);ctx.fillRect(screen,y,25,1);}ctx.globalAlpha=1;label(ctx,'شق',sx,cy-25,'#fbbf24','center',12,true);label(ctx,'نمط الحيود',screen,H-15,'#cbd5e1','center',11,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const sx=W*.24,lp=(s.ctrl.L-.3)/2.7,screen=W*(.56+.34*Math.max(0,Math.min(1,lp))),cy=H/2,col=wl2rgb(s.ctrl.lam);
+  const gap=10+H*.16*(s.ctrl.a-5)/95;
+  ctx.fillStyle='#334155';ctx.fillRect(sx-5,20,10,cy-gap/2);ctx.fillRect(sx-5,cy+gap/2,10,H-(cy+gap/2)-20);
+  ctx.fillStyle=col;ctx.globalAlpha=.24;ctx.beginPath();ctx.moveTo(sx,cy-gap/2);ctx.lineTo(screen,35);ctx.lineTo(screen,H-35);ctx.lineTo(sx,cy+gap/2);ctx.closePath();ctx.fill();ctx.globalAlpha=1;
+  ctx.fillStyle='#0a0e1a';ctx.fillRect(screen,20,25,H-40);ctx.strokeStyle='#fbbf24';ctx.strokeRect(screen,20,3,H-40);
+  const lam=s.ctrl.lam*1e-9,a=s.ctrl.a*1e-6,distPx=screen-sx;
+  for(let y=25;y<H-25;y++){const theta=Math.atan2(y-cy,distPx),beta=Math.PI*a*Math.sin(theta)/lam,I=Math.abs(beta)<1e-9?1:Math.pow(Math.sin(beta)/beta,2);ctx.fillStyle=col;ctx.globalAlpha=Math.min(1,I);ctx.fillRect(screen+3,y,22,1);}ctx.globalAlpha=1;
+  ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(sx,H-42);ctx.lineTo(screen,H-42);ctx.stroke();
+  label(ctx,'a='+s.ctrl.a.toFixed(0)+' µm',sx,cy-gap/2-18,'#fbbf24','center',9,true);
+  label(ctx,'L='+s.ctrl.L.toFixed(1)+' m',(sx+screen)/2,H-22,'#94a3b8','center',9,true);
+  label(ctx,'λ='+s.ctrl.lam.toFixed(0)+' nm',W/2,34,col,'center',10,true);
+}
 },
 
 diffraction_grating_lab: {
@@ -5715,7 +5760,18 @@ current_balance_field_lab: {
   equations:['F=NBI\\ell\\quad(\\theta=90^\\circ)','\\frac{dF}{dB}=NI\\ell'],
   theory:'عندما يكون الموصل عموديًا على المجال، تصبح القوة متناسبة خطيًا مع B. عكس اتجاه المجال مع بقاء التيار ثابتًا يعكس اتجاه القوة.',
   hints(s){return['غيّر إشارة B ولاحظ انقلاب إشارة F.','عند B=0 تختفي القوة المغناطيسية.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cx=W/2,cy=H/2;ctx.strokeStyle='#fbbf24';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(cx-120,cy);ctx.lineTo(cx+120,cy);ctx.stroke();const symbol=s.ctrl.B>=0?'×':'•';for(let x=80;x<W-60;x+=55)for(let y=75;y<H-50;y+=55)label(ctx,symbol,x,y,'#22d3ee','center',18,true);arrow(ctx,cx,cy,cx,cy-Math.max(-120,Math.min(120,c.F*100)),'#f87171',4,10);label(ctx,`B=${s.ctrl.B.toFixed(2)} T`,cx,32,'#22d3ee','center',14,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const c=this.calc(s),cx=W/2,cy=H/2,bNorm=Math.min(1,Math.abs(s.ctrl.B)/1.5),lNorm=(s.ctrl.l-1)/19;
+  const half=45+W*.20*lNorm,segs=Math.max(1,Math.min(12,Math.round(s.ctrl.N))),gap=42+36*(1-bNorm);
+  for(let x=70;x<W-50;x+=gap)for(let y=70;y<H-55;y+=gap)label(ctx,s.ctrl.B>=0?'×':'•',x,y,'#22d3ee','center',16,true);
+  for(let k=0;k<segs;k++){const yy=cy+(k-(segs-1)/2)*Math.min(8,60/Math.max(1,segs-1));ctx.strokeStyle='#fbbf24';ctx.lineWidth=3+Math.min(5,s.ctrl.I);ctx.beginPath();ctx.moveTo(cx-half,yy);ctx.lineTo(cx+half,yy);ctx.stroke();}
+  const fy=-Math.max(-125,Math.min(125,c.F*100));arrow(ctx,cx,cy,cx,cy+fy,'#f87171',4,10);
+  label(ctx,'B='+s.ctrl.B.toFixed(2)+' T   I='+s.ctrl.I.toFixed(1)+' A',cx,32,'#22d3ee','center',11,true);
+  label(ctx,'ℓ='+s.ctrl.l.toFixed(0)+' cm   N='+s.ctrl.N,cx,H-35,'#cbd5e1','center',9,true);
+  label(ctx,'F='+c.F.toFixed(3)+' N',cx,56,'#fbbf24','center',12,true);
+}
 },
 
 mutual_induction_frequency_current_lab: {
@@ -5743,7 +5799,19 @@ induced_voltage_turns_diameter_lab: {
   equations:['A=\\frac{\\pi d^2}{4}','\\Phi=BA','E_{\\rm rms}=\\frac{N A\\omega B_{\\max}}{\\sqrt2}'],
   theory:'لملف دائري في مجال مغناطيسي جيبي منتظم وعمودي على مستوى الملف، يتناسب الجهد المستحث مع N ومع المساحة A؛ لذلك يتناسب مع مربع القطر d²، لا مع القطر خطيًا.',
   hints(s){return['إذا ضاعفت N يتضاعف الجهد المستحث.','إذا ضاعفت القطر يصبح A أربعة أمثال تقريبًا، وبالتالي يصبح الجهد أربعة أمثال.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),cx=W/2,cy=H/2,r=Math.min(105,30+s.ctrl.d*4);ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;for(let k=0;k<10;k++){ctx.beginPath();ctx.arc(cx+k*.8,cy,r-k*2.5,0,Math.PI*2);ctx.stroke();}for(let x=70;x<W-50;x+=55)label(ctx,'×',x,cy,'#22d3ee','center',18,true);label(ctx,`A=${(c.A*1e4).toFixed(1)} cm²`,cx,35,'#fbbf24','center',14,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const c=this.calc(s),cx=W/2,cy=H/2,r=Math.min(120,28+s.ctrl.d*4.4),turns=Math.round(4+16*(s.ctrl.N-10)/990);
+  const bNorm=(s.ctrl.Bpk-.001)/(.05-.001),phase=Math.sin((s.t||0)*2*Math.PI*s.ctrl.f/20);
+  ctx.strokeStyle='#fbbf24';ctx.lineWidth=2.5;
+  for(let k=0;k<turns;k++){const shrink=k*Math.min(2.2,r*.45/Math.max(1,turns));ctx.beginPath();ctx.arc(cx+k*.35,cy,Math.max(8,r-shrink),0,Math.PI*2);ctx.stroke();}
+  const arrows=Math.round(3+8*bNorm),span=r*1.55;
+  for(let k=0;k<arrows;k++){const x=cx-span+2*span*(k+.5)/arrows;arrow(ctx,x,cy+100,x,cy-100,phase>=0?'#22d3ee':'#f472b6',1.2+2*bNorm,6);}
+  label(ctx,'N='+s.ctrl.N+'   d='+s.ctrl.d.toFixed(1)+' cm',cx,34,'#fbbf24','center',11,true);
+  label(ctx,'f='+s.ctrl.f.toFixed(0)+' Hz   Bmax='+s.ctrl.Bpk.toFixed(3)+' T',cx,55,'#22d3ee','center',9,true);
+  label(ctx,'E_rms='+c.Erms.toFixed(3)+' V',cx,H-30,'#cbd5e1','center',11,true);
+}
 },
 
 motional_emf_lab: {
