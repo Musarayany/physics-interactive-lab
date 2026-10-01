@@ -469,7 +469,7 @@ body.lab-cinematic-active #view-sim.professor-mode #sim-canvas-wrap{height:min(8
       <div class="sub">فكرة وإعداد وتصميم وتنفيذ: م.د موسى محمد مهدي</div>
     </div>
     <div class="text-center mb-8">
-      <div class="badge text-gold border-gold/40 mb-3">120 تجربة تفاعلية مصنّفة في 17 فرعًا</div>
+      <div class="badge text-gold border-gold/40 mb-3">121 تجربة تفاعلية مصنّفة في 17 فرعًا</div>
       <h1 class="text-4xl md:text-5xl font-black mb-3 leading-tight">
         جرّب، <span class="text-gold">شاهد</span>، وافهم الفيزياء
       </h1>
@@ -1265,6 +1265,123 @@ ohm: {
     if(pts.length>=2&&Number.isFinite(fit)){ctx.strokeStyle='#22d3ee';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx+gw,gy-(fit*(imax/1000)/vmax)*gh);ctx.stroke();}
     pts.forEach(p=>{const x=gx+(p.I*1000/imax)*gw,y=gy-(p.V/vmax)*gh;ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();});
     label(ctx,Number.isFinite(fit)?('الميل ≈ '+fit.toFixed(1)+' Ω'):'سجّل نقطتين على الأقل',gr.x+gr.w/2,gr.y+gr.h-18,Number.isFinite(fit)?'#22d3ee':'#64748b','center',9,true);
+  }
+},
+
+newton_prism: {
+  title:'منشور نيوتن وتحليل الضوء الأبيض', icon:'🌈', category:'بصريات',
+  desc:'مرّر ضوءًا أبيض في منشور زجاجي وشاهد كيف يختلف الانحراف باختلاف الطول الموجي.',
+  welcome:{title:'🌈 منشور نيوتن',steps:['غيّر زاوية سقوط الضوء على المنشور.','غيّر زاوية رأس المنشور وراقب مقدار الانحراف.','قارن الأحمر والبنفسجي: الزجاج يملك معامل انكسار أكبر للأطوال الموجية الأقصر، لذلك يتشتت الضوء الأبيض إلى ألوانه.']},
+  controls:[
+    {id:'A',label:'زاوية رأس المنشور A',min:30,max:65,step:1,value:60,unit:'°',help:'الزاوية بين وجهي الانكسار في المنشور.'},
+    {id:'i',label:'زاوية السقوط i',min:40,max:70,step:1,value:45,unit:'°',help:'زاوية سقوط الشعاع على الوجه الأول مقاسة من العمود.'}
+  ],
+  _ray(n,s){
+    const A=deg2rad(s.ctrl.A),i=deg2rad(s.ctrl.i);
+    const x=Math.sin(i)/n;
+    if(Math.abs(x)>1)return{tir:true};
+    const r1=Math.asin(x),r2=A-r1;
+    const y=n*Math.sin(r2);
+    if(Math.abs(y)>1)return{tir:true,r1:r1,r2:r2};
+    const e=Math.asin(y),d=i+e-A;
+    return{tir:false,r1:r1,r2:r2,e:e,d:d};
+  },
+  reset(s){s.t=0;},update(s,dt){s.t=(s.t||0)+dt;},
+  readouts(s){
+    const red=this._ray(1.5143,s),violet=this._ray(1.5267,s);
+    if(red.tir||violet.tir)return[
+      {l:'الحالة',v:'انعكاس كلي داخلي',u:'',c:'gold'},
+      {l:'زاوية الرأس',v:s.ctrl.A.toFixed(0),u:'°'},
+      {l:'زاوية السقوط',v:s.ctrl.i.toFixed(0),u:'°'}
+    ];
+    const spread=rad2deg(violet.d-red.d);
+    return[
+      {l:'انحراف الأحمر',v:rad2deg(red.d).toFixed(2),u:'°',c:'gold'},
+      {l:'انحراف البنفسجي',v:rad2deg(violet.d).toFixed(2),u:'°',c:'cyan'},
+      {l:'الفصل الزاوي',v:spread.toFixed(2),u:'°'}
+    ];
+  },
+  hints(s){
+    const red=this._ray(1.5143,s),violet=this._ray(1.5267,s);
+    if(red.tir||violet.tir)return['حدث انعكاس كلي داخلي عند الوجه الثاني لبعض الأشعة. غيّر زاوية السقوط أو زاوية رأس المنشور.'];
+    const spread=rad2deg(violet.d-red.d);
+    return[
+      'البنفسجي ينحرف أكثر من الأحمر لأن معامل انكسار الزجاج له أكبر عند الطول الموجي الأقصر.',
+      'الفصل الزاوي بين الأحمر والبنفسجي في هذا النموذج ≈ <span class="hl">'+spread.toFixed(2)+'°</span>.'
+    ];
+  },
+  equations:['n=\\dfrac{\\sin i}{\\sin r_1}','A=r_1+r_2','\\delta=i+e-A'],
+  theory:'تحسب المحاكاة مسار كل لون باستخدام قانون سنيل على وجهي المنشور وعلاقة هندسة المنشور A=r₁+r₂. استُخدمت معاملات انكسار نموذجية قريبة من زجاج crown في المجال المرئي (تقريب تعليمي). الفصل اللوني مرسوم مكبّرًا بصريًا ليسهل رؤيته، بينما قيم زوايا الانحراف المعروضة تحسب من المعادلات.',
+  draw(ctx,W,H,s){
+    ctx.fillStyle='#050914';ctx.fillRect(0,0,W,H);drawGrid(ctx,W,H);
+    const apex={x:W*.53,y:H*.18},L={x:W*.34,y:H*.76},R={x:W*.70,y:H*.76};
+    const entry={x:L.x+(apex.x-L.x)*.43,y:L.y+(apex.y-L.y)*.43};
+    const exit={x:R.x+(apex.x-R.x)*.48,y:R.y+(apex.y-R.y)*.48};
+
+    label(ctx,'محاكاة منشور نيوتن',W/2,34,'#a78bfa','center',18,true);
+    label(ctx,'اسحب المتغيرات من لوحة التحكم وقارن مقدار انحراف كل لون',W/2,56,'#94a3b8','center',10,false);
+
+    ctx.save();
+    const pg=ctx.createLinearGradient(L.x,L.y,apex.x,apex.y);
+    pg.addColorStop(0,'rgba(59,130,246,.18)');pg.addColorStop(.5,'rgba(147,197,253,.28)');pg.addColorStop(1,'rgba(255,255,255,.08)');
+    ctx.fillStyle=pg;ctx.strokeStyle='#bfdbfe';ctx.lineWidth=2.4;ctx.shadowColor='#60a5fa';ctx.shadowBlur=16;
+    ctx.beginPath();ctx.moveTo(apex.x,apex.y);ctx.lineTo(L.x,L.y);ctx.lineTo(R.x,R.y);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+
+    ctx.save();ctx.shadowColor='#fff';ctx.shadowBlur=18;ctx.strokeStyle='#fff';ctx.lineWidth=4.5;
+    ctx.beginPath();ctx.moveTo(22,entry.y+68);ctx.lineTo(entry.x,entry.y);ctx.lineTo(exit.x,exit.y);ctx.stroke();ctx.restore();
+    ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.3;ctx.setLineDash([6,5]);
+    ctx.beginPath();ctx.moveTo(entry.x-70,entry.y-55);ctx.lineTo(entry.x+80,entry.y+60);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(exit.x-70,exit.y+45);ctx.lineTo(exit.x+78,exit.y-50);ctx.stroke();ctx.setLineDash([]);
+
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(entry.x,entry.y,5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(exit.x,exit.y,5,0,Math.PI*2);ctx.fill();
+    label(ctx,'نقطة الدخول',entry.x-18,entry.y-28,'#e2e8f0','right',10,true);
+    label(ctx,'نقطة الخروج',exit.x-14,exit.y+28,'#e2e8f0','right',10,true);
+
+    const colors=[
+      {name:'أحمر',wl:656,n:1.5143,c:'#ef4444'},
+      {name:'برتقالي',wl:610,n:1.5159,c:'#fb923c'},
+      {name:'أصفر',wl:589,n:1.5167,c:'#facc15'},
+      {name:'أخضر',wl:546,n:1.5187,c:'#22c55e'},
+      {name:'سماوي',wl:500,n:1.5214,c:'#22d3ee'},
+      {name:'أزرق',wl:486,n:1.5224,c:'#3b82f6'},
+      {name:'بنفسجي',wl:436,n:1.5267,c:'#8b5cf6'}
+    ];
+    const rays=colors.map(q=>({q:q,r:this._ray(q.n,s)}));
+    const valid=rays.filter(z=>!z.r.tir);
+    if(!valid.length){
+      label(ctx,'انعكاس كلي داخلي عند الوجه الثاني',W*.80,H*.48,'#fb7185','center',15,true);
+      return;
+    }
+    const base=valid[0].r.d;
+    const outLen=Math.max(160,W-exit.x-30);
+    valid.forEach((z,idx)=>{
+      const physical=z.r.d-base;
+      const visualAngle=.04+physical*8.0;
+      const ex=W-24,ey=exit.y+outLen*Math.tan(visualAngle);
+      ctx.save();ctx.shadowColor=z.q.c;ctx.shadowBlur=16;ctx.strokeStyle=z.q.c;ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(exit.x,exit.y);ctx.lineTo(ex,ey);ctx.stroke();ctx.restore();
+      if(W>820&&idx!==1&&idx!==3&&idx!==4){
+        label(ctx,z.q.name,ex-8,ey-8,z.q.c,'right',9,true);
+      }
+    });
+
+    const red=this._ray(1.5143,s),violet=this._ray(1.5267,s);
+    if(red.tir||violet.tir){
+      label(ctx,'بعض الألوان وصلت إلى الانعكاس الكلي',W*.78,H*.46,'#fb7185','center',13,true);
+    }else{
+      const spread=rad2deg(violet.d-red.d);
+      const bw=Math.min(285,W*.32),bx=22,by=18,bh=92;
+      ctx.fillStyle='rgba(7,11,20,.84)';ctx.strokeStyle='rgba(148,163,184,.25)';
+      ctx.fillRect(bx,by,bw,bh);ctx.strokeRect(bx,by,bw,bh);
+      label(ctx,'تحليل الضوء الأبيض',bx+14,by+21,'#e2e8f0','left',11,true);
+      label(ctx,'δ الأحمر = '+rad2deg(red.d).toFixed(2)+'°',bx+14,by+43,'#ef4444','left',10,true);
+      label(ctx,'δ البنفسجي = '+rad2deg(violet.d).toFixed(2)+'°',bx+14,by+63,'#a78bfa','left',10,true);
+      label(ctx,'Δδ = '+spread.toFixed(2)+'°  (الفصل مرسوم مكبّرًا)',bx+14,by+83,'#fbbf24','left',9,true);
+    }
+
+    ctx.save();ctx.strokeStyle='#a78bfa';ctx.lineWidth=2;ctx.beginPath();ctx.arc(apex.x,apex.y+3,48,.99,2.15);ctx.stroke();ctx.restore();
+    label(ctx,'A='+s.ctrl.A.toFixed(0)+'°',apex.x,apex.y+62,'#a78bfa','center',10,true);
   }
 },
 
@@ -7549,7 +7666,7 @@ window.addEventListener('load',()=>{
         <h1 class="text-xl font-bold mb-2 text-slate-300">أهلًا وسهلًا بك في</h1>
         <h2 class="text-3xl md:text-4xl font-black mb-4 text-gold leading-tight">مختبر الفيزياء التفاعلي</h2>
         <p class="text-slate-400 text-sm mb-6 leading-relaxed">
-          منصة تعليمية تضم <b class="text-cyan">120 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">17 فرعًا فيزيائيًا</b>:
+          منصة تعليمية تضم <b class="text-cyan">121 تجربة تفاعلية</b> مصنّفة في <b class="text-cyan">17 فرعًا فيزيائيًا</b>:
           الميكانيكا، الكهرباء، البصريات، الموجات، ميكانيكا الكم، الفيزياء الذرية والجزيئية،
           فيزياء الصلبة، النانوتكنولوجي، الأطياف، النماذج النووية، الفيزياء النووية،
           الإلكترونيات التماثلية، الإلكترونيات الرقمية، الموائع والحرارة، والنسبية.
@@ -7575,7 +7692,7 @@ window.addEventListener('load',()=>{
   `;
   document.getElementById('welcome-start').onclick=()=>{
     overlay.innerHTML='';
-    toast('استمتع بـ <b>120 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
+    toast('استمتع بـ <b>121 تجربة</b> في <b>17 فرعًا</b>! اختر فرعًا وابدأ.','learn',3500);
   };
   renderFilterTabs();
 });
