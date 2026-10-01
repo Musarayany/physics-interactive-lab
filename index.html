@@ -4265,15 +4265,124 @@ joule_heat: {
 
 oersted: {
   title:'تجربة أورستد', icon:'🧭', category:'كهرباء',
-  desc:'انحراف إبرة البوصلة قرب سلك يحمل تيارًا وإظهار المجال المغناطيسي للتيار.',
-  welcome:{title:'🧭 تجربة أورستد',steps:['غيّر شدة التيار.','راقب اتجاه إبرة البوصلة.','اعكس التيار لترى انعكاس اتجاه المجال.']},
-  controls:[{id:'I',label:'شدة التيار',min:-10,max:10,step:0.5,value:5,unit:'A'},{id:'r',label:'بعد البوصلة عن السلك',min:1,max:20,step:1,value:7,unit:'cm'}],
-  reset(s){},update(s,dt){},
-  readouts(s){const B=CONST.mu0*s.ctrl.I/(2*Math.PI*(s.ctrl.r/100));return[{l:'B عند البوصلة',v:(B*1e6).toFixed(1),u:'µT',c:'gold'},{l:'اتجاه المجال',v:s.ctrl.I>0?'عكس عقارب الساعة':s.ctrl.I<0?'مع عقارب الساعة':'لا مجال من السلك',u:'',c:'cyan'}];},
-  equations:['B=\\frac{\\mu_0 I}{2\\pi r}'],
-  theory:'أثبت أورستد أن التيار الكهربائي يولّد مجالًا مغناطيسيًا حول السلك. اتجاه المجال يتبع قاعدة اليد اليمنى وينعكس عند عكس اتجاه التيار.',
-  hints(s){return['قرّب البوصلة من السلك فتزداد شدة المجال.','بدّل إشارة التيار ولاحظ انقلاب اتجاه الإبرة.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;ctx.strokeStyle='#fbbf24';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(cx,45);ctx.lineTo(cx,H-45);ctx.stroke();for(let r=45;r<150;r+=35){ctx.strokeStyle='rgba(34,211,238,.45)';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();}const ang=s.ctrl.I>0?-Math.PI/4:s.ctrl.I<0?3*Math.PI/4:0;ctx.save();ctx.translate(cx+130,cy);ctx.rotate(ang);arrow(ctx,-45,0,45,0,'#f87171',4,10);ctx.restore();label(ctx,'بوصلة',cx+130,cy+65,'#cbd5e1','center',12,true);}
+  desc:'شاهد حركة الشحنات واتجاه التيار والمجال وانحراف البوصلة في مشهد واحد.',
+  welcome:{title:'🧭 تجربة أورستد',steps:['غيّر شدة التيار وشاهد حركة الإلكترونات.','راقب اتجاه التيار التقليدي واتجاه المجال حول السلك.','اعكس التيار لترى انقلاب اتجاه المجال وانحراف البوصلة.']},
+  controls:[
+    {id:'I',label:'شدة التيار',min:-10,max:10,step:0.5,value:5,unit:'A',help:'الإشارة تحدد اتجاه التيار، والمقدار يحدد شدة المجال.'},
+    {id:'r',label:'بعد البوصلة عن السلك',min:1,max:20,step:1,value:7,unit:'cm',help:'B يتناقص عكسيًا مع البعد r.'}
+  ],
+  reset(s){s.t=0;},
+  update(s,dt){s.t=(s.t||0)+dt;},
+  readouts(s){
+    const r=Math.max(0.001,s.ctrl.r/100);
+    const B=CONST.mu0*s.ctrl.I/(2*Math.PI*r);
+    const BE=30e-6;
+    const def=rad2deg(Math.atan2(B,BE));
+    return[
+      {l:'B عند البوصلة',v:(B*1e6).toFixed(1),u:'µT',c:'gold'},
+      {l:'انحراف تقريبي',v:def.toFixed(1),u:'°',c:'cyan'},
+      {l:'اتجاه المجال',v:s.ctrl.I>0?'عكس عقارب الساعة':s.ctrl.I<0?'مع عقارب الساعة':'لا مجال من السلك',u:''}
+    ];
+  },
+  equations:['B=\\frac{\\mu_0 I}{2\\pi r}','\\tan\\phi\\approx\\frac{B_{wire}}{B_E}'],
+  theory:'بيّنت تجربة أورستد أن التيار الكهربائي يولّد مجالًا مغناطيسيًا حول السلك، واتجاهه يتبع قاعدة اليد اليمنى. لعرض انحراف البوصلة بصريًا تفترض المحاكاة مركبة أفقية مرجعية لمجال الأرض مقدارها 30 µT؛ لذلك زاوية الانحراف المعروضة تقريبية وتعليمية، بينما قيمة B للسلك تحسب من العلاقة μ₀I/(2πr).',
+  hints(s){
+    const B=Math.abs(CONST.mu0*s.ctrl.I/(2*Math.PI*Math.max(0.001,s.ctrl.r/100)))*1e6;
+    if(Math.abs(s.ctrl.I)<0.01)return['أوقف التيار: تختفي مساهمة السلك ويبقى اتجاه البوصلة المرجعي.','حرّك شدة التيار بعيدًا عن الصفر ثم اعكس الإشارة.'];
+    return['الإلكترونات تتحرك عكس اتجاه التيار التقليدي.','شدة مجال السلك هنا ≈ <span class="hl">'+B.toFixed(1)+' µT</span>؛ تقريب البوصلة من السلك يزيدها.'];
+  },
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);
+    const wireY=H*0.42,x1=58,x2=W-58,len=x2-x1;
+    const I=s.ctrl.I,mag=Math.min(1,Math.abs(I)/10);
+
+    const bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'rgba(15,35,62,.26)');bg.addColorStop(1,'rgba(5,12,24,.10)');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+    label(ctx,'تجربة أورستد',W/2,34,'#67e8f9','center',18,true);
+    label(ctx,'غيّر التيار وشاهد الشحنات والمجال والبوصلة في المشهد نفسه',W/2,56,'#94a3b8','center',10,false);
+
+    ctx.save();
+    ctx.shadowColor='#fb923c';ctx.shadowBlur=18;
+    ctx.strokeStyle='#fb923c';ctx.lineWidth=10;
+    ctx.beginPath();ctx.moveTo(x1,wireY);ctx.lineTo(x2,wireY);ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle='#fde68a';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(x1,wireY-1);ctx.lineTo(x2,wireY-1);ctx.stroke();
+
+    if(Math.abs(I)>0.01){
+      const dir=I>0?1:-1;
+      for(let k=0;k<7;k++){
+        const x=x1+55+k*(len-110)/6;
+        arrow(ctx,x-dir*20,wireY-28,x+dir*20,wireY-28,'#facc15',2.2,8);
+      }
+      label(ctx,I>0?'اتجاه التيار التقليدي →':'← اتجاه التيار التقليدي',W/2,wireY-47,'#facc15','center',12,true);
+    }else{
+      label(ctx,'التيار = 0 A',W/2,wireY-34,'#64748b','center',12,true);
+    }
+
+    const eDir=I>=0?-1:1;
+    const speed=35+95*mag;
+    const spacing=46;
+    for(let k=0;k<Math.ceil(len/spacing)+2;k++){
+      let x=x1+((k*spacing+(s.t||0)*speed*eDir)%len+len)%len;
+      ctx.fillStyle='#7dd3fc';ctx.strokeStyle='#e0f2fe';ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.arc(x,wireY,7,0,Math.PI*2);ctx.fill();ctx.stroke();
+      label(ctx,'−',x,wireY+1,'#075985','center',10,true);
+    }
+    label(ctx,'الإلكترونات تتحرك عكس اتجاه التيار',W/2,wireY+27,'#7dd3fc','center',10,false);
+
+    const loopX=W*0.54;
+    for(let rr=34;rr<=76;rr+=21){
+      ctx.strokeStyle='rgba(34,211,238,'+(0.22+0.28*mag)+')';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(loopX,wireY,rr,0,Math.PI*2);ctx.stroke();
+      if(Math.abs(I)>0.01){
+        const aa=I>0?-0.7:0.7;
+        const ax=loopX+rr*Math.cos(aa),ay=wireY+rr*Math.sin(aa);
+        const tangent=aa+(I>0?-Math.PI/2:Math.PI/2);
+        arrow(ctx,ax-10*Math.cos(tangent),ay-10*Math.sin(tangent),ax+10*Math.cos(tangent),ay+10*Math.sin(tangent),'#22d3ee',2,7);
+      }
+    }
+
+    const ccx=W*0.66,ccy=H*0.72,cr=Math.min(72,Math.max(48,H*0.115));
+    const rr=Math.max(.001,s.ctrl.r/100);
+    const B=CONST.mu0*I/(2*Math.PI*rr),BE=30e-6;
+    const def=Math.atan2(B,BE);
+
+    ctx.save();
+    ctx.shadowColor='rgba(251,191,36,.35)';ctx.shadowBlur=18;
+    ctx.fillStyle='#f8fafc';ctx.strokeStyle='#d6b85a';ctx.lineWidth=4;
+    ctx.beginPath();ctx.arc(ccx,ccy,cr,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.restore();
+
+    ctx.strokeStyle='#cbd5e1';ctx.lineWidth=1;
+    for(let k=0;k<36;k++){
+      const aa=k*Math.PI*2/36,rin=cr-(k%9===0?10:5);
+      ctx.beginPath();ctx.moveTo(ccx+rin*Math.cos(aa),ccy+rin*Math.sin(aa));ctx.lineTo(ccx+(cr-2)*Math.cos(aa),ccy+(cr-2)*Math.sin(aa));ctx.stroke();
+    }
+    label(ctx,'N',ccx,ccy-cr+16,'#0f172a','center',11,true);
+    label(ctx,'S',ccx,ccy+cr-12,'#0f172a','center',11,true);
+    label(ctx,'E',ccx+cr-14,ccy+2,'#0f172a','center',10,true);
+    label(ctx,'W',ccx-cr+14,ccy+2,'#0f172a','center',10,true);
+
+    ctx.save();
+    ctx.translate(ccx,ccy);ctx.rotate(def);
+    ctx.fillStyle='#ef4444';ctx.beginPath();ctx.moveTo(0,-cr*0.72);ctx.lineTo(-8,5);ctx.lineTo(8,5);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#334155';ctx.beginPath();ctx.moveTo(0,cr*0.72);ctx.lineTo(-8,-5);ctx.lineTo(8,-5);ctx.closePath();ctx.fill();
+    ctx.restore();
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(ccx,ccy,5,0,Math.PI*2);ctx.fill();
+
+    label(ctx,'البوصلة',ccx,ccy+cr+26,'#e2e8f0','center',11,true);
+    label(ctx,'الانحراف ≈ '+rad2deg(def).toFixed(1)+'°',ccx,ccy+cr+44,'#22d3ee','center',11,true);
+
+    const bx=24,by=H-100,bw=Math.min(250,W*.31),bh=70;
+    ctx.fillStyle='rgba(7,11,20,.82)';ctx.strokeStyle='rgba(148,163,184,.25)';
+    ctx.fillRect(bx,by,bw,bh);ctx.strokeRect(bx,by,bw,bh);
+    label(ctx,'I = '+I.toFixed(1)+' A',bx+14,by+23,'#facc15','left',11,true);
+    label(ctx,'r = '+s.ctrl.r.toFixed(0)+' cm',bx+14,by+43,'#cbd5e1','left',10,false);
+    label(ctx,'B = '+(B*1e6).toFixed(1)+' µT',bx+14,by+61,'#22d3ee','left',11,true);
+  }
 },
 
 faraday_induction: {
