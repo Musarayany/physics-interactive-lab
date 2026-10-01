@@ -5437,7 +5437,33 @@ laser_longitudinal_modes: {
   hints(s){const c=this.calc(s);return [`Δν≈c/(2n_gL)=<span class="hl">${(c.fsr/1e6).toFixed(3)} MHz</span>.`,`زيادة L تقلل FSR فتسمح عادةً بمزيد من الأنماط داخل نطاق كسب ثابت.`,`عدد الأنماط المعروض تقدير هندسي؛ الانبعاث الفعلي يعتمد أيضًا على منحنى الكسب والخسائر وتنافس الأنماط.`];},
   equations:['2nL=q\\lambda_q','\\Delta\\nu_{FSR}=\\frac{c}{2n_gL}'],
   theory:'في تجويف موجة واقفة، الرنين يتحقق عندما يحتوي طول الرحلة الكاملة على عدد صحيح من الأطوال الموجية. في وسط مشتت يحدد معامل المجموعة n_g فاصل التردد؛ تستخدم المحاكاة n≈n_g للتعليم.',
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const c=this.calc(s),left=55,right=W-45,cy=H*.58;ctx.strokeStyle='#64748b';ctx.beginPath();ctx.moveTo(left,cy);ctx.lineTo(right,cy);ctx.stroke();const n=Math.min(15,c.modes);for(let i=0;i<n;i++){const x=left+(i+.5)*(right-left)/n,h=60+90*Math.exp(-Math.pow((i-(n-1)/2)/(n/4||1),2));ctx.strokeStyle='#ef4444';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,cy);ctx.lineTo(x,cy-h);ctx.stroke();}label(ctx,`FSR ${(c.fsr/1e6).toFixed(1)} MHz`,W/2,35,'#fbbf24','center',14,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const c=this.calc(s),cy=H*.38;
+  const lp=(s.ctrl.L-1)/99,span=W*(.30+.48*Math.max(0,Math.min(1,lp)));
+  const x1=W/2-span/2,x2=W/2+span/2,lam=s.ctrl.lam;
+  const col=(lam>=380&&lam<=780)?wl2rgb(lam):(lam>780?'#ef4444':'#a78bfa');
+  ctx.strokeStyle='#22d3ee';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(x1,cy-90);ctx.lineTo(x1,cy+90);ctx.stroke();
+  ctx.strokeStyle='#fbbf24';ctx.beginPath();ctx.moveTo(x2,cy-90);ctx.lineTo(x2,cy+90);ctx.stroke();
+  ctx.fillStyle='rgba(34,211,238,'+(0.04+0.10*(s.ctrl.n-1))+')';ctx.fillRect(x1,cy-72,x2-x1,144);
+  label(ctx,'L='+s.ctrl.L.toFixed(0)+' cm',W/2,cy+118,'#cbd5e1','center',10,true);
+  label(ctx,'n≈'+s.ctrl.n.toFixed(2),W/2,cy-96,'#22d3ee','center',10,true);
+  const lobes=Math.max(3,Math.min(18,Math.round(4+14*((c.q%37)/36))));
+  ctx.save();ctx.strokeStyle=col;ctx.lineWidth=2.4;ctx.shadowColor=col;ctx.shadowBlur=8;ctx.beginPath();
+  for(let i=0;i<=280;i++){const x=x1+(x2-x1)*i/280,y=cy-24*Math.sin(i/280*Math.PI*lobes);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.stroke();ctx.restore();
+  label(ctx,'تمثيل مكبّر للموجة الواقفة',W/2,cy+90,'#64748b','center',8,false);
+  const baseY=H*.82,left=W*.10,right=W*.90,width=right-left,bwGHz=s.ctrl.bw;
+  const envPx=Math.max(55,Math.min(width*.92,width*(.18+.74*(bwGHz-.1)/(20-.1)))),mid=W/2;
+  ctx.strokeStyle='rgba(148,163,184,.55)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,baseY);ctx.lineTo(right,baseY);ctx.stroke();
+  ctx.strokeStyle='rgba(244,114,182,.65)';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<=220;i++){const x=mid-envPx/2+envPx*i/220,u=(i-110)/48,y=baseY-H*.17*Math.exp(-u*u);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+  const mc=Math.max(1,Math.min(31,c.modes)),step=envPx/Math.max(1,mc);
+  for(let i=0;i<mc;i++){const x=mid-envPx/2+(i+.5)*step,u=(x-mid)/(envPx*.30),hh=H*.15*Math.exp(-u*u);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,baseY);ctx.lineTo(x,baseY-hh);ctx.stroke();}
+  label(ctx,'FSR '+(c.fsr/1e6).toFixed(2)+' MHz',W/2,38,'#fbbf24','center',14,true);
+  label(ctx,'λ='+lam.toFixed(1)+' nm   BW='+bwGHz.toFixed(1)+' GHz   أنماط≈'+c.modes,W/2,60,'#cbd5e1','center',10,true);
+}
 },
 
 laser_cavity_stability: {
