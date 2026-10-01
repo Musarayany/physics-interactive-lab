@@ -3233,37 +3233,56 @@ laser: {
   theory:'المخطط السكاني هنا نوعي تعليمي وليس معادلات معدلات معايرة. الليزر الحقيقي يستخدم عادة منظومة مستويات مناسبة (مثل ثلاثة أو أربعة مستويات). الليزر يعتمد على الانبعاث المحفز.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);
-    const cy=H/2;
-    ctx.strokeStyle='#334155';ctx.lineWidth=3;
-    ctx.strokeRect(W*0.2,cy-50,W*0.6,100);
-    ctx.fillStyle='#22d3ee';ctx.fillRect(W*0.2-5,cy-60,10,120);
-    ctx.fillStyle='#fbbf24';ctx.fillRect(W*0.8-5,cy-60,10,120);
-    label(ctx,'مرآة كاملة',W*0.2,cy-75,'#22d3ee','center',11,true);
-    label(ctx,`مرآة R=${s.ctrl.reflect.toFixed(2)}`,W*0.8,cy-75,'#fbbf24','center',11,true);
+    const cy=H/2,R=s.ctrl.reflect,pump=s.ctrl.pump;
+    const left=W*.2,right=W*.8,span=right-left;
+
+    // Active medium glow responds to pumping.
+    const pumpNorm=pump/10;
+    const mg=ctx.createLinearGradient(left,0,right,0);
+    mg.addColorStop(0,'rgba(34,211,238,.05)');
+    mg.addColorStop(.5,'rgba(239,68,68,'+(.04+.18*pumpNorm)+')');
+    mg.addColorStop(1,'rgba(34,211,238,.05)');
+    ctx.fillStyle=mg;ctx.strokeStyle='#334155';ctx.lineWidth=2;
+    ctx.fillRect(left,cy-50,span,100);ctx.strokeRect(left,cy-50,span,100);
+
+    // Full reflector.
+    ctx.save();ctx.strokeStyle='#22d3ee';ctx.lineWidth=8;ctx.shadowColor='#22d3ee';ctx.shadowBlur=8;
+    ctx.beginPath();ctx.moveTo(left,cy-60);ctx.lineTo(left,cy+60);ctx.stroke();ctx.restore();
+
+    // Output coupler appearance follows R directly.
+    ctx.save();ctx.globalAlpha=.28+.72*R;ctx.strokeStyle='#fbbf24';ctx.lineWidth=3+8*R;ctx.shadowColor='#fbbf24';ctx.shadowBlur=5+11*R;
+    ctx.beginPath();ctx.moveTo(right,cy-60);ctx.lineTo(right,cy+60);ctx.stroke();ctx.restore();
+    label(ctx,'مرآة كاملة',left,cy-75,'#22d3ee','center',11,true);
+    label(ctx,'مرآة R='+R.toFixed(2),right,cy-75,'#fbbf24','center',11,true);
+
     const numAtoms=30;
     for(let i=0;i<numAtoms;i++){
-      const x=W*0.25+(i/numAtoms)*W*0.5;
-      const y=cy-30+(i%3)*30;
+      const x=W*.25+(i/numAtoms)*W*.5,y=cy-30+(i%3)*30;
       const isExcited=i<Math.round(30*s.N2/Math.max(1,s.N1+s.N2));
-      ctx.fillStyle=isExcited?'#fbbf24':'#475569';
-      ctx.beginPath();ctx.arc(x,y,6,0,7);ctx.fill();
-      if(isExcited){ctx.strokeStyle='rgba(251,191,36,.4)';ctx.beginPath();ctx.arc(x,y,10,0,7);ctx.stroke();}
+      ctx.fillStyle=isExcited?'#fbbf24':'#475569';ctx.beginPath();ctx.arc(x,y,6,0,7);ctx.fill();
+      if(isExcited){ctx.strokeStyle='rgba(251,191,36,'+(.2+.35*pumpNorm)+')';ctx.beginPath();ctx.arc(x,y,10,0,7);ctx.stroke();}
     }
     s.photons.forEach(p=>{
-      ctx.fillStyle='#ef4444';
-      ctx.shadowColor='#ef4444';ctx.shadowBlur=10;
-      ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();
-      ctx.shadowBlur=0;
+      ctx.fillStyle='#ef4444';ctx.shadowColor='#ef4444';ctx.shadowBlur=8+8*pumpNorm;
+      ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();ctx.shadowBlur=0;
     });
-    if(s.beam>1){
-      const inten=Math.min(1,s.beam/50);
-      ctx.strokeStyle=`rgba(239,68,68,${inten})`;
-      ctx.lineWidth=4;
-      ctx.shadowColor='#ef4444';ctx.shadowBlur=20;
-      ctx.beginPath();ctx.moveTo(W*0.8,cy);ctx.lineTo(W-10,cy);ctx.stroke();
-      ctx.shadowBlur=0;
-    }
-    label(ctx,`N₂-N₁ = ${Math.round(s.N2-s.N1)}`,W/2,H-30,s.N2>s.N1?'#22d3ee':'#ef4444','center',14,true);
+
+    // Visible output coupling is inversely related to R; cavity retention increases with R.
+    const outCoupling=1-R;
+    const visibleOut=Math.max(.05,Math.min(1,.12+s.beam/35+outCoupling*.75));
+    ctx.save();ctx.strokeStyle='rgba(239,68,68,'+visibleOut.toFixed(3)+')';
+    ctx.lineWidth=2+12*visibleOut;ctx.shadowColor='#ef4444';ctx.shadowBlur=8+24*visibleOut;
+    ctx.beginPath();ctx.moveTo(right,cy);ctx.lineTo(W-12,cy);ctx.stroke();ctx.restore();
+
+    // Small coupling meter makes R response immediate even before lasing starts.
+    const mx=right-70,my=cy+86,mw=140;
+    ctx.fillStyle='rgba(148,163,184,.12)';ctx.fillRect(mx,my,mw,6);
+    ctx.fillStyle='#fbbf24';ctx.fillRect(mx,my,mw*R,6);
+    label(ctx,'حجز داخل التجويف '+Math.round(R*100)+'%',right,cy+108,'#fbbf24','center',9,true);
+    label(ctx,'اقتران الخرج '+Math.round(outCoupling*100)+'%',right,cy+126,'#ef4444','center',9,true);
+
+    label(ctx,'N₂-N₁ = '+Math.round(s.N2-s.N1),W/2,H-30,s.N2>s.N1?'#22d3ee':'#ef4444','center',14,true);
+    label(ctx,'Pump '+pump.toFixed(1),W/2,38,'#cbd5e1','center',10,true);
   }
 },
 
@@ -7694,90 +7713,125 @@ function drawVitalityWave(c,w,h,t,accent,amp,cycles,y0,alpha){
   }
   c.stroke();c.restore();
 }
+
+function vitalitySemanticProfile(sim,state){
+  const p={freq:.45,intensity:.45,length:.50,angle:0,density:.45,reflect:.65,temp:.45,speed:.45,wavelength:null,amplitude:.45};
+  const ctrls=sim&&sim.controls||[];
+  for(const c of ctrls){
+    const label=String(c.label||'')+' '+String(c.unit||'')+' '+String(c.id||'');
+    const v=Number(state&&state.ctrl?state.ctrl[c.id]:c.value),lo=Number(c.min),hi=Number(c.max);
+    const n=(Number.isFinite(v)&&Number.isFinite(lo)&&Number.isFinite(hi)&&hi!==lo)?Math.max(0,Math.min(1,(v-lo)/(hi-lo))):.5;
+    if(/تردد|frequency|freq|(^|[^A-Za-z])f([^A-Za-z]|$)|Hz/i.test(label))p.freq=n;
+    if(/تيار|شدة|قوة التضخيم|مجال|field|current|intensity|pump|Vrms|Vpeak|جهد|voltage|طاقة|energy/i.test(label))p.intensity=Math.max(p.intensity,n);
+    if(/طول|مسافة|بعد|نصف قطر|قطر|ارتفاع|عرض|سمك|length|distance|radius|height|width/i.test(label))p.length=n;
+    if(/زاوية|θ|angle|phi|φ/i.test(label))p.angle=(n*2-1)*Math.PI*.42;
+    if(/كثافة|تركيز|تدفق|عدد|لفات|خطوط|density|conc|flux|turns/i.test(label))p.density=Math.max(p.density,n);
+    if(/انعكاس|reflect|كفاءة|efficiency|وضوح|visibility/i.test(label))p.reflect=n;
+    if(/حرارة|temperature|درجة الحرارة|(^|[^A-Za-z])T([^A-Za-z]|$)/i.test(label))p.temp=n;
+    if(/سرعة|speed|velocity|(^|[^A-Za-z])v([^A-Za-z]|$)/i.test(label))p.speed=n;
+    if(/سعة A|amplitude|السعة/i.test(label))p.amplitude=n;
+    if(/طول موجة|الطول الموجي|lambda|λ/i.test(label)&&Number.isFinite(v))p.wavelength=v;
+  }
+  return p;
+}
+
 function drawCategoryVitalityLayer(key,c,w,h,state,sim){
   if(!c||!sim||w<120||h<120)return;
-  const meta=CATEGORIES[sim.category]||{},accent=meta.color||'#22d3ee';
-  const t=vitalityTime(state),energy=vitalityCtrlEnergy(sim,state);
+  const meta=CATEGORIES[sim.category]||{};
+  let accent=meta.color||'#22d3ee';
+  const t=vitalityTime(state),energy=vitalityCtrlEnergy(sim,state),sp=vitalitySemanticProfile(sim,state);
   const cat=sim.category;
+  if(sp.wavelength!==null&&sp.wavelength>=380&&sp.wavelength<=780){
+    try{accent=wl2rgb(sp.wavelength);}catch(e){}
+  }
 
   c.save();
   c.globalCompositeOperation='source-over';
 
   if(cat==='كهرباء'){
-    const y=h*.15, count=8;
+    const y=h*.15,count=Math.round(6+12*sp.density),speed=.05+.30*Math.max(sp.freq,sp.speed,sp.intensity);
     for(let i=0;i<count;i++){
-      const u=((t*(.08+.20*energy)+i/count)%1);
-      vitalityDot(c,22+u*(w-44),y+7*Math.sin(u*Math.PI*4),2.2,accent,.13+.18*energy);
+      const u=((t*speed+i/count)%1);
+      vitalityDot(c,22+u*(w-44),y+8*Math.sin(u*Math.PI*4+sp.angle),1.8+1.2*sp.intensity,accent,.08+.24*sp.intensity);
     }
-    c.strokeStyle=cinematicHexAlpha(accent,.09+.08*energy);c.lineWidth=1;
-    c.beginPath();c.moveTo(18,y);c.bezierCurveTo(w*.35,y-16,w*.65,y+16,w-18,y);c.stroke();
+    const lines=1+Math.round(4*sp.intensity);
+    for(let k=0;k<lines;k++){
+      c.strokeStyle=cinematicHexAlpha(accent,.045+.045*sp.intensity);c.lineWidth=1;
+      c.beginPath();c.moveTo(18,y+k*5);c.bezierCurveTo(w*.35,y-18+k*5,w*.65,y+18+k*5,w-18,y+k*5);c.stroke();
+    }
   }else if(cat==='بصريات'||cat==='الليزر'){
     const y=cat==='الليزر'?h*.14:h*.12;
-    for(let i=0;i<7;i++){
-      const u=((t*(.10+.14*energy)+i/7)%1);
-      c.strokeStyle=cinematicHexAlpha(accent,.10+.12*energy);c.lineWidth=1.2;
-      c.beginPath();c.moveTo(u*w-24,y+i*3);c.lineTo(u*w+24,y+i*3);c.stroke();
+    const beams=3+Math.round(7*sp.intensity),speed=.07+.22*Math.max(sp.freq,sp.speed);
+    for(let i=0;i<beams;i++){
+      const u=((t*speed+i/beams)%1),tilt=sp.angle*.12;
+      const yy=y+(i-(beams-1)/2)*3;
+      c.strokeStyle=cinematicHexAlpha(accent,.06+.18*sp.reflect*sp.intensity);c.lineWidth=1+1.6*sp.intensity;
+      c.beginPath();c.moveTo(u*w-24,yy-tilt*24);c.lineTo(u*w+24,yy+tilt*24);c.stroke();
     }
   }else if(cat==='موجات'){
-    drawVitalityWave(c,w,h,t,accent,9+10*energy,2+3*energy,h*.16,.15);
-    drawVitalityWave(c,w,h,t+.8,accent,5+7*energy,3+2*energy,h*.19,.08);
+    const amp=5+18*sp.amplitude,cycles=1.5+5.5*(1-sp.length*.35+sp.freq*.65);
+    drawVitalityWave(c,w,h,t*(.5+1.6*sp.freq),accent,amp,cycles,h*.16,.08+.10*energy);
+    drawVitalityWave(c,w,h,t*(.45+1.2*sp.freq)+.8,accent,amp*.55,cycles*1.25,h*.20,.05+.05*energy);
   }else if(cat==='ميكانيكا'){
-    for(let i=0;i<7;i++){
-      const u=((t*(.035+.065*energy)+i/7)%1),x=20+u*(w-40),y=h*.13;
-      c.strokeStyle=cinematicHexAlpha(accent,.10);c.lineWidth=1.4;
-      c.beginPath();c.moveTo(x-10-16*energy,y);c.lineTo(x,y);c.stroke();
-      vitalityDot(c,x,y,1.8,accent,.18);
+    const count=5+Math.round(8*sp.speed),speed=.025+.12*Math.max(sp.speed,sp.intensity);
+    for(let i=0;i<count;i++){
+      const u=((t*speed+i/count)%1),x=20+u*(w-40),y=h*.13+Math.sin(sp.angle)*10;
+      c.strokeStyle=cinematicHexAlpha(accent,.06+.08*sp.intensity);c.lineWidth=1.4;
+      c.beginPath();c.moveTo(x-8-22*sp.speed,y);c.lineTo(x,y);c.stroke();
+      vitalityDot(c,x,y,1.6+1.2*sp.intensity,accent,.10+.10*energy);
     }
   }else if(cat==='ميكانيكا الكم'){
-    for(let i=0;i<14;i++){
-      const a=t*.35+i*2.399,rr=(.04+.035*(i%5))*Math.min(w,h);
-      const x=w*.5+rr*Math.cos(a+i),y=h*.13+rr*.18*Math.sin(a*1.7+i);
-      vitalityDot(c,x,y,1.5+(i%3)*.4,accent,.08+.06*Math.sin(a)*Math.sin(a));
+    const count=8+Math.round(14*sp.density);
+    for(let i=0;i<count;i++){
+      const a=t*(.18+.75*sp.freq)+i*2.399,rr=(.035+.03*(i%6))*Math.min(w,h)*( .65+.45*sp.length);
+      const x=w*.5+rr*Math.cos(a+i),y=h*.14+rr*.18*Math.sin(a*1.7+i);
+      vitalityDot(c,x,y,1.3+(i%3)*.45,accent,.05+.11*sp.intensity);
     }
   }else if(cat==='الفيزياء الذرية'||cat==='الفيزياء الجزيئية'){
-    const cx=w*.88,cy=h*.13;
-    for(let i=0;i<3;i++){
-      const rr=10+i*9,a=t*(.5+.18*i)+i*2.1;
-      c.strokeStyle=cinematicHexAlpha(accent,.08);c.beginPath();c.ellipse(cx,cy,rr,rr*.42,a*.08,0,Math.PI*2);c.stroke();
-      vitalityDot(c,cx+rr*Math.cos(a),cy+rr*.42*Math.sin(a),1.8,accent,.20);
+    const cx=w*.88,cy=h*.13,orbits=2+Math.round(3*sp.density);
+    for(let i=0;i<orbits;i++){
+      const rr=9+i*(7+5*sp.length),a=t*(.25+.7*sp.freq+.35*sp.speed)+i*2.1;
+      c.strokeStyle=cinematicHexAlpha(accent,.045+.045*sp.intensity);c.beginPath();c.ellipse(cx,cy,rr,rr*.42,a*.08,0,Math.PI*2);c.stroke();
+      vitalityDot(c,cx+rr*Math.cos(a),cy+rr*.42*Math.sin(a),1.6+sp.intensity,accent,.12+.12*sp.intensity);
     }
   }else if(cat==='الأطياف'){
     const x0=w*.18,x1=w*.82,y=h*.13,colors=['#ef4444','#fb923c','#facc15','#22c55e','#22d3ee','#3b82f6','#8b5cf6'];
     colors.forEach((col,i)=>{
-      const x=x0+(x1-x0)*i/(colors.length-1),pulse=.10+.12*(.5+.5*Math.sin(t*2+i));
-      c.strokeStyle=cinematicHexAlpha(col,pulse);c.lineWidth=2;c.beginPath();c.moveTo(x,y-8);c.lineTo(x,y+8);c.stroke();
+      const x=x0+(x1-x0)*i/(colors.length-1),pulse=.06+.16*sp.intensity*(.5+.5*Math.sin(t*(1+3*sp.freq)+i));
+      c.strokeStyle=cinematicHexAlpha(col,pulse);c.lineWidth=1.2+2*sp.intensity;c.beginPath();c.moveTo(x,y-10);c.lineTo(x,y+10);c.stroke();
     });
   }else if(cat==='فيزياء الصلبة'||cat==='النانوتكنولوجي'){
-    const step=24,yy=h*.13;
-    for(let i=0;i<Math.min(22,Math.floor(w/step));i++){
-      const x=18+i*step+2.8*Math.sin(t*2+i*.7)*energy;
-      vitalityDot(c,x,yy+3*Math.sin(t*1.5+i),1.8,accent,.12);
-      if(i){c.strokeStyle=cinematicHexAlpha(accent,.055);c.beginPath();c.moveTo(x-step,yy);c.lineTo(x,yy);c.stroke();}
+    const step=18+18*(1-sp.density),yy=h*.13,vib=1+6*sp.temp;
+    for(let i=0;i<Math.min(30,Math.floor(w/step));i++){
+      const x=18+i*step+vib*Math.sin(t*(1+3*sp.temp)+i*.7),y=yy+vib*.6*Math.sin(t*(.8+2*sp.temp)+i);
+      vitalityDot(c,x,y,1.6+1.2*sp.intensity,accent,.07+.10*sp.intensity);
+      if(i){c.strokeStyle=cinematicHexAlpha(accent,.04);c.beginPath();c.moveTo(x-step,yy);c.lineTo(x,yy);c.stroke();}
     }
   }else if(cat==='النماذج النووية'||cat==='الفيزياء النووية'){
-    const cx=w*.88,cy=h*.13;
-    for(let i=0;i<10;i++){
-      const a=i*2.399+t*.08,rr=4+3.3*Math.sqrt(i);
-      vitalityDot(c,cx+rr*Math.cos(a),cy+rr*Math.sin(a),2.0,i%2?accent:'#fbbf24',.13+.05*energy);
+    const count=7+Math.round(15*sp.density),cx=w*.88,cy=h*.13;
+    for(let i=0;i<count;i++){
+      const a=i*2.399+t*(.04+.20*sp.speed),rr=4+3.0*Math.sqrt(i)*( .75+.35*sp.length);
+      vitalityDot(c,cx+rr*Math.cos(a),cy+rr*Math.sin(a),1.6+1.1*sp.intensity,i%2?accent:'#fbbf24',.08+.09*sp.intensity);
     }
   }else if(cat==='الإلكترونيات التماثلية'){
-    drawVitalityWave(c,w,h,t,accent,7+8*energy,2+4*energy,h*.14,.16);
+    drawVitalityWave(c,w,h,t*(.6+2.5*sp.freq),accent,5+15*sp.intensity,2+5*sp.freq,h*.14,.08+.12*sp.intensity);
   }else if(cat==='الإلكترونيات الرقمية'){
-    c.strokeStyle=cinematicHexAlpha(accent,.16);c.lineWidth=1.6;c.beginPath();
-    const y0=h*.14,segments=18;
+    c.strokeStyle=cinematicHexAlpha(accent,.08+.12*sp.intensity);c.lineWidth=1.2+1.4*sp.intensity;c.beginPath();
+    const y0=h*.14,segments=12+Math.round(10*sp.freq);
     for(let i=0;i<=segments;i++){
-      const x=15+(w-30)*i/segments,y=y0+(((i+Math.floor(t*3))%3)===0?-7:7);
+      const x=15+(w-30)*i/segments,y=y0+(((i+Math.floor(t*(1+5*sp.freq)))%3)===0?-8:8);
       if(i===0)c.moveTo(x,y);else{c.lineTo(x,y);if(i<segments)c.lineTo(x+(w-30)/(segments*2),y);}
     }c.stroke();
   }else if(cat==='الموائع والحرارة'){
-    for(let i=0;i<10;i++){
-      const u=((t*(.025+.06*energy)+i/10)%1),x=w*.12+(i%5)*w*.19+6*Math.sin(t+i),y=h*.20-u*h*.14;
-      vitalityDot(c,x,y,1.5+(i%3),accent,.08+.08*energy);
+    const count=6+Math.round(15*Math.max(sp.temp,sp.density)),rise=.018+.08*Math.max(sp.temp,sp.speed);
+    for(let i=0;i<count;i++){
+      const u=((t*rise+i/count)%1),x=w*.08+(i%7)*w*.14+7*Math.sin(t+i),y=h*.22-u*h*.16;
+      vitalityDot(c,x,y,1.4+1.8*sp.temp,accent,.05+.12*Math.max(sp.temp,sp.intensity));
     }
   }else if(cat==='النسبية'){
-    c.strokeStyle=cinematicHexAlpha(accent,.055);c.lineWidth=1;
-    const shift=(t*12)%34;
-    for(let x=-34+shift;x<w;x+=34){c.beginPath();c.moveTo(x,0);c.lineTo(x+18,h*.24);c.stroke();}
+    c.strokeStyle=cinematicHexAlpha(accent,.035+.045*sp.speed);c.lineWidth=1;
+    const shift=(t*(5+25*sp.speed))%34,slant=8+28*sp.speed;
+    for(let x=-34+shift;x<w;x+=34){c.beginPath();c.moveTo(x,0);c.lineTo(x+slant,h*.24);c.stroke();}
     for(let y=18;y<h*.24;y+=28){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}
   }
   c.restore();
