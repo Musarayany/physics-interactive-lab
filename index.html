@@ -7323,37 +7323,117 @@ route();
 requestAnimationFrame(loop);
 </script>
 
-<!-- PHYSICS_PRIVATE_ANALYTICS_V1: visitor + social-link analytics; reports are visible only to authorized GA4 users. -->
+<!-- PHYSICS_PRIVATE_ANALYTICS_V1: visitor + social-link analytics; reports are visible only to authorized GA4/Firebase users. -->
 <script>
 (function(){
   'use strict';
 
   var cfg = window.PHYSICS_ANALYTICS || {};
+  if (cfg.enabled === false) return;
+
+  var analyticsReady = false;
+  var queuedEvents = [];
+
+  function sendEvent(name, params){
+    if (analyticsReady && typeof window.__physicsAnalyticsSend === 'function') {
+      try { window.__physicsAnalyticsSend(name, params || {}); } catch (_) {}
+    } else {
+      queuedEvents.push([name, params || {}]);
+    }
+  }
+
+  function markReady(sender){
+    window.__physicsAnalyticsSend = sender;
+    analyticsReady = true;
+    var pending = queuedEvents.slice();
+    queuedEvents.length = 0;
+    pending.forEach(function(item){
+      try { sender(item[0], item[1]); } catch (_) {}
+    });
+  }
+
+  function trackInitialVisit(){
+    sendEvent('page_view', {
+      page_title: document.title,
+      page_location: window.location.href,
+      page_path: window.location.pathname
+    });
+    sendEvent('physics_lab_visit', {
+      app_name: 'physics_interactive_lab',
+      page_path: window.location.pathname
+    });
+  }
+
+  function initWithMeasurementId(measurementId){
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
+
+    var gaScript = document.createElement('script');
+    gaScript.async = true;
+    gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
+    document.head.appendChild(gaScript);
+
+    window.gtag('js', new Date());
+    window.gtag('config', measurementId, {
+      send_page_view: false
+    });
+
+    markReady(function(name, params){
+      window.gtag('event', name, params || {});
+    });
+    trackInitialVisit();
+  }
+
+  function loadScript(src){
+    return new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  function initWithFirebase(firebaseConfig){
+    var version = '12.19.0';
+    var base = 'https://www.gstatic.com/firebasejs/' + version + '/';
+    Promise.resolve()
+      .then(function(){
+        if (window.firebase && typeof window.firebase.initializeApp === 'function') return;
+        return loadScript(base + 'firebase-app-compat.js');
+      })
+      .then(function(){
+        if (window.firebase && typeof window.firebase.analytics === 'function') return;
+        return loadScript(base + 'firebase-analytics-compat.js');
+      })
+      .then(function(){
+        if (!window.firebase || typeof window.firebase.initializeApp !== 'function' || typeof window.firebase.analytics !== 'function') return;
+
+        var app;
+        try {
+          app = window.firebase.app('physics-lab-analytics');
+        } catch (_) {
+          app = window.firebase.initializeApp(firebaseConfig, 'physics-lab-analytics');
+        }
+
+        var analytics = app.analytics();
+        markReady(function(name, params){
+          analytics.logEvent(name, params || {});
+        });
+        trackInitialVisit();
+      })
+      .catch(function(){
+        // Analytics must never interfere with the physics lab.
+      });
+  }
+
   var measurementId = String(cfg.measurementId || '').trim();
-
-  // Safe no-op until a valid GA4 Measurement ID is configured.
-  if (cfg.enabled === false || !/^G-[A-Z0-9]+$/i.test(measurementId)) return;
-
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
-
-  var gaScript = document.createElement('script');
-  gaScript.async = true;
-  gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
-  document.head.appendChild(gaScript);
-
-  window.gtag('js', new Date());
-  window.gtag('config', measurementId, {
-    send_page_view: true,
-    page_title: document.title,
-    page_location: window.location.href
-  });
-
-  // Dedicated visit event in addition to GA4's standard page_view/users metrics.
-  window.gtag('event', 'physics_lab_visit', {
-    app_name: 'physics_interactive_lab',
-    page_path: window.location.pathname
-  });
+  if (/^G-[A-Z0-9]+$/i.test(measurementId)) {
+    initWithMeasurementId(measurementId);
+  } else if (cfg.firebaseConfig && cfg.firebaseConfig.appId && cfg.firebaseConfig.apiKey) {
+    initWithFirebase(cfg.firebaseConfig);
+  }
 
   function findSocialAnchor(target){
     var el = target;
@@ -7380,9 +7460,8 @@ requestAnimationFrame(loop);
       page_hash: window.location.hash || ''
     };
 
-    // One combined event for comparison + one explicit event for quick counting.
-    window.gtag('event', 'social_click', params);
-    window.gtag('event', platform + '_click', params);
+    sendEvent('social_click', params);
+    sendEvent(platform + '_click', params);
   }, true);
 })();
 </script>
