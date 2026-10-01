@@ -3969,7 +3969,25 @@ compton: {
   equations:['\\Delta\\lambda=\\frac{h}{m_ec}(1-\\cos\\theta)'],
   theory:'في تبعثر كومبتون يتصرف الفوتون كجسيم يحمل زخمًا، فينقل جزءًا من طاقته وزخمه إلى الإلكترون ويزداد طوله الموجي.',
   hints(s){const dl=CONST.lambdaC_pm*(1-Math.cos(s.ctrl.th*Math.PI/180));return[`الإزاحة الحالية <b>${dl.toFixed(3)} pm</b>.`,`أكبر إزاحة تحدث قرب 180°.`];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);const cx=W/2,cy=H/2;arrow(ctx,55,cy,cx-15,cy,'#fbbf24',4,10);ctx.fillStyle='#60a5fa';ctx.beginPath();ctx.arc(cx,cy,12,0,Math.PI*2);ctx.fill();const a=-s.ctrl.th*Math.PI/180;arrow(ctx,cx+10,cy,cx+170*Math.cos(a),cy+170*Math.sin(a),'#22d3ee',4,10);arrow(ctx,cx,cy,cx-80*Math.cos(a/2),cy+80*Math.sin(a/2),'#f472b6',3,9);label(ctx,'γ',90,cy-20,'#fbbf24','center',17,true);label(ctx,'γ′',cx+130*Math.cos(a),cy+130*Math.sin(a)-18,'#22d3ee','center',17,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const cx=W/2,cy=H/2,a=-s.ctrl.th*Math.PI/180,dl=CONST.lambdaC_pm*(1-Math.cos(s.ctrl.th*Math.PI/180)),lam2=s.ctrl.lam+dl;
+  function photonWave(x1,y1,x2,y2,lambda,color){
+    const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,nx=-uy,ny=ux;
+    const cycles=Math.max(4,Math.min(18,900/lambda));
+    ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.beginPath();
+    for(let i=0;i<=160;i++){const t=i/160,baseX=x1+dx*t,baseY=y1+dy*t,off=6*Math.sin(t*Math.PI*2*cycles),x=baseX+nx*off,y=baseY+ny*off;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+  }
+  photonWave(55,cy,cx-18,cy,s.ctrl.lam,'#fbbf24');
+  ctx.fillStyle='#60a5fa';ctx.beginPath();ctx.arc(cx,cy,12,0,Math.PI*2);ctx.fill();
+  const ex=cx+180*Math.cos(a),ey=cy+180*Math.sin(a);photonWave(cx+14*Math.cos(a),cy+14*Math.sin(a),ex,ey,lam2,'#22d3ee');
+  arrow(ctx,cx,cy,cx-80*Math.cos(a/2),cy+80*Math.sin(a/2),'#f472b6',3,9);
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,48,a,0,a>0);ctx.stroke();
+  label(ctx,'θ='+s.ctrl.th.toFixed(0)+'°',cx+58,cy-18,'#94a3b8','left',9,true);
+  label(ctx,'λ='+s.ctrl.lam.toFixed(1)+' pm',115,cy-28,'#fbbf24','center',10,true);
+  label(ctx,'λ′='+lam2.toFixed(2)+' pm',cx+130*Math.cos(a),cy+130*Math.sin(a)-22,'#22d3ee','center',10,true);
+}
 },
 
 
@@ -4205,25 +4223,28 @@ relativity_simultaneity: {
   ];},
   equations:['\\Delta t′=\\gamma\\left(\\Delta t-\\frac{v\\Delta x}{c^2}\\right)','\\Delta t=0\\Rightarrow \\Delta t′=-\\gamma\\frac{v\\Delta x}{c^2}'],
   theory:'نسبية التزامن ليست مجرد تأخر وصول الضوء. يمكن للراصدين أن يصححا أزمنة وصول الإشارات ومع ذلك يختلفا في تعريف أي الأحداث البعيدة وقع «الآن». إذا كان الحدثان متزامنين في S ومفصولين مكانيًا، فإن تحويل الزمن يعطي Δt′ غير صفري عندما v≠0. السبب العميق هو أن مزامنة الساعات البعيدة نفسها تعتمد على حالة حركة المرجع.',
-  draw(ctx,W,H,s){
-    drawGrid(ctx,W,H);const q=this._calc(s),t=Math.min(s.t,q.tLeft),mid=W/2,top=60,panelH=(H-120)/2;
-    const drawFrame=(y,title,color,trainFrame)=>{
-      ctx.fillStyle='rgba(6,10,20,.84)';ctx.strokeStyle='#25304a';ctx.fillRect(22,y,W-44,panelH-8);ctx.strokeRect(22,y,W-44,panelH-8);label(ctx,title,36,y+18,color,'left',11,true);
-      const left=80,right=W-80,cy=y+panelH*.62;ctx.strokeStyle='#475569';ctx.beginPath();ctx.moveTo(left,cy);ctx.lineTo(right,cy);ctx.stroke();
-      // flashes
-      ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(left,cy,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(right,cy,6,0,Math.PI*2);ctx.fill();
-      const fracR=clamp(t/q.tRight,0,1),fracL=clamp(t/q.tLeft,0,1);
-      const center=trainFrame?(mid+(q.b*t/(q.D/2))*((right-left)/2)*.35):mid;
-      const xr=right-(right-center)*fracR,xl=left+(center-left)*fracL;
-      ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(xr,cy-24,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(xl,cy-24,5,0,Math.PI*2);ctx.fill();
-      if(trainFrame){ctx.fillStyle='rgba(232,121,249,.12)';ctx.strokeStyle='#e879f9';ctx.fillRect(center-58,cy-64,116,28);ctx.strokeRect(center-58,cy-64,116,28);label(ctx,'مركز القطار',center,cy-76,'#e879f9','center',8,true);}
-      else{ctx.fillStyle='#cbd5e1';ctx.beginPath();ctx.arc(mid,cy-20,7,0,Math.PI*2);ctx.fill();label(ctx,'راصد الرصيف',mid,cy-37,'#cbd5e1','center',8,true);}
-      label(ctx,'A',left,cy+19,'#fbbf24','center',8,true);label(ctx,'B',right,cy+19,'#22d3ee','center',8,true);
-    };
-    drawFrame(top,'S — البرقان متزامنان في الرصيف','#fbbf24',false);
-    drawFrame(top+panelH,'S′ — القطار يتحرك نحو B ويبتعد عن A','#e879f9',true);
-    label(ctx,'Δt=0 في S   ⇄   Δt′='+q.dtp.toFixed(2)+' s في S′',mid,H-27,'#e879f9','center',11,true);
-  }
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);const q=this._calc(s),t=Math.min(s.t,q.tLeft),mid=W/2,top=60,panelH=(H-120)/2;
+  const dxNorm=(s.ctrl.dx-1)/7,span=W*(.36+.42*Math.max(0,Math.min(1,dxNorm)));
+  const drawFrame=(y,title,color,trainFrame)=>{
+    ctx.fillStyle='rgba(6,10,20,.84)';ctx.strokeStyle='#25304a';ctx.fillRect(22,y,W-44,panelH-8);ctx.strokeRect(22,y,W-44,panelH-8);label(ctx,title,36,y+18,color,'left',11,true);
+    const left=mid-span/2,right=mid+span/2,cy=y+panelH*.62;ctx.strokeStyle='#475569';ctx.beginPath();ctx.moveTo(left,cy);ctx.lineTo(right,cy);ctx.stroke();
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(left,cy,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(right,cy,6,0,Math.PI*2);ctx.fill();
+    const fracR=clamp(t/q.tRight,0,1),fracL=clamp(t/q.tLeft,0,1);
+    const center=trainFrame?(mid+(q.b*t/(q.D/2))*((right-left)/2)*.35):mid;
+    const xr=right-(right-center)*fracR,xl=left+(center-left)*fracL;
+    ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(xr,cy-24,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(xl,cy-24,5,0,Math.PI*2);ctx.fill();
+    if(trainFrame){ctx.fillStyle='rgba(232,121,249,.12)';ctx.strokeStyle='#e879f9';ctx.fillRect(center-58,cy-64,116,28);ctx.strokeRect(center-58,cy-64,116,28);label(ctx,'مركز القطار',center,cy-76,'#e879f9','center',8,true);}
+    else{ctx.fillStyle='#cbd5e1';ctx.beginPath();ctx.arc(mid,cy-20,7,0,Math.PI*2);ctx.fill();label(ctx,'راصد الرصيف',mid,cy-37,'#cbd5e1','center',8,true);}
+    label(ctx,'A',left,cy+19,'#fbbf24','center',8,true);label(ctx,'B',right,cy+19,'#22d3ee','center',8,true);
+    ctx.strokeStyle='#64748b';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,cy+37);ctx.lineTo(right,cy+37);ctx.stroke();
+    label(ctx,'Δx='+s.ctrl.dx.toFixed(1)+' light-s',mid,cy+53,'#94a3b8','center',8,true);
+  };
+  drawFrame(top,'S — البرقان متزامنان في الرصيف','#fbbf24',false);
+  drawFrame(top+panelH,'S′ — القطار يتحرك نحو B ويبتعد عن A','#e879f9',true);
+  label(ctx,'Δt=0 في S   ⇄   Δt′='+q.dtp.toFixed(2)+' s في S′',mid,H-27,'#e879f9','center',11,true);
+}
 },
 
 length_contraction: {
@@ -4768,7 +4789,23 @@ hafele_keating: {
   equations:['\\frac{\\Delta t_g}{t}\\approx\\frac{gh}{c^2}','\\frac{\\Delta t_v}{t}\\approx-\\frac{v^2}{2c^2}'],
   theory:'تقريب ضعيف المجال والسرعة يقارن ساعة الطائرة بساعة أرضية عند خط العرض المختار، ويضم تأثير الارتفاع والسرعة واتجاه الحركة بالنسبة لدوران الأرض.',
   hints(s){return['زيادة الارتفاع تجعل الساعة تميل إلى التقدم بسبب الجاذبية الأضعف.','زيادة السرعة تجعل الساعة تميل إلى التأخر بسبب تمدد الزمن الحركي.'];},
-  draw(ctx,W,H,s){drawGrid(ctx,W,H);ctx.strokeStyle='#60a5fa';ctx.lineWidth=4;ctx.beginPath();ctx.arc(W/2,H/2+80,150,Math.PI,0);ctx.stroke();const x=W/2+Math.sin(performance.now()/900)*170;ctx.font='36px sans-serif';ctx.fillText('✈️',x,H/2-40);label(ctx,`${s.ctrl.h.toFixed(1)} km`,W/2,H/2+125,'#cbd5e1','center',13,true);}
+  
+draw(ctx,W,H,s){
+  drawGrid(ctx,W,H);
+  const cx=W/2,cy=H*.72,R=Math.min(W,H)*.25,lat=deg2rad(s.ctrl.lat),altNorm=(s.ctrl.h-1)/14;
+  ctx.fillStyle='rgba(59,130,246,.12)';ctx.strokeStyle='#60a5fa';ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy,R,Math.PI,2*Math.PI);ctx.fill();ctx.stroke();
+  ctx.strokeStyle='rgba(148,163,184,.35)';ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.stroke();
+  const groundX=cx+R*Math.sin(lat),groundY=cy-R*Math.cos(lat);
+  ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(groundX,groundY,5,0,Math.PI*2);ctx.fill();
+  const orbitR=R+18+34*altNorm,dir=s.ctrl.dir>=0?1:-1,phase=(performance.now()/1400)*(s.ctrl.v/250)*dir;
+  const ang=-Math.PI/2+lat*.35+phase*.12,px=cx+orbitR*Math.cos(ang),py=cy+orbitR*Math.sin(ang);
+  ctx.font='32px sans-serif';ctx.fillText('✈️',px-16,py+10);
+  arrow(ctx,px-34*dir,py-24,px+34*dir,py-24,dir>0?'#a3e635':'#f472b6',2.5,8);
+  ctx.strokeStyle='#94a3b8';ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(cx,cy,orbitR,Math.PI,2*Math.PI);ctx.stroke();ctx.setLineDash([]);
+  label(ctx,'خط العرض '+s.ctrl.lat.toFixed(0)+'°',groundX,groundY+22,'#fbbf24','center',9,true);
+  label(ctx,'h='+s.ctrl.h.toFixed(1)+' km   v='+s.ctrl.v.toFixed(0)+' m/s',W/2,36,'#cbd5e1','center',10,true);
+  label(ctx,dir>0?'اتجاه شرق':'اتجاه غرب',W/2,57,dir>0?'#a3e635':'#f472b6','center',10,true);
+}
 },
 
 aspect_bell: {
