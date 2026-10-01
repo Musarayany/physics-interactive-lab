@@ -407,6 +407,40 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
 .rel-scene-why{font-size:9px;color:#94a3b8;line-height:1.55;margin-top:5px}.rel-scene-action{font-size:9px;color:#e879f9;font-weight:900;margin-top:9px}.rel-core-badge{display:inline-block;border:1px solid rgba(34,211,238,.35);color:#22d3ee;background:rgba(34,211,238,.08);padding:2px 6px;border-radius:999px;font-size:7px;font-weight:900;margin-top:7px}
 .rel-note{margin-top:18px;border:1px solid rgba(34,211,238,.22);border-radius:16px;padding:13px 15px;background:rgba(34,211,238,.055);font-size:10px;line-height:1.75;color:#cbd5e1}
 @media(max-width:767px){.rel-hero{padding:18px 14px;border-radius:18px}.rel-sub{font-size:10.5px;line-height:1.7}.rel-observer-demo{grid-template-columns:1fr;gap:7px}.rel-vs{flex-direction:row;padding:2px}.rel-frame{min-height:140px}.rel-scene-grid{grid-template-columns:1fr;padding:10px}.rel-world-head{grid-template-columns:auto 1fr}.rel-world-progress{display:none}}
+
+/* CINEMATIC_LAB_WORKSPACE_V1 */
+@media (min-width:900px){
+ body.lab-cinematic-active main{max-width:1500px!important;padding-top:18px!important;padding-left:18px!important;padding-right:18px!important}
+ body.lab-cinematic-active #view-sim>a{margin-bottom:8px!important}
+ body.lab-cinematic-active #view-sim>.mb-5{margin-bottom:10px!important;align-items:center!important}
+ body.lab-cinematic-active #sim-title{font-size:1.75rem!important;line-height:1.25!important}
+ body.lab-cinematic-active #sim-desc{font-size:.78rem!important;max-width:760px!important}
+ body.lab-cinematic-active #experiment-learning-shell{margin-bottom:10px!important;padding:8px 10px!important;border-radius:13px!important}
+ body.lab-cinematic-active .learning-shell-top{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+ body.lab-cinematic-active .learning-goal-card,body.lab-cinematic-active .learning-challenge-card{padding:8px 11px!important;min-height:0!important}
+ body.lab-cinematic-active .learning-kicker{font-size:9px!important;margin-bottom:3px!important}
+ body.lab-cinematic-active .learning-goal-text{font-size:10.5px!important;line-height:1.45!important}
+ body.lab-cinematic-active #learning-path{display:none!important}
+ body.lab-cinematic-active #lab-grid{grid-template-columns:minmax(0,1fr) 305px!important;gap:14px!important;align-items:start!important}
+ body.lab-cinematic-active #sim-stage-wrap{min-width:0}
+ body.lab-cinematic-active #sim-stage-card{padding:7px!important;border-radius:16px!important;box-shadow:0 18px 70px -35px rgba(34,211,238,.45),0 0 0 1px rgba(148,163,184,.12) inset}
+ body.lab-cinematic-active #sim-canvas-wrap{aspect-ratio:auto!important;height:clamp(500px,68vh,760px)!important;min-height:500px!important;border-radius:12px!important;background:radial-gradient(900px 520px at 60% 46%,rgba(30,64,175,.10),transparent 65%),#070b14!important}
+ body.lab-cinematic-active #sim-side{position:sticky!important;top:76px!important;max-height:calc(100vh - 92px)!important;overflow-y:auto!important;overflow-x:hidden!important;padding-left:2px!important;scrollbar-width:thin}
+ body.lab-cinematic-active #sim-side>.glass{padding:13px!important;border-radius:14px!important}
+ body.lab-cinematic-active #controls{gap:10px!important}
+ body.lab-cinematic-active #controls .control-help{font-size:8.5px!important;line-height:1.4!important}
+ body.lab-cinematic-active #readouts>div{padding-top:5px!important;padding-bottom:5px!important}
+ body.lab-cinematic-active #hint-box .hint-item{padding:8px 10px!important;font-size:10.5px!important}
+ body.lab-cinematic-active #cause-effect-box{padding:8px 9px!important}
+}
+@media (min-width:1320px){
+ body.lab-cinematic-active #lab-grid{grid-template-columns:minmax(0,1fr) 320px!important}
+ body.lab-cinematic-active #sim-canvas-wrap{height:clamp(560px,72vh,820px)!important;min-height:560px!important}
+}
+#sim-stage-card:fullscreen,#sim-stage-card:-webkit-full-screen{width:100vw!important;height:100vh!important;padding:12px!important;border-radius:0!important;background:#070b14!important;display:flex!important;align-items:stretch!important}
+#sim-stage-card:fullscreen #sim-canvas-wrap,#sim-stage-card:-webkit-full-screen #sim-canvas-wrap{width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;aspect-ratio:auto!important;border-radius:8px!important}
+body.lab-cinematic-active #view-sim.professor-mode #sim-canvas-wrap{height:min(80vh,900px)!important}
+
 </style>
 <script src="./analytics-config.js"></script>
 </head>
@@ -506,6 +540,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
         <button id="btn-professor" class="btn px-4 py-2.5 rounded-xl border border-edge bg-panel font-bold text-sm">👨‍🏫 وضع الأستاذ</button>
         <button id="btn-play" class="btn px-5 py-2.5 rounded-xl bg-gold text-ink font-bold text-sm glow-gold">⏸ إيقاف</button>
         <button id="btn-reset" class="btn px-5 py-2.5 rounded-xl border border-edge bg-panel font-bold text-sm">↺ إعادة</button>
+        <button id="btn-fullscreen" class="btn px-4 py-2.5 rounded-xl border border-cyan/40 bg-panel font-bold text-sm text-cyan">⛶ ملء الشاشة</button>
       </div>
     </div>
     <div id="experiment-learning-shell" aria-live="polite">
@@ -6537,6 +6572,8 @@ const MeasurementLab={
   }
 };
 function openSim(key){
+  document.body.classList.add('lab-cinematic-active');
+  document.body.dataset.activeSim=key;
   document.getElementById('view-home').classList.add('hidden');
   document.getElementById('view-relativity').classList.add('hidden');
   document.getElementById('view-sim').classList.remove('hidden');
@@ -6576,7 +6613,7 @@ function openSim(key){
   });
 }
 
-function closeSim(){currentSim=null;currentSimKey=null;currentState=null;}
+function closeSim(){document.body.classList.remove('lab-cinematic-active');delete document.body.dataset.activeSim;currentSim=null;currentSimKey=null;currentState=null;}
 
 function showWelcome(sim){
   if(!sim.welcome)return;
@@ -7123,6 +7160,27 @@ document.getElementById('btn-reset').addEventListener('click',()=>{
   toast('↺ أُعيدت التجربة.','ok');
   updateHintBox();
 });
+
+
+// CINEMATIC_FULLSCREEN_HANDLER_V1
+document.getElementById('btn-fullscreen').addEventListener('click',async()=>{
+ const stage=document.getElementById('sim-stage-card');if(!stage)return;
+ try{
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+   if(stage.requestFullscreen)await stage.requestFullscreen();else if(stage.webkitRequestFullscreen)stage.webkitRequestFullscreen();
+  }else{
+   if(document.exitFullscreen)await document.exitFullscreen();else if(document.webkitExitFullscreen)document.webkitExitFullscreen();
+  }
+ }catch(e){toast('تعذر فتح وضع ملء الشاشة في هذا المتصفح.','err',2200);}
+});
+function syncLabFullscreen(){
+ const active=!!(document.fullscreenElement||document.webkitFullscreenElement);
+ const b=document.getElementById('btn-fullscreen');
+ if(b)b.textContent=active?'⤢ خروج من ملء الشاشة':'⛶ ملء الشاشة';
+ setTimeout(()=>{if(currentSim)fitCanvas();},80);
+}
+document.addEventListener('fullscreenchange',syncLabFullscreen);
+document.addEventListener('webkitfullscreenchange',syncLabFullscreen);
 
 document.getElementById('measurement-record').addEventListener('click',()=>MeasurementLab.record());
 document.getElementById('measurement-fit').addEventListener('click',()=>MeasurementLab.fit());
