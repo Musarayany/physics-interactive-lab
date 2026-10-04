@@ -6980,7 +6980,106 @@ stage3_electron_beam_fields: {
     if(pts.length){const p=pts[Math.floor(((s.t*.5)%1)*(pts.length-1))],x=x0+p.x*xScale,y=y0-p.y*yScale;ctx.fillStyle='#a3e635';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();}
     ctx.fillStyle='#1e293b';ctx.fillRect(x0+.28*xScale-5,H*.28,10,H*.48);label(ctx,'الشاشة',x0+.28*xScale,H*.82,'#cbd5e1','center',9,true);
   }
+},
+
+stage3_franck_hertz_mercury: {
+  title:'تجربة فرانك–هيرتز', icon:'📈', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
+  desc:'أنبوب فرانك–هيرتز بنموذج زئبق تعليمي مثالي مع جهد إعاقة ومنحنى تيار متكرر القمم والقيعان.',
+  objective:'إظهار تكميم طاقة الإثارة الذرية وقياس طاقة الإثارة من متوسط المسافة بين الملامح المتتالية لمنحنى التيار.',
+  apparatus:['أنبوب فرانك–هيرتز','كاثود ساخن','شبكة تسريع','جهد إعاقة','مجمع','مقياس تيار/راسم منحنى'],
+  welcome:{title:'📈 فرانك–هيرتز — إثارة ذرية متقطعة',steps:['امسح جهد التسريع Va.','راقب هبوط تيار المجمع بعد كل تصادم إثارة غير مرن.','اضبط جهد الإعاقة لتوضيح القيعان.','سجّل مواضع عدة قيعان واحسب متوسط ΔV.']},
+  controls:[
+    {id:'Va',label:'جهد التسريع Va',min:0,max:60,step:.1,value:14.7,unit:'V'},
+    {id:'Vr',label:'جهد الإعاقة',min:.5,max:3,step:.1,value:1.5,unit:'V'},
+    {id:'Eexc',label:'طاقة الإثارة Eexc',min:3.5,max:6,step:.05,value:4.9,unit:'eV'},
+    {id:'heater',label:'شدة الانبعاث/السخان',min:50,max:150,step:5,value:100,unit:'%'}
+  ],
+  reset(s){s.t=0;s.records=[];},update(s,dt){s.t+=dt;},
+  _currentAt(V,s){
+    const contact=1.0,available=Math.max(0,V-contact),E=s.ctrl.Eexc,Vr=s.ctrl.Vr;
+    if(available<=0)return 0;
+    const residual=available-E*Math.floor(available/E);
+    const transmission=1/(1+Math.exp(-(residual-Vr)/.20));
+    return 12*(s.ctrl.heater/100)*Math.sqrt(available/60)*(.10+.90*transmission);
+  },
+  calc(s){
+    const I=this._currentAt(s.ctrl.Va,s),rec=(s.records||[]).slice().sort((a,b)=>a-b);
+    const diffs=[];for(let i=1;i<rec.length;i++)if(rec[i]-rec[i-1]>.5)diffs.push(rec[i]-rec[i-1]);
+    const avg=diffs.length?diffs.reduce((a,b)=>a+b,0)/diffs.length:NaN;
+    return{I,rec,diffs,avg};
+  },
+  readouts(s){const q=this.calc(s);return[
+    {l:'تيار المجمع',v:q.I.toFixed(3),u:'µA',c:'gold'},
+    {l:'المسافة النظرية بين الملامح',v:s.ctrl.Eexc.toFixed(2),u:'V',c:'cyan'},
+    {l:'عدد النقاط المسجلة',v:String(q.rec.length),u:''},
+    {l:'متوسط ΔV المقاس',v:Number.isFinite(q.avg)?q.avg.toFixed(3):'—',u:Number.isFinite(q.avg)?'V':''},
+    {l:'Eexc المستنتجة',v:Number.isFinite(q.avg)?q.avg.toFixed(3):'—',u:Number.isFinite(q.avg)?'eV':''}
+  ];},
+  hints(s){const mod=((s.ctrl.Va-1)%s.ctrl.Eexc+s.ctrl.Eexc)%s.ctrl.Eexc;return[
+    'المنحنى المرسوم محاكاة تعليمية مثالية لمنحنى فرانك–هيرتز، وليس بيانات مختبر حقيقية.',
+    mod<s.ctrl.Vr+.25?'الإلكترونات بعد تصادم إثارة لا تملك طاقة كافية لتجاوز جهد الإعاقة؛ يظهر هبوط في التيار.':'الإلكترونات تصل إلى المجمع بكفاءة أعلى في هذا الموضع.',
+    'في نموذج الزئبق الافتراضي تكون المسافة المميزة ≈ '+s.ctrl.Eexc.toFixed(2)+' V.'
+  ];},
+  equations:['e\\Delta V\\approx E_{exc}','E_{exc}(\\mathrm{eV})\\approx\\Delta V(\\mathrm{V})'],
+  theory:'<b>المشاهدة المتوقعة:</b> يزداد تيار المجمع ثم يهبط دوريًا عندما تكتسب الإلكترونات طاقة تكفي لإثارة الذرات وتفقد جزءًا محددًا من طاقتها. <br><b>تفسير النتائج:</b> المسافة بين الملامح المتتالية تعطي طاقة الإثارة بوحدة eV. المنحنى هنا حتمي ومثالي وموسوم بوضوح على أنه محاكاة تعليمية.',
+  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const nearest=1+Math.round((s.ctrl.Va-1)/s.ctrl.Eexc)*s.ctrl.Eexc;if(nearest>=0&&nearest<=60&&!s.records.some(v=>Math.abs(v-nearest)<.15))s.records.push(nearest);return true;},
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const cy=H*.27;
+    ctx.fillStyle='#1e293b';ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.fillRect(W*.08,cy-52,W*.54,104);ctx.strokeRect(W*.08,cy-52,W*.54,104);
+    ctx.fillStyle='#fbbf24';ctx.fillRect(W*.11,cy-26,14,52);label(ctx,'كاثود',W*.115,cy-40,'#fbbf24','center',8,true);
+    ctx.strokeStyle='#22d3ee';for(let k=0;k<4;k++){const x=W*(.22+.07*k);ctx.beginPath();ctx.moveTo(x,cy-36);ctx.lineTo(x,cy+36);ctx.stroke();}
+    ctx.fillStyle='#94a3b8';ctx.fillRect(W*.56,cy-28,10,56);label(ctx,'المجمع',W*.565,cy-42,'#cbd5e1','center',8,true);
+    for(let i=0;i<18;i++){const x=W*.13+((s.t*.08+i/18)%1)*W*.40,y=cy+18*Math.sin(i*1.8+s.t);ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill();}
+    const gx=W*.07,gy=H*.55,gw=W*.72,gh=H*.30;ctx.strokeStyle='#475569';ctx.strokeRect(gx,gy,gw,gh);
+    ctx.strokeStyle='#fbbf24';ctx.lineWidth=2.4;ctx.beginPath();for(let i=0;i<=240;i++){const V=60*i/240,I=this._currentAt(V,s),x=gx+gw*i/240,y=gy+gh-gh*I/14;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+    const xv=gx+gw*s.ctrl.Va/60;ctx.strokeStyle='#22d3ee';ctx.beginPath();ctx.moveTo(xv,gy);ctx.lineTo(xv,gy+gh);ctx.stroke();
+    label(ctx,'محاكاة تعليمية مثالية لمنحنى فرانك–هيرتز',gx+gw/2,gy-13,'#94a3b8','center',8,true);
+    const rb={x:W*.82,y:H*.66,w:W*.15,h:32};s._recordBtn=rb;S3LAB.button(ctx,rb,'📍 سجّل',true);
+  }
+},
+
+stage3_zeeman_cadmium: {
+  title:'تأثير زيمان', icon:'🧲', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
+  desc:'انقسام خط الكادميوم الأحمر إلى مركبات π وσ± في تأثير زيمان العادي.',
+  objective:'قياس اعتماد الانقسام الطيفي على المجال المغناطيسي وفهم قواعد الاختيار Δm=0,±1 والفرق بين الرصد العرضي والطولي.',
+  apparatus:['مصدر طيف كادميوم','مغناطيس كهربائي','نظام رصد/تداخل','مرشح للخط الأحمر'],
+  welcome:{title:'🧲 تأثير زيمان العادي',steps:['ابدأ عند B=0 ولاحظ خطًا واحدًا.','زد B وراقب انفصال σ+ وσ− خطيًا.','بدّل اتجاه الرصد بين عرضي وطولي.','فعّل إظهار الاستقطاب لمقارنة المركبات.']},
+  controls:[
+    {id:'B',label:'المجال المغناطيسي B',min:0,max:2.5,step:.02,value:1.2,unit:'T'},
+    {id:'lambda0',label:'الطول الموجي المركزي λ₀',min:630,max:660,step:.1,value:643.8,unit:'nm'},
+    {id:'g',label:'عامل لانديه g',min:.8,max:1.2,step:.01,value:1,unit:''},
+    {id:'view',type:'buttons',label:'اتجاه الرصد',value:0,options:[{value:0,label:'عرضي ⟂B'},{value:1,label:'طولي ∥B'}]},
+    {id:'pol',type:'buttons',label:'إظهار الاستقطاب',value:1,options:[{value:1,label:'إظهار'},{value:0,label:'إخفاء'}]}
+  ],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){const muB=CONST.e*CONST.hbar/(2*CONST.me),dnu=muB*s.ctrl.g*s.ctrl.B/CONST.h,l0=s.ctrl.lambda0*1e-9,dl=l0*l0*dnu/CONST.c;return{muB,dnu,dl,l0};},
+  readouts(s){const q=this.calc(s);return[
+    {l:'Δν بين π وσ',v:(q.dnu/1e9).toFixed(3),u:'GHz',c:'gold'},
+    {l:'|Δλ|',v:(q.dl*1e12).toFixed(3),u:'pm',c:'cyan'},
+    {l:'λσ−',v:((q.l0-q.dl)*1e9).toFixed(4),u:'nm'},
+    {l:'λπ',v:(q.l0*1e9).toFixed(4),u:'nm'},
+    {l:'λσ+',v:((q.l0+q.dl)*1e9).toFixed(4),u:'nm'}
+  ];},
+  hints(s){return[
+    s.ctrl.B===0?'عند B=0 تتطابق المركبات في خط واحد.':'الانقسام يتناسب خطيًا تقريبًا مع B في نموذج زيمان العادي.',
+    Number(s.ctrl.view)===0?'في الرصد العرضي تظهر π وσ±؛ استقطاب π خطي موازٍ للمجال وσ خطي عموديًا عليه.':'في الرصد الطولي تختفي π وتظهر σ± باستقطابين دائريين متعاكسين.',
+    'النموذج هنا تأثير زيمان العادي فقط؛ لا يحاكي البنية الشاذة.'
+  ];},
+  equations:['\\mu_B=\\frac{e\\hbar}{2m_e}','\\Delta\\nu=\\frac{\\mu_B gB}{h}','|\\Delta\\lambda|\\approx\\frac{\\lambda_0^2\\Delta\\nu}{c}','\\Delta m=0,\\pm1'],
+  theory:'<b>المشاهدة المتوقعة:</b> خط واحد عند B=0 ثم انفصال مستمر للمركبات مع زيادة المجال. <br><b>تفسير النتائج:</b> المجال يرفع انحلال مستويات العزم المغناطيسي؛ انتقالات Δm=0 تعطي π وانتقالات Δm=±1 تعطي σ±. الرصد الطولي يبين مركبتي σ فقط.',
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this.calc(s),cx=W*.72,cy=H*.46;
+    ctx.fillStyle='#64748b';ctx.fillRect(W*.08,H*.25,W*.12,H*.42);ctx.fillRect(W*.34,H*.25,W*.12,H*.42);label(ctx,'N',W*.14,H*.23,'#fbbf24','center',10,true);label(ctx,'S',W*.40,H*.23,'#22d3ee','center',10,true);
+    ctx.fillStyle='#ef4444';ctx.beginPath();ctx.arc(W*.27,H*.46,18,0,Math.PI*2);ctx.fill();label(ctx,'Cd',W*.27,H*.46,'#fff','center',8,true);
+    const sep=clamp(q.dl/1e-12*8,0,W*.09),showPi=Number(s.ctrl.view)===0;
+    ctx.fillStyle='#090e18';ctx.strokeStyle='#334155';ctx.fillRect(W*.55,H*.18,W*.38,H*.56);ctx.strokeRect(W*.55,H*.18,W*.38,H*.56);
+    const lines=[];if(showPi)lines.push({x:cx,c:'#ef4444',t:'π'});lines.push({x:cx-sep,c:'#f472b6',t:'σ−'},{x:cx+sep,c:'#22d3ee',t:'σ+'});
+    lines.forEach(o=>{ctx.strokeStyle=o.c;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(o.x,H*.27);ctx.lineTo(o.x,H*.66);ctx.stroke();label(ctx,o.t,o.x,H*.70,o.c,'center',9,true);});
+    if(s.ctrl.pol){if(showPi)label(ctx,'π: خطي ∥B',W*.74,H*.13,'#ef4444','center',8,true);label(ctx,Number(s.ctrl.view)===0?'σ: خطي ⟂B':'σ±: دائري متعاكس',W*.74,H*.78,'#cbd5e1','center',8,true);}
+    label(ctx,'λ₀='+s.ctrl.lambda0.toFixed(1)+' nm',W*.74,H*.84,'#94a3b8','center',9,true);
+  }
 }
+
 
 };
 
