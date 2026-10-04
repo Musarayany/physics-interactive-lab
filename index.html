@@ -6727,27 +6727,29 @@ stage3_rydberg_constant: {
     {id:'lines',label:'كثافة المحزوز',min:300,max:600,step:10,value:500,unit:'خط/mm'},
     {id:'thetaM',label:'زاوية التلسكوب المقاسة',min:1,max:55,step:.01,value:19.15,unit:'°'}
   ],
-  _lambda(n){return 1/(S3LAB.RH*(1/4-1/(n*n)));},
-  _theta(n,m,lines){const d=1/(lines*1e3),r=m*this._lambda(n)/d;return Math.asin(clamp(r,-1,1));},
+  _lambdaVac(n){return 1/(S3LAB.RH*(1/4-1/(n*n)));},
+  _lambdaAir(n){return this._lambdaVac(n)/1.000277;},
+  _theta(n,m,lines){const d=1/(lines*1e3),r=m*this._lambdaAir(n)/d;return Math.asin(clamp(r,-1,1));},
   _align(s){const th=rad2deg(this._theta(Number(s.ctrl.n),Number(s.ctrl.m),Number(s.ctrl.lines)));s.ctrl.thetaM=Number(th.toFixed(2));S3LAB.sync('thetaM',s.ctrl.thetaM,'°');},
   reset(s){s.t=0;s.records={};this._align(s);},
   onControlChange(s,id){if(id==='n'||id==='m'||id==='lines')this._align(s);},
   update(s,dt){s.t+=dt;},
   calc(s){
     const n=Number(s.ctrl.n),m=Number(s.ctrl.m),lines=Number(s.ctrl.lines),d=1/(lines*1e3);
-    const lambdaTrue=this._lambda(n),thetaTheo=this._theta(n,m,lines),thetaM=deg2rad(Number(s.ctrl.thetaM));
-    const lambdaM=d*Math.sin(thetaM)/m;
+    const lambdaVac=this._lambdaVac(n),lambdaAir=this._lambdaAir(n),thetaTheo=this._theta(n,m,lines),thetaM=deg2rad(Number(s.ctrl.thetaM));
+    const lambdaAirM=d*Math.sin(thetaM)/m,lambdaVacM=lambdaAirM*1.000277;
     const denom=(1/4-1/(n*n));
-    const RHcalc=lambdaM>0?1/(lambdaM*denom):NaN;
+    const RHcalc=lambdaVacM>0?1/(lambdaVacM*denom):NaN;
     const rec=Object.values(s.records||{});
     const mean=rec.length?rec.reduce((a,r)=>a+r.RH,0)/rec.length:NaN;
     const err=Number.isFinite(mean)?100*(mean-S3LAB.RH)/S3LAB.RH:NaN;
-    return{n,m,lines,d,lambdaTrue,thetaTheo,thetaM,lambdaM,RHcalc,mean,err,rec};
+    return{n,m,lines,d,lambdaVac,lambdaAir,thetaTheo,thetaM,lambdaAirM,lambdaVacM,RHcalc,mean,err,rec};
   },
   readouts(s){const q=this.calc(s);return[
     {l:'θ النظري',v:rad2deg(q.thetaTheo).toFixed(2),u:'°'},
     {l:'θ المقاس',v:rad2deg(q.thetaM).toFixed(2),u:'°',c:'cyan'},
-    {l:'λ من المحزوز',v:(q.lambdaM*1e9).toFixed(2),u:'nm',c:'gold'},
+    {l:'λ في الهواء من المحزوز',v:(q.lambdaAirM*1e9).toFixed(2),u:'nm',c:'gold'},
+    {l:'λ الفراغ المصحح',v:(q.lambdaVacM*1e9).toFixed(2),u:'nm'},
     {l:'R_H من الخط الحالي',v:(q.RHcalc/1e7).toFixed(5),u:'×10⁷ m⁻¹'},
     {l:'متوسط R_H المسجل',v:Number.isFinite(q.mean)?(q.mean/1e7).toFixed(5):'—',u:Number.isFinite(q.mean)?'×10⁷ m⁻¹':''},
     {l:'الخطأ النسبي',v:Number.isFinite(q.err)?q.err.toFixed(3):'—',u:Number.isFinite(q.err)?'%':''}
@@ -6755,11 +6757,11 @@ stage3_rydberg_constant: {
   hints(s){const q=this.calc(s),mis=Math.abs(rad2deg(q.thetaM-q.thetaTheo));return[
     'معادلة المحزوز: d sinθ = mλ. اللون المختار يتحرك فعليًا مع زاوية الحيود.',
     mis<.15?'✅ التلسكوب قريب من مركز الخط؛ سجّل القياس.':'حرّك زاوية التلسكوب نحو '+rad2deg(q.thetaTheo).toFixed(2)+'°.',
-    'R∞ يخص نواة لا نهائية الكتلة، بينما R_H أصغر قليلًا بسبب الكتلة المختزلة للإلكترون والبروتون.'
+    'المحزوز يعمل في الهواء؛ نحول λ_air إلى λ_vac بمعامل n_air≈1.000277 قبل تطبيق صيغة ريدبرج. R∞ يخص نواة لا نهائية الكتلة، بينما R_H أصغر قليلًا بسبب الكتلة المختزلة.'
   ];},
   equations:['\\frac{1}{\\lambda}=R_H\\left(\\frac{1}{2^2}-\\frac{1}{n^2}\\right)','m\\lambda=d\\sin\\theta','\\theta=\\frac{|\\theta_R-\\theta_L|}{2}'],
-  theory:'<b>القيمة المرجعية:</b> R∞ = 1.0973731568×10⁷ m⁻¹، بينما يعطي تصحيح الكتلة المختزلة للهيدروجين R_H≈1.09678×10⁷ m⁻¹. <br><b>المشاهدة المتوقعة:</b> Hα الأحمر عند أطول طول موجي وأكبر زاوية حيود، ثم Hβ وHγ وHδ. <br><b>تفسير النتائج:</b> ثبات R_H المستخرج من عدة خطوط يؤكد صيغة بالمر/ريدبرج.',
-  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(!Number.isFinite(q.RHcalc))return true;s.records[q.n]={n:q.n,theta:q.thetaM,lambda:q.lambdaM,RH:q.RHcalc};return true;},
+  theory:'<b>القيمة المرجعية:</b> R∞ = 1.0973731568×10⁷ m⁻¹، بينما يعطي تصحيح الكتلة المختزلة للهيدروجين R_H≈1.09678×10⁷ m⁻¹. في الهواء تظهر خطوط بالمر تقريبًا عند 656.28، 486.13، 434.05، 410.17 nm؛ يحول النموذج هذه القيم إلى طول موجي فراغي قبل حساب R_H. <br><b>المشاهدة المتوقعة:</b> Hα الأحمر عند أطول طول موجي وأكبر زاوية حيود، ثم Hβ وHγ وHδ. <br><b>تفسير النتائج:</b> ثبات R_H المستخرج من عدة خطوط يؤكد صيغة بالمر/ريدبرج.',
+  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(!Number.isFinite(q.RHcalc))return true;s.records[q.n]={n:q.n,theta:q.thetaM,lambdaAir:q.lambdaAirM,lambdaVac:q.lambdaVacM,RH:q.RHcalc};return true;},
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),cy=H*.47,gx=W*.46;
     ctx.fillStyle='#334155';ctx.fillRect(28,cy-42,70,84);label(ctx,'H₂',63,cy,'#e2e8f0','center',15,true);
@@ -6768,7 +6770,7 @@ stage3_rydberg_constant: {
     for(let k=-18;k<=18;k++){ctx.strokeStyle='rgba(244,114,182,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(gx-8,cy+k*6);ctx.lineTo(gx+8,cy+k*6);ctx.stroke();}
     const L=Math.min(W*.42,H*.42);
     [3,4,5,6].forEach(n=>{
-      const lam=this._lambda(n),th=this._theta(n,q.m,q.lines),col=S3LAB.wl(lam*1e9),sel=n===q.n;
+      const lam=this._lambdaAir(n),th=this._theta(n,q.m,q.lines),col=S3LAB.wl(lam*1e9),sel=n===q.n;
       const ex=gx+L*Math.cos(th),ey=cy-L*Math.sin(th);
       ctx.strokeStyle=col;ctx.globalAlpha=sel?1:.26;ctx.lineWidth=sel?4:1.7;ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(ex,ey);ctx.stroke();
       ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(ex,cy+(cy-ey));ctx.stroke();ctx.globalAlpha=1;
@@ -6779,7 +6781,7 @@ stage3_rydberg_constant: {
     ctx.strokeStyle='#22d3ee';ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(tx,ty);ctx.stroke();ctx.setLineDash([]);
     label(ctx,'تلسكوب',tx,ty-24,'#22d3ee','center',9,true);
     const rb={x:22,y:H-47,w:154,h:30};s._recordBtn=rb;S3LAB.button(ctx,rb,'📍 سجّل الخط الحالي',true);
-    const rec=q.rec.sort((a,b)=>a.n-b.n);if(rec.length){label(ctx,'الخطوط المسجلة: '+rec.map(r=>'n='+r.n+' · '+(r.lambda*1e9).toFixed(1)+' nm').join(' | '),W/2,H-18,'#cbd5e1','center',8,false);}
+    const rec=q.rec.sort((a,b)=>a.n-b.n);if(rec.length){label(ctx,'الخطوط المسجلة: '+rec.map(r=>'n='+r.n+' · '+(r.lambdaAir*1e9).toFixed(1)+' nm').join(' | '),W/2,H-18,'#cbd5e1','center',8,false);}
   }
 },
 
