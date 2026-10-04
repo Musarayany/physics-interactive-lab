@@ -6713,7 +6713,275 @@ rl_phase_frequency_lab: {
   theory:'في RL المتسلسلة، يزداد X_L مع التردد، ولذلك يزداد تقدم الجهد الكلي على التيار. عند التردد العالي قد تقترب زاوية تأخر التيار من 90°.',
   hints(s){return['ارفع f ولاحظ زيادة زاوية تأخر التيار.','هذه زاوية الجهد الكلي بالنسبة للتيار، وليست فرق الطور على المقاومة وحدها.'];},
   draw(ctx,W,H,s){drawGrid(ctx,W,H);const left=65,right=W-45,top=45,bottom=H-55,fmin=5,fmax=5000;ctx.strokeStyle='#94a3b8';ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,bottom);ctx.lineTo(right,bottom);ctx.stroke();ctx.strokeStyle='#a3e635';ctx.lineWidth=3;ctx.beginPath();for(let k=0;k<=120;k++){const f=fmin*Math.pow(fmax/fmin,k/120),XL=2*Math.PI*f*s.ctrl.L/1000,ph=Math.atan2(XL,s.ctrl.R)*180/Math.PI,x=left+(right-left)*Math.log(f/fmin)/Math.log(fmax/fmin),y=bottom-(bottom-top)*ph/90;k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();label(ctx,'90°',left-10,top,'#cbd5e1','right',11,true);label(ctx,'0°',left-10,bottom,'#cbd5e1','right',11,true);label(ctx,'f →',right,bottom+20,'#cbd5e1','right',11,true);}
+},
+
+stage3_rydberg_constant: {
+  title:'تعيين قيمة ثابت ريدبرج', icon:'🌈', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
+  desc:'مختبر طيف الهيدروجين ومحزوز الحيود لاستخراج ثابت ريدبرج من خطوط بالمر المرئية.',
+  objective:'قياس أطوال موجات خطوط بالمر n=3–6 بواسطة محزوز حيود، ثم حساب R_H ومتوسطه ومقارنته بالقيمة المرجعية.',
+  apparatus:['مصباح طيف هيدروجين','مطياف/كوليميتر','محزوز حيود','تلسكوب دوّار','تدريج زاوي'],
+  welcome:{title:'🌈 ثابت ريدبرج من طيف الهيدروجين',steps:['اختر خط بالمر n.','اختر رتبة الحيود وكثافة خطوط المحزوز.','حرّك التلسكوب حتى يطابق الشعاع الملون.','اضغط زر تسجيل القياس داخل المشهد، ثم كرر لبقية الخطوط.']},
+  controls:[
+    {id:'n',type:'buttons',label:'خط بالمر n→2',value:3,options:[{value:3,label:'Hα · n=3'},{value:4,label:'Hβ · n=4'},{value:5,label:'Hγ · n=5'},{value:6,label:'Hδ · n=6'}]},
+    {id:'m',type:'buttons',label:'رتبة الحيود m',value:1,options:[{value:1,label:'m=1'},{value:2,label:'m=2'}]},
+    {id:'lines',label:'كثافة المحزوز',min:300,max:600,step:10,value:500,unit:'خط/mm'},
+    {id:'thetaM',label:'زاوية التلسكوب المقاسة',min:1,max:55,step:.01,value:19.15,unit:'°'}
+  ],
+  _lambda(n){return 1/(S3LAB.RH*(1/4-1/(n*n)));},
+  _theta(n,m,lines){const d=1/(lines*1e3),r=m*this._lambda(n)/d;return Math.asin(clamp(r,-1,1));},
+  _align(s){const th=rad2deg(this._theta(Number(s.ctrl.n),Number(s.ctrl.m),Number(s.ctrl.lines)));s.ctrl.thetaM=Number(th.toFixed(2));S3LAB.sync('thetaM',s.ctrl.thetaM,'°');},
+  reset(s){s.t=0;s.records={};this._align(s);},
+  onControlChange(s,id){if(id==='n'||id==='m'||id==='lines')this._align(s);},
+  update(s,dt){s.t+=dt;},
+  calc(s){
+    const n=Number(s.ctrl.n),m=Number(s.ctrl.m),lines=Number(s.ctrl.lines),d=1/(lines*1e3);
+    const lambdaTrue=this._lambda(n),thetaTheo=this._theta(n,m,lines),thetaM=deg2rad(Number(s.ctrl.thetaM));
+    const lambdaM=d*Math.sin(thetaM)/m;
+    const denom=(1/4-1/(n*n));
+    const RHcalc=lambdaM>0?1/(lambdaM*denom):NaN;
+    const rec=Object.values(s.records||{});
+    const mean=rec.length?rec.reduce((a,r)=>a+r.RH,0)/rec.length:NaN;
+    const err=Number.isFinite(mean)?100*(mean-S3LAB.RH)/S3LAB.RH:NaN;
+    return{n,m,lines,d,lambdaTrue,thetaTheo,thetaM,lambdaM,RHcalc,mean,err,rec};
+  },
+  readouts(s){const q=this.calc(s);return[
+    {l:'θ النظري',v:rad2deg(q.thetaTheo).toFixed(2),u:'°'},
+    {l:'θ المقاس',v:rad2deg(q.thetaM).toFixed(2),u:'°',c:'cyan'},
+    {l:'λ من المحزوز',v:(q.lambdaM*1e9).toFixed(2),u:'nm',c:'gold'},
+    {l:'R_H من الخط الحالي',v:(q.RHcalc/1e7).toFixed(5),u:'×10⁷ m⁻¹'},
+    {l:'متوسط R_H المسجل',v:Number.isFinite(q.mean)?(q.mean/1e7).toFixed(5):'—',u:Number.isFinite(q.mean)?'×10⁷ m⁻¹':''},
+    {l:'الخطأ النسبي',v:Number.isFinite(q.err)?q.err.toFixed(3):'—',u:Number.isFinite(q.err)?'%':''}
+  ];},
+  hints(s){const q=this.calc(s),mis=Math.abs(rad2deg(q.thetaM-q.thetaTheo));return[
+    'معادلة المحزوز: d sinθ = mλ. اللون المختار يتحرك فعليًا مع زاوية الحيود.',
+    mis<.15?'✅ التلسكوب قريب من مركز الخط؛ سجّل القياس.':'حرّك زاوية التلسكوب نحو '+rad2deg(q.thetaTheo).toFixed(2)+'°.',
+    'R∞ يخص نواة لا نهائية الكتلة، بينما R_H أصغر قليلًا بسبب الكتلة المختزلة للإلكترون والبروتون.'
+  ];},
+  equations:['\\frac{1}{\\lambda}=R_H\\left(\\frac{1}{2^2}-\\frac{1}{n^2}\\right)','m\\lambda=d\\sin\\theta','\\theta=\\frac{|\\theta_R-\\theta_L|}{2}'],
+  theory:'<b>القيمة المرجعية:</b> R∞ = 1.0973731568×10⁷ m⁻¹، بينما يعطي تصحيح الكتلة المختزلة للهيدروجين R_H≈1.09678×10⁷ m⁻¹. <br><b>المشاهدة المتوقعة:</b> Hα الأحمر عند أطول طول موجي وأكبر زاوية حيود، ثم Hβ وHγ وHδ. <br><b>تفسير النتائج:</b> ثبات R_H المستخرج من عدة خطوط يؤكد صيغة بالمر/ريدبرج.',
+  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(!Number.isFinite(q.RHcalc))return true;s.records[q.n]={n:q.n,theta:q.thetaM,lambda:q.lambdaM,RH:q.RHcalc};return true;},
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this.calc(s),cy=H*.47,gx=W*.46;
+    ctx.fillStyle='#334155';ctx.fillRect(28,cy-42,70,84);label(ctx,'H₂',63,cy,'#e2e8f0','center',15,true);
+    ctx.fillStyle='#fbbf24';ctx.fillRect(98,cy-10,gx-118,20);label(ctx,'كوليميتر',W*.28,cy-26,'#94a3b8','center',9,true);
+    ctx.strokeStyle='#94a3b8';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(gx,54);ctx.lineTo(gx,H-54);ctx.stroke();
+    for(let k=-18;k<=18;k++){ctx.strokeStyle='rgba(244,114,182,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(gx-8,cy+k*6);ctx.lineTo(gx+8,cy+k*6);ctx.stroke();}
+    const L=Math.min(W*.42,H*.42);
+    [3,4,5,6].forEach(n=>{
+      const lam=this._lambda(n),th=this._theta(n,q.m,q.lines),col=S3LAB.wl(lam*1e9),sel=n===q.n;
+      const ex=gx+L*Math.cos(th),ey=cy-L*Math.sin(th);
+      ctx.strokeStyle=col;ctx.globalAlpha=sel?1:.26;ctx.lineWidth=sel?4:1.7;ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(ex,ey);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(ex,cy+(cy-ey));ctx.stroke();ctx.globalAlpha=1;
+      if(sel)label(ctx,'H'+({3:'α',4:'β',5:'γ',6:'δ'}[n]),ex-4,ey-12,col,'center',10,true);
+    });
+    const th=q.thetaM,tx=gx+L*.88*Math.cos(th),ty=cy-L*.88*Math.sin(th);
+    ctx.save();ctx.translate(tx,ty);ctx.rotate(-th);ctx.fillStyle='#1e293b';ctx.strokeStyle='#22d3ee';ctx.fillRect(-42,-13,84,26);ctx.strokeRect(-42,-13,84,26);ctx.restore();
+    ctx.strokeStyle='#22d3ee';ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(tx,ty);ctx.stroke();ctx.setLineDash([]);
+    label(ctx,'تلسكوب',tx,ty-24,'#22d3ee','center',9,true);
+    const rb={x:22,y:H-47,w:154,h:30};s._recordBtn=rb;S3LAB.button(ctx,rb,'📍 سجّل الخط الحالي',true);
+    const rec=q.rec.sort((a,b)=>a.n-b.n);if(rec.length){label(ctx,'الخطوط المسجلة: '+rec.map(r=>'n='+r.n+' · '+(r.lambda*1e9).toFixed(1)+' nm').join(' | '),W/2,H-18,'#cbd5e1','center',8,false);}
+  }
+},
+
+stage3_magnetron_specific_charge: {
+  title:'إيجاد الشحنة النوعية للإلكترون e/m بطريقة الماغنترون', icon:'🧲', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
+  desc:'مسارات إلكترونية داخل مصعد أسطواني مع مجال مغناطيسي وقطع تيار المصعد عند المجال الحرج.',
+  objective:'تحديد المجال المغناطيسي الحرج الذي يمنع الإلكترونات من بلوغ المصعد، ثم استخراج e/m من هندسة الماغنترون.',
+  apparatus:['ماغنترون/أنبوب ثنائي أسطواني','كاثود محوري','مصعد أسطواني','ملفات مجال مغناطيسي','مقياس تيار المصعد','مصدر جهد مستمر'],
+  welcome:{title:'🧲 الماغنترون و e/m',steps:['اضبط جهد المصعد Va.','زد تيار الملفات تدريجيًا.','راقب ازدياد تقوس المسارات وانخفاض تيار المصعد قرب Bc.','استخدم العلاقة الأسطوانية الكاملة لحساب e/m.']},
+  controls:[
+    {id:'Va',label:'جهد المصعد Va',min:50,max:300,step:5,value:150,unit:'V'},
+    {id:'I',label:'تيار ملفات المجال',min:0,max:2,step:.01,value:1.05,unit:'A'},
+    {id:'kB',label:'ثابت معايرة المجال kB',min:1,max:3,step:.05,value:2,unit:'mT/A'},
+    {id:'ra',label:'نصف قطر المصعد ra',min:2.5,max:5,step:.1,value:4,unit:'cm'},
+    {id:'rc',label:'نصف قطر الكاثود rc',min:.2,max:.8,step:.05,value:.5,unit:'cm'}
+  ],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){
+    const Va=s.ctrl.Va,ra=s.ctrl.ra/100,rc=s.ctrl.rc/100,B=s.ctrl.kB*1e-3*s.ctrl.I;
+    const Bc=Math.sqrt(8*Va*ra*ra/(S3LAB.em*Math.pow(ra*ra-rc*rc,2)));
+    const width=Math.max(2e-5,.045*Bc),cut=1/(1+Math.exp((B-Bc)/width)),Ia=4*cut;
+    const v=Math.sqrt(2*CONST.e*Va/CONST.me),rOrbit=B>1e-8?CONST.me*v/(CONST.e*B):Infinity;
+    const emFromB=B>1e-8?8*Va*ra*ra/(B*B*Math.pow(ra*ra-rc*rc,2)):NaN;
+    return{Va,ra,rc,B,Bc,Ia,v,rOrbit,emFromB,cut};
+  },
+  readouts(s){const q=this.calc(s),diff=Number.isFinite(q.emFromB)?100*(q.emFromB-S3LAB.em)/S3LAB.em:NaN;return[
+    {l:'B الحالي',v:(q.B*1e3).toFixed(3),u:'mT',c:'cyan'},
+    {l:'B_c النموذجي',v:(q.Bc*1e3).toFixed(3),u:'mT',c:'gold'},
+    {l:'تيار المصعد Ia',v:q.Ia.toFixed(3),u:'mA'},
+    {l:'نصف قطر التقوس',v:Number.isFinite(q.rOrbit)?(q.rOrbit*100).toFixed(2):'∞',u:Number.isFinite(q.rOrbit)?'cm':''},
+    {l:'e/m إذا اعتُبر B حرجًا',v:Number.isFinite(q.emFromB)?(q.emFromB/1e11).toFixed(4):'—',u:Number.isFinite(q.emFromB)?'×10¹¹ C/kg':''},
+    {l:'الفرق عن المرجع',v:Number.isFinite(diff)?diff.toFixed(2):'—',u:Number.isFinite(diff)?'%':''}
+  ];},
+  hints(s){const q=this.calc(s);return[
+    q.B<q.Bc?'الإلكترونات ما زالت تصل إلى المصعد؛ زد B نحو '+(q.Bc*1e3).toFixed(2)+' mT.':'عند هذا المجال ينحني معظم الإلكترونات قبل بلوغ المصعد، لذلك يهبط Ia.',
+    'استُخدمت العلاقة الأسطوانية الكاملة لأن rc ليس مفترضًا صفراً.',
+    'B=kB I هنا معايرة صريحة للجهاز، وليست علاقة ملفات مخمّنة.'
+  ];},
+  equations:['\\frac{e}{m}=\\frac{8V_a r_a^2}{B_c^2(r_a^2-r_c^2)^2}','B=k_B I','r=\\frac{m_ev}{eB}'],
+  theory:'<b>المشاهدة المتوقعة:</b> كلما زاد B صغرت أنصاف أقطار المسارات حتى لا تعود الإلكترونات قادرة على ملامسة المصعد، فينخفض Ia بقوة قرب Bc. <br><b>تفسير النتائج:</b> المجال الحرج مع Va وهندسة الأسطوانة يحدد e/m. يستخدم النموذج منحنى قطع أملسًا تعليميًا حول الحد الحرج بدل ادعاء ضوضاء قياس حقيقية.',
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this.calc(s),cx=W*.40,cy=H*.48,scale=Math.min(W,H)*.28/q.ra,raP=q.ra*scale,rcP=Math.max(8,q.rc*scale);
+    ctx.strokeStyle='#64748b';ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy,raP,0,Math.PI*2);ctx.stroke();label(ctx,'المصعد',cx,cy-raP-18,'#94a3b8','center',10,true);
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(cx,cy,rcP,0,Math.PI*2);ctx.fill();label(ctx,'كاثود',cx,cy,'#0a0e1a','center',8,true);
+    const bnorm=clamp(q.B/(q.Bc*1.4),0,1.4);for(let i=0;i<6;i++){const ang=i*Math.PI/3;const startR=rcP+5,sx=cx+startR*Math.cos(ang),sy=cy+startR*Math.sin(ang);ctx.strokeStyle='#22d3ee';ctx.globalAlpha=.45+.08*i;ctx.lineWidth=1.7;ctx.beginPath();ctx.moveTo(sx,sy);for(let k=1;k<=45;k++){const u=k/45,turn=bnorm*2.6*u,rr=startR+(raP-startR)*u*(1-clamp((bnorm-1)*.7,0,.45));ctx.lineTo(cx+rr*Math.cos(ang+turn),cy+rr*Math.sin(ang+turn));}ctx.stroke();}ctx.globalAlpha=1;
+    const coilX=W*.72,coilR=Math.min(72,H*.18);ctx.strokeStyle='#f472b6';ctx.lineWidth=3;for(let k=-2;k<=2;k++){ctx.beginPath();ctx.ellipse(coilX+k*5,cy,coilR*.55,coilR,0,0,Math.PI*2);ctx.stroke();}label(ctx,'ملفات المجال',coilX,cy+coilR+18,'#f472b6','center',9,true);
+    const gx=W*.63,gy=H*.73,gw=W*.31,gh=H*.18;ctx.strokeStyle='#334155';ctx.strokeRect(gx,gy,gw,gh);ctx.beginPath();for(let i=0;i<=100;i++){const B=q.Bc*1.6*i/100,wid=Math.max(2e-5,.045*q.Bc),I=4/(1+Math.exp((B-q.Bc)/wid)),x=gx+gw*i/100,y=gy+gh-gh*I/4;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.stroke();label(ctx,'Ia مقابل B',gx+gw/2,gy-12,'#cbd5e1','center',9,true);
+  }
+},
+
+stage3_millikan_oil_drop: {
+  title:'تحكم الشحنة وقياس شحنة الإلكترون — تجربة ميليكان', icon:'💧', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
+  desc:'قطرات زيت مشحونة بين لوحين مع سقوط حر، مجال قابل للعكس، واستخراج r وq مع احتساب الطفو.',
+  objective:'قياس السرعة الحدية في السقوط والصعود، استخراج نصف قطر القطرة وشحنتها، والتحقق من q=ne.',
+  apparatus:['مرذاذ زيت','لوحان متوازيان','مصدر جهد','منطقة رصد/مجهر','قطرات زيت مشحونة'],
+  welcome:{title:'💧 ميليكان — تكميم الشحنة',steps:['اختر قطرة من القطرات الأربع.','أطفئ المجال ولاحظ سرعة السقوط الحدية vf.','شغّل المجال بالقطبية الرافعة واضبط V ولاحظ vr.','اعكس القطبية لترى انعكاس اتجاه القوة الكهربائية.']},
+  controls:[
+    {id:'drop',type:'buttons',label:'القطرة المختارة',value:0,options:[{value:0,label:'قطرة A'},{value:1,label:'قطرة B'},{value:2,label:'قطرة C'},{value:3,label:'قطرة D'}]},
+    {id:'V',label:'فرق الجهد',min:0,max:800,step:5,value:420,unit:'V'},
+    {id:'d',label:'المسافة بين اللوحين',min:4,max:10,step:.1,value:6,unit:'mm'},
+    {id:'field',type:'buttons',label:'المجال',value:1,options:[{value:0,label:'OFF'},{value:1,label:'ON'}]},
+    {id:'pol',type:'buttons',label:'القطبية',value:1,options:[{value:1,label:'رفع الشحنة السالبة'},{value:-1,label:'عكس القطبية'}]}
+  ],
+  _drops:[{r:.72e-6,n:3},{r:.88e-6,n:5},{r:1.02e-6,n:8},{r:1.18e-6,n:11}],
+  reset(s){s.t=0;s.y=0;},
+  update(s,dt){const q=this.calc(s);s.t+=dt;s.y+=(q.vTerm||0)*dt;if(Math.abs(s.y)>q.d*.38)s.y=-Math.sign(s.y)*q.d*.34;},
+  calc(s){
+    const dr=this._drops[clamp(Math.round(s.ctrl.drop),0,this._drops.length-1)],r=dr.r,n=dr.n,q=-n*CONST.e,d=s.ctrl.d/1000,V=s.ctrl.V;
+    const vol=4*Math.PI*r*r*r/3,weight=(S3LAB.rhoOil-S3LAB.rhoAir)*vol*S3LAB.g,drag=6*Math.PI*S3LAB.etaAir*r;
+    const vf=weight/drag,Ey=s.ctrl.field?(-s.ctrl.pol*V/Math.max(d,1e-6)):0,Fe=q*Ey;
+    const vTerm=(Fe-weight)/drag,vr=Math.max(0,vTerm);
+    const rRecovered=Math.sqrt(9*S3LAB.etaAir*vf/(2*S3LAB.g*(S3LAB.rhoOil-S3LAB.rhoAir)));
+    const qRecovered=(s.ctrl.field&&V>0&&vr>0)?6*Math.PI*S3LAB.etaAir*rRecovered*(vf+vr)*d/V:NaN;
+    return{r,n,q,d,V,vol,weight,drag,vf,Ey,Fe,vTerm,vr,rRecovered,qRecovered};
+  },
+  readouts(s){const q=this.calc(s);return[
+    {l:'v_f سقوط',v:(q.vf*1000).toFixed(3),u:'mm/s'},
+    {l:'v_r صعود',v:(q.vr*1000).toFixed(3),u:'mm/s',c:'cyan'},
+    {l:'نصف القطر من Stokes',v:(q.rRecovered*1e6).toFixed(3),u:'µm'},
+    {l:'|q|',v:Number.isFinite(q.qRecovered)?q.qRecovered.toExponential(3):(Math.abs(q.q)).toExponential(3),u:'C',c:'gold'},
+    {l:'q/e',v:Number.isFinite(q.qRecovered)?(q.qRecovered/CONST.e).toFixed(3):q.n.toFixed(0),u:''},
+    {l:'أقرب n',v:q.n.toFixed(0),u:'e'}
+  ];},
+  hints(s){const q=this.calc(s);return[
+    !s.ctrl.field?'المجال مطفأ: القطرة تهبط عند السرعة الحدية vf.':(q.vTerm>0?'القوة الكهربائية تتغلب على الوزن الفعّال؛ القطرة تصعد.':'القوة الصافية إلى الأسفل؛ القطرة تهبط.'),
+    'استُخدم (ρoil−ρair)g، أي أن قوة الطفو لم تُهمَل.',
+    'شحنة كل قطرة في النموذج عدد صحيح n من الشحنة الأولية؛ لا توجد قيم عشوائية.'
+  ];},
+  equations:['E=\\frac{V}{d}','\\frac{4}{3}\\pi r^3(\\rho_{oil}-\\rho_{air})g=6\\pi\\eta r v_f','r=\\sqrt{\\frac{9\\eta v_f}{2g(\\rho_{oil}-\\rho_{air})}}','q=\\frac{6\\pi\\eta r(v_f+v_r)d}{V}','q=ne'],
+  theory:'<b>المشاهدة المتوقعة:</b> عند إطفاء المجال تهبط القطرة بسرعة حدية ثابتة. عند تشغيل القطبية المناسبة يمكن أن تتباطأ أو تتوقف أو تصعد؛ وعكس القطبية يعكس اتجاه القوة الكهربائية. <br><b>تفسير النتائج:</b> يستخرج r من قانون ستوكس مع تصحيح الطفو، ثم q من سرعتي السقوط والصعود. القطرات الأربع تحمل مضاعفات صحيحة من e.',
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this.calc(s),left=W*.16,right=W*.84,top=H*.24,bottom=H*.76;
+    ctx.fillStyle='#475569';ctx.fillRect(left,top,right-left,10);ctx.fillRect(left,bottom,right-left,10);
+    label(ctx,s.ctrl.pol>0?'اللوح العلوي +':'اللوح العلوي −',W/2,top-18,s.ctrl.pol>0?'#fbbf24':'#22d3ee','center',10,true);
+    label(ctx,s.ctrl.pol>0?'اللوح السفلي −':'اللوح السفلي +',W/2,bottom+24,s.ctrl.pol>0?'#22d3ee':'#fbbf24','center',10,true);
+    ctx.fillStyle='#94a3b8';ctx.fillRect(30,H*.12,76,22);ctx.beginPath();ctx.moveTo(90,H*.14);ctx.lineTo(130,H*.21);ctx.lineTo(78,H*.21);ctx.closePath();ctx.fill();label(ctx,'مرذاذ',68,H*.09,'#cbd5e1','center',9,true);
+    if(s.ctrl.field){for(let k=0;k<6;k++){const x=left+(right-left)*(k+.5)/6;const up=q.Ey<0;arrow(ctx,x,up?bottom-12:top+18,x,up?top+18:bottom-12,'rgba(34,211,238,.65)',1.5,6);}}
+    const yy=(top+bottom)/2-clamp(s.y/(q.d*.38),-1,1)*(bottom-top)*.34,rr=9+q.r*1e6*5;
+    ctx.fillStyle='#fbbf24';ctx.shadowColor='#fbbf24';ctx.shadowBlur=10;ctx.beginPath();ctx.arc(W/2,yy,rr,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    label(ctx,'−'+q.n+'e',W/2,yy,'#7c2d12','center',8,true);label(ctx,'القطرة المختارة',W/2,yy+rr+16,'#cbd5e1','center',8,true);
+    ctx.strokeStyle='#64748b';ctx.strokeRect(W*.05,H*.34,W*.16,H*.30);label(ctx,'مجهر',W*.13,H*.32,'#94a3b8','center',9,true);
+    arrow(ctx,W*.62,yy,W*.62,yy-44*(q.Fe>0?1:-1),'#22d3ee',2,8);label(ctx,'F_E',W*.62,yy-52*(q.Fe>0?1:-1),'#22d3ee','center',8,true);
+    arrow(ctx,W*.70,yy,W*.70,yy+42,'#ef4444',2,8);label(ctx,'W−F_b',W*.70,yy+52,'#ef4444','center',8,true);
+  }
+},
+
+stage3_photoelectric_effect: {
+  title:'دراسة التأثير الكهروضوئي', icon:'💡', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
+  desc:'خطوط طيف زئبق، خلية كهروضوئية، جهد إيقاف ومنحنيات I–V مع قياس h من Vs مقابل f.',
+  objective:'التحقق من معادلة آينشتاين للتأثير الكهروضوئي وقياس h من ميل منحنى جهد الإيقاف مقابل التردد.',
+  apparatus:['مصدر ضوء/خطوط زئبق','مرشح طيفي','خلية كهروضوئية','مصدر جهد معاكس','ميكروأميتر'],
+  welcome:{title:'💡 التأثير الكهروضوئي',steps:['اختر طول موجة من خطوط الزئبق.','غيّر شدة الضوء ولاحظ أن التيار يتغير بينما Vs لا يتغير.','زد جهد الإعاقة حتى ينعدم التيار.','سجّل عدة خطوط من زر القياس داخل المشهد لاستنتاج h.']},
+  controls:[
+    {id:'lam',type:'buttons',label:'خط الزئبق',value:404.7,options:[{value:365,label:'365.0 nm'},{value:404.7,label:'404.7 nm'},{value:435.8,label:'435.8 nm'},{value:546.1,label:'546.1 nm'},{value:578.05,label:'577/579 nm'}]},
+    {id:'intensity',label:'شدة الضوء',min:10,max:100,step:5,value:60,unit:'%'},
+    {id:'Vret',label:'جهد الإعاقة',min:0,max:4,step:.02,value:.5,unit:'V'},
+    {id:'phi',label:'دالة الشغل φ للنموذج',min:1.6,max:3.2,step:.05,value:2,unit:'eV'}
+  ],
+  reset(s){s.t=0;s.records={};},update(s,dt){s.t+=dt;},
+  calcFor(lam,phi,intensity,Vret){
+    const f=CONST.c/(lam*1e-9),E=CONST.h*f/CONST.e,K=Math.max(0,E-phi),Vs=K,emits=E>phi;
+    const I0=20*(intensity/100),I=(emits&&Vs>0&&Vret<Vs)?I0*Math.sqrt(Math.max(0,1-Vret/Vs)):0;
+    return{lam,f,E,K,Vs,emits,I,I0};
+  },
+  calc(s){const q=this.calcFor(Number(s.ctrl.lam),s.ctrl.phi,s.ctrl.intensity,s.ctrl.Vret),pts=Object.values(s.records||{}).map(r=>({x:r.f,y:r.Vs})),fit=S3LAB.fit(pts);return Object.assign(q,{fit,pts});},
+  readouts(s){const q=this.calc(s),hFit=q.fit?CONST.e*q.fit.slope:NaN;return[
+    {l:'التردد f',v:(q.f/1e14).toFixed(3),u:'×10¹⁴ Hz'},
+    {l:'طاقة الفوتون',v:q.E.toFixed(3),u:'eV'},
+    {l:'Kmax',v:q.K.toFixed(3),u:'eV',c:'cyan'},
+    {l:'جهد الإيقاف Vs',v:q.emits?q.Vs.toFixed(3):'لا انبعاث',u:q.emits?'V':'',c:'gold'},
+    {l:'التيار الضوئي',v:q.I.toFixed(2),u:'µA'},
+    {l:'h من الملاءمة',v:Number.isFinite(hFit)?hFit.toExponential(4):'—',u:Number.isFinite(hFit)?'J·s':''}
+  ];},
+  hints(s){const q=this.calc(s);return[
+    !q.emits?'hf < φ، لذلك لا يحدث انبعاث مهما زادت الشدة.':'زيادة الشدة ترفع عدد الإلكترونات والتيار، لكنها لا تغيّر Vs عند ثبات f.',
+    q.emits?(s.ctrl.Vret>=q.Vs?'وصل جهد الإعاقة إلى جهد الإيقاف؛ التيار ≈ صفر.':'زد Vret نحو '+q.Vs.toFixed(2)+' V لإيقاف أسرع الإلكترونات.'):'جرّب خطًا أقصر طولًا موجيًا.',
+    'ميل Vs مقابل f يساوي h/e، والجزء المقطوع يساوي −φ/e في النموذج المثالي.'
+  ];},
+  equations:['hf=\\phi+K_{max}','K_{max}=eV_s','f=\\frac{c}{\\lambda}','V_s=\\frac{h}{e}f-\\frac{\\phi}{e}'],
+  theory:'<b>المشاهدة المتوقعة:</b> الشدة تغيّر التيار المشبع لا جهد الإيقاف؛ التردد الأعلى يرفع Vs إذا كان hf>φ؛ وتحت تردد العتبة لا يحدث انبعاث. <br><b>تفسير النتائج:</b> الخطية بين Vs وf تعطي h/e من الميل. دالة الشغل هنا معامل صريح للنموذج وليست منسوبة إلى معدن محدد.',
+  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(q.emits)s.records[String(q.lam)]={f:q.f,Vs:q.Vs,lam:q.lam};return true;},
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this.calc(s),col=S3LAB.wl(q.lam),cell={x:W*.42,y:H*.22,w:W*.22,h:H*.28};
+    ctx.fillStyle='#1e293b';ctx.fillRect(32,H*.28,72,70);ctx.fillStyle=col;ctx.globalAlpha=.8;for(let k=0;k<Math.max(2,Math.round(s.ctrl.intensity/12));k++){const yy=H*.31+k*7;ctx.beginPath();ctx.moveTo(104,yy);ctx.lineTo(cell.x,cell.y+cell.h*.5);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();}ctx.globalAlpha=1;label(ctx,q.lam.toFixed(1)+' nm',68,H*.24,col,'center',10,true);
+    ctx.strokeStyle='#94a3b8';ctx.strokeRect(cell.x,cell.y,cell.w,cell.h);ctx.fillStyle='#fbbf24';ctx.fillRect(cell.x+10,cell.y+14,10,cell.h-28);ctx.fillStyle='#22d3ee';ctx.fillRect(cell.x+cell.w-20,cell.y+14,10,cell.h-28);label(ctx,'خلية كهروضوئية',cell.x+cell.w/2,cell.y-14,'#cbd5e1','center',9,true);
+    if(q.emits){const count=Math.max(1,Math.round(s.ctrl.intensity/14));for(let i=0;i<count;i++){const u=((s.t*.22+i/count)%1),x=cell.x+24+u*(cell.w-52),y=cell.y+cell.h*.5+18*Math.sin(i*1.7+s.t);ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();}}
+    const gx=W*.08,gy=H*.62,gw=W*.54,gh=H*.25;ctx.strokeStyle='#475569';ctx.strokeRect(gx,gy,gw,gh);ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<=100;i++){const v=4*i/100,c=this.calcFor(q.lam,s.ctrl.phi,s.ctrl.intensity,v),x=gx+gw*i/100,y=gy+gh-gh*c.I/20;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();label(ctx,'I–V الإعاقة',gx+gw/2,gy-12,'#cbd5e1','center',9,true);
+    const rb={x:W*.69,y:H*.68,w:W*.25,h:32};s._recordBtn=rb;S3LAB.button(ctx,rb,'📍 سجّل Vs,f',q.emits);
+    const pts=Object.values(s.records||{});label(ctx,'نقاط Vs–f: '+pts.length,W*.815,H*.64,'#94a3b8','center',9,true);
+  }
+},
+
+stage3_electron_beam_fields: {
+  title:'سلوك الحزمة الإلكترونية في المجال الكهربائي والمجال المغناطيسي', icon:'🟢', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
+  desc:'أنبوب حزمة إلكترونية مع صفائح انحراف وملفات هلمهولتز وحل عددي لقوة لورنتز.',
+  objective:'دراسة انحراف الإلكترونات في E وB منفردين ومجتمعين، والتحقق من اتجاه القوة وشرط منتقي السرعة v=E/B.',
+  apparatus:['مدفع إلكتروني','مصعد تسريع','صفائح انحراف','شاشة فلورية','زوج ملفات هلمهولتز'],
+  welcome:{title:'🟢 الحزمة الإلكترونية في E وB',steps:['اضبط جهد التسريع Va.','فعّل المجال الكهربائي وغيّر Vp أو إشارته.','فعّل المجال المغناطيسي وغيّر التيار أو اتجاه B.','قارن شرط انعدام الانحراف مع v=E/B.']},
+  controls:[
+    {id:'Va',label:'جهد التسريع Va',min:200,max:3000,step:20,value:1200,unit:'V'},
+    {id:'Vp',label:'جهد صفائح الانحراف Vp',min:-300,max:300,step:5,value:100,unit:'V'},
+    {id:'d',label:'تباعد الصفائح d',min:1,max:5,step:.1,value:3,unit:'cm'},
+    {id:'I',label:'تيار هلمهولتز I',min:0,max:2,step:.02,value:.7,unit:'A'},
+    {id:'Bdir',type:'buttons',label:'اتجاه B',value:1,options:[{value:1,label:'B ⊙ +z'},{value:-1,label:'B ⊗ −z'}]},
+    {id:'Eon',type:'buttons',label:'المجال الكهربائي',value:1,options:[{value:1,label:'E ON'},{value:0,label:'E OFF'}]},
+    {id:'Bon',type:'buttons',label:'المجال المغناطيسي',value:1,options:[{value:1,label:'B ON'},{value:0,label:'B OFF'}]}
+  ],
+  reset(s){s.t=0;s._trajKey='';s._traj=null;},update(s,dt){s.t+=dt;},
+  _fields(s){const v0=Math.sqrt(2*CONST.e*s.ctrl.Va/CONST.me),E=s.ctrl.Eon?s.ctrl.Vp/(s.ctrl.d/100):0,N=130,R=.15,B0=Math.pow(4/5,1.5)*CONST.mu0*N*s.ctrl.I/R,B=s.ctrl.Bon*s.ctrl.Bdir*B0;return{v0,E,B,N,R};},
+  _trajectory(s){
+    const k=[s.ctrl.Va,s.ctrl.Vp,s.ctrl.d,s.ctrl.I,s.ctrl.Bdir,s.ctrl.Eon,s.ctrl.Bon].join('|');if(s._traj&&s._trajKey===k)return s._traj;
+    const f=this._fields(s),q=-CONST.e,m=CONST.me,L=.28,dt=L/(f.v0*720);let x=0,y=0,vx=f.v0,vy=0;const pts=[];
+    for(let i=0;i<850&&x<L&&Math.abs(y)<.075;i++){const active=x>.045&&x<.22,Ey=active?f.E:0,Bz=active?f.B:0,ax=(q/m)*(vy*Bz),ay=(q/m)*(Ey-vx*Bz);vx+=ax*dt;vy+=ay*dt;x+=vx*dt;y+=vy*dt;if(i%4===0)pts.push({x,y});}
+    const v=Math.hypot(vx,vy),r=Math.abs(f.B)>1e-12?CONST.me*f.v0/(CONST.e*Math.abs(f.B)):Infinity;s._trajKey=k;s._traj={pts,x,y,vx,vy,v,r,fields:f};return s._traj;
+  },
+  readouts(s){const q=this._trajectory(s),f=q.fields,sel=(Math.abs(f.B)>1e-12)?Math.abs(f.E/f.B):NaN;return[
+    {l:'v₀',v:(f.v0/1e6).toFixed(3),u:'×10⁶ m/s',c:'gold'},
+    {l:'E',v:(f.E/1000).toFixed(2),u:'kV/m'},
+    {l:'B',v:(f.B*1e3).toFixed(3),u:'mT',c:'cyan'},
+    {l:'r عند B فقط',v:Number.isFinite(q.r)?q.r.toFixed(3):'∞',u:Number.isFinite(q.r)?'m':''},
+    {l:'انحراف الشاشة y',v:(q.y*1000).toFixed(2),u:'mm'},
+    {l:'E/B',v:Number.isFinite(sel)?(sel/1e6).toFixed(3):'—',u:Number.isFinite(sel)?'×10⁶ m/s':''}
+  ];},
+  hints(s){const q=this._trajectory(s),f=q.fields;return[
+    'القوة محسوبة عدديًا من F=q(E+v×B) مع q=−e؛ لذلك اتجاه انحراف الإلكترون معاكس لاتجاه قوة الشحنة الموجبة.',
+    s.ctrl.Eon&&s.ctrl.Bon&&Math.abs(f.B)>1e-12?'شرط المنتقي التقريبي: E/B='+(Math.abs(f.E/f.B)/1e6).toFixed(2)+'×10⁶ m/s مقابل v₀='+(f.v0/1e6).toFixed(2)+'×10⁶ m/s.':'فعّل E وB معًا لاختبار شرط انعدام الانحراف.',
+    'عكس إشارة Vp أو اتجاه B يعكس مساهمة القوة المقابلة فورًا.'
+  ];},
+  equations:['v_0=\\sqrt{\\frac{2eV_a}{m_e}}','E=\\frac{V_p}{d}','B=\\left(\\frac45\\right)^{3/2}\\frac{\\mu_0NI}{R}','m_e\\frac{d\\vec v}{dt}=-e(\\vec E+\\vec v\\times\\vec B)','r=\\frac{m_ev}{eB}'],
+  theory:'<b>المشاهدة المتوقعة:</b> E وحده يعطي انحرافًا شبه قطع مكافئ، وB وحده يسبب تقوسًا دائريًا؛ وعكس أي مجال يعكس انحرافه. <br><b>تفسير النتائج:</b> المسار هنا ناتج من تكامل عددي لقوة لورنتز داخل منطقة الصفائح/الملفات. استخدم النموذج زوج هلمهولتز محددًا N=130 وR=0.15 m، لذلك علاقة المجال ليست قيمة مفترضة مجهولة.',
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this._trajectory(s),pts=q.pts,x0=W*.08,y0=H*.52,xScale=W*.82/.28,yScale=H*.38/.075;
+    ctx.strokeStyle='#64748b';ctx.lineWidth=3;ctx.strokeRect(x0,H*.20,W*.82,H*.58);label(ctx,'أنبوب مفرغ',W*.49,H*.16,'#94a3b8','center',9,true);
+    ctx.fillStyle='#fbbf24';ctx.fillRect(x0-18,y0-18,34,36);label(ctx,'e⁻ gun',x0-1,y0,'#0a0e1a','center',8,true);
+    const px1=x0+.045*xScale,px2=x0+.22*xScale;ctx.fillStyle='#334155';ctx.fillRect(px1,H*.31,px2-px1,8);ctx.fillRect(px1,H*.68,px2-px1,8);label(ctx,'صفائح E', (px1+px2)/2,H*.27,'#cbd5e1','center',9,true);
+    ctx.strokeStyle='#f472b6';ctx.lineWidth=3;for(let k=0;k<5;k++){ctx.beginPath();ctx.ellipse((px1+px2)/2+k*5,y0,W*.17,H*.25,0,0,Math.PI*2);ctx.stroke();}label(ctx,'هلمهولتز', (px1+px2)/2,y0+H*.29,'#f472b6','center',9,true);
+    ctx.strokeStyle='#22d3ee';ctx.shadowColor='#22d3ee';ctx.shadowBlur=10;ctx.lineWidth=3;ctx.beginPath();pts.forEach((p,i)=>{const x=x0+p.x*xScale,y=y0-p.y*yScale;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();ctx.shadowBlur=0;
+    if(pts.length){const p=pts[Math.floor(((s.t*.5)%1)*(pts.length-1))],x=x0+p.x*xScale,y=y0-p.y*yScale;ctx.fillStyle='#a3e635';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();}
+    ctx.fillStyle='#1e293b';ctx.fillRect(x0+.28*xScale-5,H*.28,10,H*.48);label(ctx,'الشاشة',x0+.28*xScale,H*.82,'#cbd5e1','center',9,true);
+  }
 }
+
 };
 
 
