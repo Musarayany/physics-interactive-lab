@@ -7079,7 +7079,101 @@ stage3_zeeman_cadmium: {
     label(ctx,'λ₀='+s.ctrl.lambda0.toFixed(1)+' nm',W*.74,H*.84,'#94a3b8','center',9,true);
   }
 }
+,
 
+stage3_electron_diffraction_graphite: {
+  title:'إثبات الطبيعة الموجية للإلكترون باستخدام حيود الإلكترونات', icon:'🟢', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
+  desc:'مدفع إلكتروني وهدف غرافيت وشاشة فلورية تعرض حلقتي حيود تتقلصان بزيادة جهد التسريع.',
+  objective:'التحقق من علاقة دي برولي واستنتاج سلوك حلقات حيود الإلكترونات وفق قانون براج وهندسة الشاشة.',
+  apparatus:['مدفع إلكتروني','مصدر تسريع 1–5 kV','غرافيت متعدد البلورات','شاشة فلورية','مسطرة قياس أقطار الحلقات'],
+  welcome:{title:'🟢 حيود الإلكترونات في الغرافيت',steps:['غيّر جهد التسريع V.','راقب تناقص λ عند زيادة V.','راقب تقلص الحلقتين على الشاشة.','غيّر L أو المسافات البلورية وقارن الأقطار المحسوبة.']},
+  controls:[
+    {id:'V',label:'جهد التسريع',min:1,max:5,step:.05,value:5,unit:'kV'},
+    {id:'L',label:'بعد الشاشة L',min:.10,max:.20,step:.005,value:.135,unit:'m'},
+    {id:'d1',label:'المسافة البلورية d₁',min:.18,max:.24,step:.001,value:.213,unit:'nm'},
+    {id:'d2',label:'المسافة البلورية d₂',min:.10,max:.15,step:.001,value:.123,unit:'nm'}
+  ],
+  reset(s){s.t=0;},update(s,dt){s.t+=dt;},
+  calc(s){
+    const V=s.ctrl.V*1000,lam=CONST.h/Math.sqrt(2*CONST.me*CONST.e*V*(1+CONST.e*V/(2*CONST.me*CONST.c*CONST.c)));
+    const lamNR=CONST.h/Math.sqrt(2*CONST.me*CONST.e*V);
+    const one=d=>{const th=Math.asin(clamp(lam/(2*d),-1,1)),R=s.ctrl.L*Math.tan(2*th);return{th,R,D:2*R};};
+    return{V,lam,lamNR,a:one(s.ctrl.d1*1e-9),b:one(s.ctrl.d2*1e-9)};
+  },
+  readouts(s){const q=this.calc(s);return[
+    {l:'λ النسبي',v:(q.lam*1e12).toFixed(3),u:'pm',c:'gold'},
+    {l:'λ غير النسبي',v:(q.lamNR*1e12).toFixed(3),u:'pm'},
+    {l:'θ₁',v:rad2deg(q.a.th).toFixed(3),u:'°'},
+    {l:'θ₂',v:rad2deg(q.b.th).toFixed(3),u:'°'},
+    {l:'D₁',v:(q.a.D*100).toFixed(2),u:'cm',c:'cyan'},
+    {l:'D₂',v:(q.b.D*100).toFixed(2),u:'cm',c:'cyan'}
+  ];},
+  hints(s){return[
+    'زيادة V تزيد زخم الإلكترون، فتقل λ وتقترب حلقات الحيود من المركز.',
+    'استخدم النموذج تصحيحًا نسبيًا للطول الموجي؛ عند 5 kV يجب أن تكون λ≈17.3 pm.',
+    'زاوية براج θ ليست زاوية التشتت الكلية؛ هندسة الحلقة تستخدم 2θ.'
+  ];},
+  equations:['\\lambda=\\frac{h}{\\sqrt{2m_e eV\\left(1+\\frac{eV}{2m_ec^2}\\right)}}','2d\\sin\\theta=n\\lambda','R=L\\tan(2\\theta)','D=2R'],
+  theory:'<b>المشاهدة المتوقعة:</b> تظهر حلقتان رئيسيتان للغرافيت، وتتناقص أقطارهما مع زيادة جهد التسريع. <br><b>تفسير النتائج:</b> يعكس النمط الطبيعة الموجية للإلكترون؛ λ من دي برولي، وشرط براج يحدد θ، ثم تحول هندسة الشاشة زاوية التشتت 2θ إلى نصف قطر الحلقة.',
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this.calc(s),gunX=W*.08,targetX=W*.38,screenX=W*.78,cy=H*.48;
+    ctx.fillStyle='#334155';ctx.fillRect(gunX,cy-38,W*.15,76);label(ctx,'مدفع e⁻',gunX+W*.075,cy,'#e2e8f0','center',10,true);
+    for(let i=0;i<12;i++){const u=((s.t*.25+i/12)%1),x=gunX+W*.15+u*(targetX-gunX-W*.15),y=cy+6*Math.sin(i+s.t);ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(x,y,2.4,0,Math.PI*2);ctx.fill();}
+    ctx.fillStyle='#94a3b8';ctx.fillRect(targetX-5,cy-52,10,104);label(ctx,'غرافيت',targetX,cy-66,'#cbd5e1','center',9,true);
+    ctx.fillStyle='#0a0e1a';ctx.strokeStyle='#64748b';ctx.fillRect(screenX-18,H*.17,36,H*.62);ctx.strokeRect(screenX-18,H*.17,36,H*.62);
+    const maxR=Math.max(q.a.R,q.b.R,.001),scale=Math.min(H*.24/maxR,W*.13/maxR),r1=q.a.R*scale,r2=q.b.R*scale;
+    ctx.strokeStyle='#a3e635';ctx.shadowColor='#a3e635';ctx.shadowBlur=10;ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(screenX,cy,8,r1,0,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='#22d3ee';ctx.beginPath();ctx.ellipse(screenX,cy,8,r2,0,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;
+    ctx.strokeStyle='rgba(251,191,36,.55)';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(targetX,cy);ctx.lineTo(screenX,cy-r1);ctx.moveTo(targetX,cy);ctx.lineTo(screenX,cy-r2);ctx.stroke();ctx.setLineDash([]);
+    label(ctx,'D₁='+(q.a.D*100).toFixed(2)+' cm',W*.87,H*.30,'#a3e635','left',8,true);label(ctx,'D₂='+(q.b.D*100).toFixed(2)+' cm',W*.87,H*.37,'#22d3ee','left',8,true);
+  }
+},
+
+stage3_planck_led: {
+  title:'تعيين ثابت بلانك باستخدام الثنائيات الباعثة للضوء LEDs', icon:'💡', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
+  desc:'لوحة LEDs متعددة الأطوال الموجية مع مصدر DC ومقاومة 100 Ω وملاءمة خطية حقيقية لاستخراج h.',
+  objective:'قياس جهد التشغيل التقريبي لعدة LEDs، رسم Vth مقابل f، ثم استخراج h من ميل الملاءمة الخطية دون إجبار الخط على المرور بنقطة الأصل.',
+  apparatus:['LEDs: 465، 560، 585، 635، 660، 950 nm','مصدر جهد DC','مقاومة 100 Ω','فولتميتر','قياس تيار'],
+  welcome:{title:'💡 ثابت بلانك بواسطة LEDs',steps:['اختر LED.','ارفع جهد المصدر ببطء حتى بدء التوصيل/الإضاءة.','اضغط تسجيل عند العتبة التشغيلية.','كرر لعدة ألوان ثم راقب ملاءمة Vth مقابل f وقيمة h.']},
+  controls:[
+    {id:'led',type:'buttons',label:'LED المختار',value:0,options:[{value:0,label:'465 nm'},{value:1,label:'560 nm'},{value:2,label:'585 nm'},{value:3,label:'635 nm'},{value:4,label:'660 nm'},{value:5,label:'950 nm · IR'}]},
+    {id:'Vs',label:'جهد المصدر',min:0,max:5,step:.01,value:0,unit:'V'}
+  ],
+  leds:[465,560,585,635,660,950],
+  _color(nm){return nm===950?'#64748b':S3LAB.wl(nm);},
+  _threshold(nm){const f=CONST.c/(nm*1e-9),b=.35;return CONST.h*f/CONST.e+b;},
+  reset(s){s.t=0;s.records={};},update(s,dt){s.t+=dt;},
+  calc(s){
+    const nm=this.leds[clamp(Math.round(s.ctrl.led),0,this.leds.length-1)],f=CONST.c/(nm*1e-9),Vth=this._threshold(nm),R=100,I=Math.max(0,(s.ctrl.Vs-Vth)/R),junction=s.ctrl.Vs-I*R;
+    const pts=Object.values(s.records||{}).map(r=>({x:r.f,y:r.Vth})),fit=S3LAB.fit(pts),hFit=fit?CONST.e*fit.slope:NaN,err=Number.isFinite(hFit)?100*(hFit-CONST.h)/CONST.h:NaN;
+    return{nm,f,Vth,R,I,junction,fit,hFit,err,pts};
+  },
+  readouts(s){const q=this.calc(s);return[
+    {l:'λ',v:q.nm.toFixed(0),u:'nm',c:q.nm===950?undefined:'cyan'},
+    {l:'f',v:(q.f/1e14).toFixed(3),u:'×10¹⁴ Hz'},
+    {l:'Vth النموذجي',v:q.Vth.toFixed(3),u:'V',c:'gold'},
+    {l:'تيار LED',v:(q.I*1000).toFixed(2),u:'mA'},
+    {l:'h من الملاءمة',v:Number.isFinite(q.hFit)?q.hFit.toExponential(5):'—',u:Number.isFinite(q.hFit)?'J·s':''},
+    {l:'R² / الخطأ',v:q.fit?q.fit.r2.toFixed(5)+' / '+q.err.toFixed(2):'—',u:q.fit?'%':''}
+  ];},
+  hints(s){const q=this.calc(s);return[
+    q.nm===950?'950 nm تحت الحمراء؛ التوهج على الرسم رمزي فقط ولا يعني أن العين تراها.':'لون LED على اللوحة يتبع طول موجته المختار.',
+    s.ctrl.Vs<q.Vth?'ارفع الجهد تدريجيًا نحو '+q.Vth.toFixed(2)+' V حتى تبدأ الاستجابة.':'بدأ التوصيل في نموذج الدايود؛ المقاومة 100 Ω تحد التيار.',
+    'العلاقة التعليمية المشتركة لجميع LEDs هي Vth=(h/e)f+b مع b=0.35 V؛ لا توجد جهود عتبة عشوائية مستقلة.'
+  ];},
+  equations:['f=\\frac{c}{\\lambda}','eV_{th}\\approx hf+e b','V_{th}=af+b','h=e a'],
+  theory:'<b>المشاهدة المتوقعة:</b> LEDs الأقصر طولًا موجيًا تحتاج جهد عتبة أعلى، وتنتظم نقاط Vth مقابل f تقريبًا على خط مستقيم. <br><b>تفسير النتائج:</b> ملاءمة أقل المربعات تستخدم ميلًا وجزءًا مقطوعًا حرين؛ لا يُفرض المرور بالأصل. 950 nm موسوم تحت الحمراء ولا يُعرض كلون مرئي حقيقي. النموذج حتمي بلا ضوضاء عشوائية.',
+  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(s.ctrl.Vs>=q.Vth-.03)s.records[String(q.nm)]={nm:q.nm,f:q.f,Vth:q.junction};return true;},
+  draw(ctx,W,H,s){
+    drawGrid(ctx,W,H);const q=this.calc(s),panel={x:W*.07,y:H*.14,w:W*.42,h:H*.66};
+    ctx.fillStyle='#dbe2ea';ctx.strokeStyle='#94a3b8';ctx.fillRect(panel.x,panel.y,panel.w,panel.h);ctx.strokeRect(panel.x,panel.y,panel.w,panel.h);
+    this.leds.forEach((nm,i)=>{const y=panel.y+42+i*(panel.h-70)/5,col=this._color(nm),sel=i===Number(s.ctrl.led);ctx.strokeStyle=sel?'#fbbf24':'#64748b';ctx.lineWidth=sel?3:1;ctx.strokeRect(panel.x+18,y-13,panel.w-36,26);ctx.fillStyle=col;ctx.globalAlpha=nm===950?.35:1;ctx.beginPath();ctx.arc(panel.x+46,y,9,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;label(ctx,nm+' nm'+(nm===950?' · IR':''),panel.x+78,y,'#0f172a','left',9,true);});
+    const supply={x:W*.58,y:H*.18,w:W*.30,h:H*.22};ctx.fillStyle='#1e293b';ctx.strokeStyle='#475569';ctx.fillRect(supply.x,supply.y,supply.w,supply.h);ctx.strokeRect(supply.x,supply.y,supply.w,supply.h);label(ctx,'DC '+s.ctrl.Vs.toFixed(2)+' V',supply.x+supply.w/2,supply.y+supply.h*.36,'#fbbf24','center',13,true);label(ctx,'I='+(q.I*1000).toFixed(2)+' mA · R=100 Ω',supply.x+supply.w/2,supply.y+supply.h*.67,'#22d3ee','center',9,true);
+    const glow=clamp((s.ctrl.Vs-q.Vth)/.35,0,1);ctx.fillStyle=this._color(q.nm);ctx.globalAlpha=q.nm===950?.12*glow:.25+.75*glow;ctx.shadowColor=this._color(q.nm);ctx.shadowBlur=22*glow;ctx.beginPath();ctx.arc(W*.73,H*.50,22,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;label(ctx,q.nm===950?'IR — تمثيل رمزي':'LED المختار',W*.73,H*.56,q.nm===950?'#94a3b8':this._color(q.nm),'center',9,true);
+    const rb={x:W*.58,y:H*.61,w:W*.30,h:32};s._recordBtn=rb;S3LAB.button(ctx,rb,'📍 سجّل العتبة',s.ctrl.Vs>=q.Vth-.03);
+    const pts=Object.values(s.records||{});label(ctx,'النقاط المسجلة: '+pts.length+'/6',W*.73,H*.70,'#cbd5e1','center',9,true);if(q.fit)label(ctx,'h='+(q.hFit/1e-34).toFixed(4)+'×10⁻³⁴ J·s',W*.73,H*.76,'#fbbf24','center',9,true);
+  }
+}
 
 };
 
