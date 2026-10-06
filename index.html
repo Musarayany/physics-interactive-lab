@@ -7429,7 +7429,7 @@ Object.assign(SIMS.stage3_zeeman_cadmium,{
 Object.assign(SIMS.stage3_electron_diffraction_graphite,{
   measurementSpec:{
     title:'📍 قراءات حيود الإلكترونات — أقطار الحلقات',
-    instruction:'غيّر جهد التسريع V وسجّل قطري الحلقتين. ارسم D مقابل 1/√V لكل حلقة على حدة. في النموذج: d_inner=0.213 nm وd_outer=0.123 nm وL=135 mm.',
+    instruction:'غيّر جهد التسريع V وسجّل قطري الحلقتين. ارسم D مقابل 1/√V لكل حلقة على حدة. في النموذج المدقق: d_inner=0.213 nm وd_outer=0.123 nm وL=140 mm، مع V من 2.5 إلى 5.0 kV.',
     studentNote:'الحلقة الداخلية مرتبطة بالمسافة البلورية الأكبر 0.213 nm، والخارجية بالمسافة الأصغر 0.123 nm. الرسم اليدوي يستخدم تقريب الزاوية الصغيرة؛ المحاكاة نفسها تستخدم براج والهندسة بصورة أدق.',
     minPoints:4,
     columns:[
@@ -7441,9 +7441,15 @@ Object.assign(SIMS.stage3_electron_diffraction_graphite,{
     analysis(rows,fit,st,sim){
       if(!fit)return'تحتاج إلى أربع جهود مختلفة على الأقل.';
       const outer=S3LAB.fit(rows.map(r=>({x:r.invSqrtV,y:r.DOuter})));
-      const factor=2*sim.L*CONST.h*100/Math.sqrt(2*CONST.me*CONST.e*1000);
-      const dIn=factor/fit.m,dOut=outer?factor/outer.slope:NaN;
-      return'من ميل D مقابل 1/√V (تقريب الزاوية الصغيرة): d_inner≈'+(dIn*1e9).toFixed(4)+' nm، d_outer≈'+(dOut*1e9).toFixed(4)+' nm. القيم المرجعية للنموذج 0.213 و0.123 nm. R² الداخلية='+fit.r2.toFixed(5)+(outer?' والخارجية='+outer.r2.toFixed(5):'')+'.';
+      const reconstruct=(row,key)=>{
+        const V=row.V*1000;
+        const lambda=CONST.h/Math.sqrt(2*CONST.me*CONST.e*V*(1+CONST.e*V/(2*CONST.me*CONST.c*CONST.c)));
+        const R=(row[key]/100)/2,theta=.5*Math.atan(R/sim.L);
+        return lambda/(2*Math.sin(theta));
+      };
+      const din=rows.map(r=>reconstruct(r,'DInner')),dout=rows.map(r=>reconstruct(r,'DOuter'));
+      const dIn=din.reduce((a,b)=>a+b,0)/din.length,dOut=dout.reduce((a,b)=>a+b,0)/dout.length;
+      return'الرسم D مقابل 1/√V خطي تقريبًا: R² الداخلية='+fit.r2.toFixed(5)+(outer?' والخارجية='+outer.r2.toFixed(5):'')+'. وبإعادة الحساب الدقيق من قانون براج والهندسة: d_inner='+(dIn*1e9).toFixed(4)+' nm، d_outer='+(dOut*1e9).toFixed(4)+' nm (المرجع 0.213 و0.123 nm).';
     }
   }
 });
