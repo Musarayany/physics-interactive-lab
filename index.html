@@ -7131,17 +7131,15 @@ stage3_electron_diffraction_graphite: {
   apparatus:['مدفع إلكتروني','مصدر تسريع 1–5 kV','غرافيت متعدد البلورات','شاشة فلورية','مسطرة قياس أقطار الحلقات'],
   welcome:{title:'🟢 حيود الإلكترونات في الغرافيت',steps:['غيّر جهد التسريع V.','راقب تناقص λ عند زيادة V.','راقب تقلص الحلقتين على الشاشة.','غيّر L أو المسافات البلورية وقارن الأقطار المحسوبة.']},
   controls:[
-    {id:'V',label:'جهد التسريع',min:1,max:5,step:.05,value:5,unit:'kV'},
-    {id:'L',label:'بعد الشاشة L',min:.10,max:.20,step:.005,value:.135,unit:'m'},
-    {id:'d1',label:'المسافة البلورية d₁',min:.18,max:.24,step:.001,value:.213,unit:'nm'},
-    {id:'d2',label:'المسافة البلورية d₂',min:.10,max:.15,step:.001,value:.123,unit:'nm'}
+    {id:'V',label:'جهد التسريع',min:1,max:5,step:.05,value:5,unit:'kV'}
   ],
+  L:.135,dInner_nm:.213,dOuter_nm:.123,
   reset(s){s.t=0;},update(s,dt){s.t+=dt;},
   calc(s){
     const V=s.ctrl.V*1000,lam=CONST.h/Math.sqrt(2*CONST.me*CONST.e*V*(1+CONST.e*V/(2*CONST.me*CONST.c*CONST.c)));
     const lamNR=CONST.h/Math.sqrt(2*CONST.me*CONST.e*V);
-    const one=d=>{const th=Math.asin(clamp(lam/(2*d),-1,1)),R=s.ctrl.L*Math.tan(2*th);return{th,R,D:2*R};};
-    return{V,lam,lamNR,a:one(s.ctrl.d1*1e-9),b:one(s.ctrl.d2*1e-9)};
+    const one=d=>{const th=Math.asin(clamp(lam/(2*d),-1,1)),R=this.L*Math.tan(2*th);return{th,R,D:2*R};};
+    return{V,lam,lamNR,a:one(this.dInner_nm*1e-9),b:one(this.dOuter_nm*1e-9)};
   },
   readouts(s){const q=this.calc(s);return[
     {l:'λ النسبي',v:(q.lam*1e12).toFixed(3),u:'pm',c:'gold'},
@@ -7157,7 +7155,7 @@ stage3_electron_diffraction_graphite: {
     'زاوية براج θ ليست زاوية التشتت الكلية؛ هندسة الحلقة تستخدم 2θ.'
   ];},
   equations:['\\lambda=\\frac{h}{\\sqrt{2m_e eV\\left(1+\\frac{eV}{2m_ec^2}\\right)}}','2d\\sin\\theta=n\\lambda','R=L\\tan(2\\theta)','D=2R'],
-  theory:'<b>المشاهدة المتوقعة:</b> تظهر حلقتان رئيسيتان للغرافيت، وتتناقص أقطارهما مع زيادة جهد التسريع. <br><b>تفسير النتائج:</b> يعكس النمط الطبيعة الموجية للإلكترون؛ λ من دي برولي، وشرط براج يحدد θ، ثم تحول هندسة الشاشة زاوية التشتت 2θ إلى نصف قطر الحلقة.',
+  theory:'<b>المشاهدة المتوقعة:</b> تظهر حلقتان رئيسيتان للغرافيت، وتتناقص أقطارهما مع زيادة جهد التسريع. الحلقة الداخلية مرتبطة بـ d=0.213 nm والخارجية بـ d=0.123 nm، وبعد الهدف عن الشاشة في النموذج L=135 mm. <br><b>تفسير النتائج:</b> يعكس النمط الطبيعة الموجية للإلكترون؛ λ من دي برولي، وشرط براج يحدد θ، ثم تحول هندسة الشاشة زاوية التشتت 2θ إلى نصف قطر الحلقة.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),gunX=W*.06,targetX=W*.36,screenX=W*.76,cy=H*.50;
     ctx.fillStyle='#334155';ctx.fillRect(gunX,cy-34,W*.14,68);ctx.strokeStyle='#64748b';ctx.strokeRect(gunX,cy-34,W*.14,68);label(ctx,'مدفع e⁻',gunX+W*.07,cy,'#e2e8f0','center',9,true);
@@ -7168,7 +7166,7 @@ stage3_electron_diffraction_graphite: {
     const sr=Math.min(W*.17,H*.28),scx=screenX,scy=cy;
     ctx.fillStyle='rgba(9,28,24,.95)';ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.beginPath();ctx.arc(scx,scy,sr,0,Math.PI*2);ctx.fill();ctx.stroke();
     const Vref=1000,lamRef=CONST.h/Math.sqrt(2*CONST.me*CONST.e*Vref*(1+CONST.e*Vref/(2*CONST.me*CONST.c*CONST.c)));
-    const thRef=Math.asin(clamp(lamRef/(2*s.ctrl.d2*1e-9),-1,1)),Rref=s.ctrl.L*Math.tan(2*thRef);
+    const thRef=Math.asin(clamp(lamRef/(2*this.dOuter_nm*1e-9),-1,1)),Rref=this.L*Math.tan(2*thRef);
     const scale=sr*.78/Math.max(Rref,1e-6),r1=q.a.R*scale,r2=q.b.R*scale;
     [[r1,'#a3e635'],[r2,'#22d3ee']].forEach(([rr,col])=>{
       ctx.save();ctx.strokeStyle=col;ctx.lineWidth=3;ctx.shadowColor=col;ctx.shadowBlur=12;ctx.globalAlpha=.92;
@@ -7198,7 +7196,7 @@ stage3_planck_led: {
   ],
   leds:[465,560,585,635,660,950],
   _color(nm){return nm===950?'#64748b':S3LAB.wl(nm);},
-  _threshold(nm){const f=CONST.c/(nm*1e-9),b=.35;return CONST.h*f/CONST.e+b;},
+  _threshold(nm){const f=CONST.c/(nm*1e-9);return CONST.h*f/CONST.e;},
   reset(s){s.t=0;s.records={};},update(s,dt){s.t+=dt;},
   calc(s){
     const nm=this.leds[clamp(Math.round(s.ctrl.led),0,this.leds.length-1)],f=CONST.c/(nm*1e-9),Vth=this._threshold(nm),R=100,I=Math.max(0,(s.ctrl.Vs-Vth)/R),junction=s.ctrl.Vs-I*R;
@@ -7216,10 +7214,10 @@ stage3_planck_led: {
   hints(s){const q=this.calc(s);return[
     q.nm===950?'950 nm تحت الحمراء؛ التوهج على الرسم رمزي فقط ولا يعني أن العين تراها.':'لون LED على اللوحة يتبع طول موجته المختار.',
     s.ctrl.Vs<q.Vth?'ارفع الجهد تدريجيًا نحو '+q.Vth.toFixed(2)+' V حتى تبدأ الاستجابة.':'بدأ التوصيل في نموذج الدايود؛ المقاومة 100 Ω تحد التيار.',
-    'العلاقة التعليمية المشتركة لجميع LEDs هي Vth=(h/e)f+b مع b=0.35 V؛ لا توجد جهود عتبة عشوائية مستقلة.'
+    'المحاكاة تستخدم النموذج التعليمي المثالي eVth≈hf دون إزاحة عشوائية. في LED حقيقي يتأثر جهد البدء بمادة الوصلة ودرجة الحرارة ومعيار رؤية الضوء.'
   ];},
-  equations:['f=\\frac{c}{\\lambda}','eV_{th}\\approx hf+e b','V_{th}=af+b','h=e a'],
-  theory:'<b>المشاهدة المتوقعة:</b> LEDs الأقصر طولًا موجيًا تحتاج جهد عتبة أعلى، وتنتظم نقاط Vth مقابل f تقريبًا على خط مستقيم. <br><b>تفسير النتائج:</b> ملاءمة أقل المربعات تستخدم ميلًا وجزءًا مقطوعًا حرين؛ لا يُفرض المرور بالأصل. 950 nm موسوم تحت الحمراء ولا يُعرض كلون مرئي حقيقي. النموذج حتمي بلا ضوضاء عشوائية.',
+  equations:['f=\\frac{c}{\\lambda}','eV_{th}\\approx hf','V_{th}\\approx\\frac{h}{e}f','h=e a'],
+  theory:'<b>المشاهدة المتوقعة:</b> LEDs الأقصر طولًا موجيًا تحتاج جهد عتبة أعلى، وتنتظم نقاط Vth مقابل f تقريبًا على خط مستقيم. <br><b>تفسير النتائج:</b> ملاءمة أقل المربعات تستخدم ميلًا وجزءًا مقطوعًا حرين لكشف أي إزاحة؛ النموذج البرمجي نفسه مثالي، أما تجربة LED الحقيقية فهي تقريبية. 950 nm موسوم تحت الحمراء ولا يُعرض كلون مرئي حقيقي. النموذج حتمي بلا ضوضاء عشوائية.',
   pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(s.ctrl.Vs>=q.Vth)s.records[String(q.nm)]={nm:q.nm,f:q.f,Vth:q.junction};return true;},
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),panel={x:W*.07,y:H*.14,w:W*.42,h:H*.66};
