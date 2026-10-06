@@ -6950,7 +6950,7 @@ stage3_photoelectric_effect: {
   ];},
   equations:['hf=\\phi+K_{max}','K_{max}=eV_s','f=\\frac{c}{\\lambda}','V_s=\\frac{h}{e}f-\\frac{\\phi}{e}'],
   theory:'<b>المشاهدة المتوقعة:</b> الشدة تغيّر التيار المشبع لا جهد الإيقاف؛ التردد الأعلى يرفع Vs إذا كان hf>φ؛ وتحت تردد العتبة لا يحدث انبعاث. <br><b>تفسير النتائج:</b> الخطية بين Vs وf تعطي h/e من الميل. دالة الشغل هنا معامل صريح للنموذج وليست منسوبة إلى معدن محدد.',
-  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(q.emits)s.records[String(q.lam)]={f:q.f,Vs:q.Vs,lam:q.lam};return true;},
+  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(q.emits&&Math.abs(s.ctrl.Vret-q.Vs)<=.04)s.records[String(q.lam)]={f:q.f,Vs:s.ctrl.Vret,lam:q.lam};return true;},
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),col=S3LAB.wl(q.lam),cell={x:W*.42,y:H*.22,w:W*.22,h:H*.28};
     ctx.fillStyle='#1e293b';ctx.fillRect(32,H*.28,72,70);ctx.fillStyle=col;ctx.globalAlpha=.8;for(let k=0;k<Math.max(2,Math.round(s.ctrl.intensity/12));k++){const yy=H*.31+k*7;ctx.beginPath();ctx.moveTo(104,yy);ctx.lineTo(cell.x,cell.y+cell.h*.5);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();}ctx.globalAlpha=1;label(ctx,q.lam.toFixed(1)+' nm',68,H*.24,col,'center',10,true);
