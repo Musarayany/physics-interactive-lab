@@ -7035,12 +7035,12 @@ stage3_franck_hertz_mercury: {
   controls:[
     {id:'Va',label:'جهد التسريع Va',min:0,max:60,step:.1,value:14.7,unit:'V'},
     {id:'Vr',label:'جهد الإعاقة',min:.5,max:3,step:.1,value:1.5,unit:'V'},
-    {id:'Eexc',label:'طاقة الإثارة Eexc',min:3.5,max:6,step:.05,value:4.9,unit:'eV'},
     {id:'heater',label:'شدة الانبعاث/السخان',min:50,max:150,step:5,value:100,unit:'%'}
   ],
+  Eexc:4.9,
   reset(s){s.t=0;s.records=[];},update(s,dt){s.t+=dt;},
   _currentAt(V,s){
-    const contact=1.0,available=Math.max(0,V-contact),E=s.ctrl.Eexc,Vr=s.ctrl.Vr;
+    const contact=1.0,available=Math.max(0,V-contact),E=this.Eexc,Vr=s.ctrl.Vr;
     if(available<=0)return 0;
     const residual=available-E*Math.floor(available/E);
     const transmission=1/(1+Math.exp(-(residual-Vr)/.20));
@@ -7054,19 +7054,19 @@ stage3_franck_hertz_mercury: {
   },
   readouts(s){const q=this.calc(s);return[
     {l:'تيار المجمع',v:q.I.toFixed(3),u:'µA',c:'gold'},
-    {l:'المسافة النظرية بين الملامح',v:s.ctrl.Eexc.toFixed(2),u:'V',c:'cyan'},
+    {l:'المسافة النظرية بين الملامح',v:this.Eexc.toFixed(2),u:'V',c:'cyan'},
     {l:'عدد النقاط المسجلة',v:String(q.rec.length),u:''},
     {l:'متوسط ΔV المقاس',v:Number.isFinite(q.avg)?q.avg.toFixed(3):'—',u:Number.isFinite(q.avg)?'V':''},
     {l:'Eexc المستنتجة',v:Number.isFinite(q.avg)?q.avg.toFixed(3):'—',u:Number.isFinite(q.avg)?'eV':''}
   ];},
-  hints(s){const mod=((s.ctrl.Va-1)%s.ctrl.Eexc+s.ctrl.Eexc)%s.ctrl.Eexc;return[
+  hints(s){const mod=((s.ctrl.Va-1)%this.Eexc+this.Eexc)%this.Eexc;return[
     'المنحنى المرسوم محاكاة تعليمية مثالية لمنحنى فرانك–هيرتز، وليس بيانات مختبر حقيقية.',
     mod<s.ctrl.Vr+.25?'الإلكترونات بعد تصادم إثارة لا تملك طاقة كافية لتجاوز جهد الإعاقة؛ يظهر هبوط في التيار.':'الإلكترونات تصل إلى المجمع بكفاءة أعلى في هذا الموضع.',
-    'في نموذج الزئبق الافتراضي تكون المسافة المميزة ≈ '+s.ctrl.Eexc.toFixed(2)+' V.'
+    'في نموذج الزئبق الافتراضي تكون المسافة المميزة ≈ '+this.Eexc.toFixed(2)+' V.'
   ];},
   equations:['e\\Delta V\\approx E_{exc}','E_{exc}(\\mathrm{eV})\\approx\\Delta V(\\mathrm{V})'],
   theory:'<b>المشاهدة المتوقعة:</b> يزداد تيار المجمع ثم يهبط دوريًا عندما تكتسب الإلكترونات طاقة تكفي لإثارة الذرات وتفقد جزءًا محددًا من طاقتها. <br><b>تفسير النتائج:</b> المسافة بين الملامح المتتالية تعطي طاقة الإثارة بوحدة eV. المنحنى هنا حتمي ومثالي وموسوم بوضوح على أنه محاكاة تعليمية.',
-  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const nearest=1+Math.round((s.ctrl.Va-1)/s.ctrl.Eexc)*s.ctrl.Eexc;if(nearest>=0&&nearest<=60&&!s.records.some(v=>Math.abs(v-nearest)<.15))s.records.push(nearest);return true;},
+  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const nearest=1+Math.round((s.ctrl.Va-1)/this.Eexc)*this.Eexc;if(nearest>=0&&nearest<=60&&!s.records.some(v=>Math.abs(v-nearest)<.15))s.records.push(nearest);return true;},
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const cy=H*.27;
     ctx.fillStyle='#1e293b';ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.fillRect(W*.08,cy-52,W*.54,104);ctx.strokeRect(W*.08,cy-52,W*.54,104);
@@ -7090,13 +7090,12 @@ stage3_zeeman_cadmium: {
   welcome:{title:'🧲 تأثير زيمان العادي',steps:['ابدأ عند B=0 ولاحظ خطًا واحدًا.','زد B وراقب انفصال σ+ وσ− خطيًا.','بدّل اتجاه الرصد بين عرضي وطولي.','فعّل إظهار الاستقطاب لمقارنة المركبات.']},
   controls:[
     {id:'B',label:'المجال المغناطيسي B',min:0,max:2.5,step:.02,value:1.2,unit:'T'},
-    {id:'lambda0',label:'الطول الموجي المركزي λ₀',min:630,max:660,step:.1,value:643.8,unit:'nm'},
-    {id:'g',label:'عامل لانديه g',min:.8,max:1.2,step:.01,value:1,unit:''},
     {id:'view',type:'buttons',label:'اتجاه الرصد',value:0,options:[{value:0,label:'عرضي ⟂B'},{value:1,label:'طولي ∥B'}]},
     {id:'pol',type:'buttons',label:'إظهار الاستقطاب',value:1,options:[{value:1,label:'إظهار'},{value:0,label:'إخفاء'}]}
   ],
+  lambda0_nm:643.8,g:1,
   reset(s){s.t=0;},update(s,dt){s.t+=dt;},
-  calc(s){const muB=CONST.e*CONST.hbar/(2*CONST.me),dnu=muB*s.ctrl.g*s.ctrl.B/CONST.h,l0=s.ctrl.lambda0*1e-9,dl=l0*l0*dnu/CONST.c;return{muB,dnu,dl,l0};},
+  calc(s){const muB=CONST.e*CONST.hbar/(2*CONST.me),dnu=muB*this.g*s.ctrl.B/CONST.h,l0=this.lambda0_nm*1e-9,dl=l0*l0*dnu/CONST.c;return{muB,dnu,dl,l0};},
   readouts(s){const q=this.calc(s);return[
     {l:'Δν بين π وσ',v:(q.dnu/1e9).toFixed(3),u:'GHz',c:'gold'},
     {l:'|Δλ|',v:(q.dl*1e12).toFixed(3),u:'pm',c:'cyan'},
@@ -7120,7 +7119,7 @@ stage3_zeeman_cadmium: {
     const lines=[];if(showPi)lines.push({x:cx,c:'#ef4444',t:'π'});lines.push({x:cx-sep,c:'#f472b6',t:'σ−'},{x:cx+sep,c:'#22d3ee',t:'σ+'});
     lines.forEach(o=>{ctx.strokeStyle=o.c;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(o.x,H*.27);ctx.lineTo(o.x,H*.66);ctx.stroke();label(ctx,o.t,o.x,H*.70,o.c,'center',9,true);});
     if(s.ctrl.pol){if(showPi)label(ctx,'π: خطي ∥B',W*.74,H*.13,'#ef4444','center',8,true);label(ctx,Number(s.ctrl.view)===0?'σ: خطي ⟂B':'σ±: دائري متعاكس',W*.74,H*.78,'#cbd5e1','center',8,true);}
-    label(ctx,'λ₀='+s.ctrl.lambda0.toFixed(1)+' nm',W*.74,H*.84,'#94a3b8','center',9,true);
+    label(ctx,'λ₀='+this.lambda0_nm.toFixed(1)+' nm',W*.74,H*.84,'#94a3b8','center',9,true);
   }
 }
 ,
