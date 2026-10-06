@@ -7245,6 +7245,234 @@ stage3_planck_led: {
 };
 
 
+/* ============================================================
+   STAGE3_MEASUREMENT_PROTOCOLS_V1
+   Source-audited student data tables. The verification graph stays hidden
+   until the student has collected readings and asks to check their work.
+   ============================================================ */
+Object.assign(SIMS.stage3_rydberg_constant,{
+  measurementSpec:{
+    title:'📍 قراءات ثابت ريدبرج — خطوط بالمر',
+    instruction:'سجّل Hα وHβ وHγ وHδ مع بقاء المحزوز والرتبة ثابتين. ارسم يدويًا 1/λ مقابل (1/4−1/n²)؛ ميل الخط يساوي R_H.',
+    studentNote:'اجمع الخطوط الأربعة أولًا. استخدم λ الفراغية في رسم ريدبرج، لا λ في الهواء. بعد إنجاز الرسم اضغط «تحقق من الرسم».',
+    minPoints:3,
+    columns:[
+      {key:'line',label:'الخط',unit:''},{key:'n',label:'n',unit:''},{key:'theta',label:'θ',unit:'°'},
+      {key:'lambdaAir',label:'λ_air',unit:'nm'},{key:'lambdaVac',label:'λ_vac',unit:'nm'},
+      {key:'xBalmer',label:'1/4−1/n²',unit:''},{key:'invLambda6',label:'1/λ',unit:'×10⁶ m⁻¹'}
+    ],
+    record(s,sim){
+      const q=sim.calc(s),mis=Math.abs(rad2deg(q.thetaM-q.thetaTheo));
+      if(mis>.25)return{error:'وجّه التلسكوب إلى مركز الخط أولًا؛ فرق الزاوية الحالي أكبر من 0.25°.'};
+      const names={3:'Hα',4:'Hβ',5:'Hγ',6:'Hδ'},x=.25-1/(q.n*q.n);
+      return{line:names[q.n],n:q.n,theta:rad2deg(q.thetaM),lambdaAir:q.lambdaAirM*1e9,lambdaVac:q.lambdaVacM*1e9,xBalmer:x,invLambda6:(1/q.lambdaVacM)/1e6};
+    },
+    graph:{x:'xBalmer',y:'invLambda6',fit:'linear',xLabel:'1/4 − 1/n²',yLabel:'1/λ (×10⁶ m⁻¹)'},
+    analysis(rows,fit){
+      if(!fit)return'تحتاج إلى ثلاثة خطوط مختلفة على الأقل لإجراء ملاءمة خطية.';
+      const R=fit.m*1e6,err=100*(R-S3LAB.RH)/S3LAB.RH;
+      return'من الميل: R_H = '+R.toExponential(7)+' m⁻¹، والخطأ بالنسبة إلى R_H المرجعي = '+err.toFixed(3)+'%، R² = '+fit.r2.toFixed(5)+'. الجزء المقطوع المثالي قريب من الصفر.';
+    }
+  }
+});
+
+Object.assign(SIMS.stage3_magnetron_specific_charge,{
+  measurementSpec:{
+    title:'📍 قراءات الماغنترون — المجال الحرج',
+    instruction:'لكل Va زد تيار الملف حتى الهبوط الحاد في Ia وسجّل القراءة قرب Bc. أبقِ Ra وثابت معايرة المجال kB ثابتين، ثم ارسم Va مقابل Bc².',
+    studentNote:'في المختبر الحقيقي يُحدد Ic من منحنى Ia مقابل تيار الملف عند كل Va. هنا يسمح زر التسجيل فقط قرب المجال الحرج المحسوب.',
+    minPoints:3,
+    columns:[
+      {key:'Va',label:'Va',unit:'V'},{key:'I',label:'Ic',unit:'A'},{key:'B',label:'Bc',unit:'mT'},
+      {key:'B2',label:'Bc²',unit:'mT²'},{key:'Ia',label:'Ia',unit:'µA'},{key:'Ra',label:'Ra',unit:'cm'}
+    ],
+    record(s,sim){
+      const q=sim.calc(s),rel=Math.abs(q.B-q.Bc)/q.Bc;
+      if(rel>.05)return{error:'لم تصل بعد إلى المجال الحرج. اضبط تيار الملف حتى يكون B ضمن ±5% من Bc.'};
+      return{Va:q.Va,I:s.ctrl.I,B:q.B*1e3,B2:Math.pow(q.B*1e3,2),Ia:q.Ia,Ra:s.ctrl.ra};
+    },
+    graph:{x:'B2',y:'Va',fit:'linear',xLabel:'Bc² (mT²)',yLabel:'Va (V)'},
+    analysis(rows,fit){
+      if(!fit)return'تحتاج إلى ثلاث قيم مختلفة لجهد المصعد على الأقل.';
+      const radii=[...new Set(rows.map(r=>Number(r.Ra).toFixed(4)))];
+      if(radii.length>1)return'غيّرت نصف قطر المصعد بين القراءات؛ أعد القياس مع Ra ثابت لأنه ثابت هندسي للجهاز.';
+      const ra=Number(rows[0].Ra)/100,em=8*(fit.m*1e6)/(ra*ra),err=100*(em-S3LAB.em)/S3LAB.em;
+      return'من ميل Va مقابل Bc²: e/m = '+em.toExponential(5)+' C/kg، والخطأ = '+err.toFixed(2)+'%، R² = '+fit.r2.toFixed(5)+'.';
+    }
+  }
+});
+
+Object.assign(SIMS.stage3_millikan_oil_drop,{
+  measurementSpec:{
+    title:'📍 قراءات ميليكان — أزمنة السقوط والصعود',
+    instruction:'اختر قطرة، استخدم القطبية الرافعة، وسجّل زمن قطع 0.5 mm في السقوط والصعود. كرر لقطرات مختلفة. المحاكاة حتمية، لذلك القراءة تمثل متوسطًا مثاليًا بدل إضافة ضوضاء مصطنعة.',
+    studentNote:'دليل PASCO يوصي بقياسات متكررة لأزمنة الصعود والهبوط في المختبر الحقيقي. بعد حساب q لكل قطرة، اختبر كون q مضاعفًا صحيحًا تقريبًا من e.',
+    minPoints:3,
+    columns:[
+      {key:'drop',label:'القطرة',unit:''},{key:'V',label:'V',unit:'V'},{key:'tFall',label:'t↓ لـ0.5mm',unit:'s'},
+      {key:'tRise',label:'t↑ لـ0.5mm',unit:'s'},{key:'radius',label:'r المصحح',unit:'µm'},
+      {key:'q19',label:'|q|',unit:'×10⁻¹⁹ C'},{key:'qOverE',label:'q/e',unit:''},{key:'n',label:'n الأقرب',unit:''}
+    ],
+    record(s,sim){
+      const q=sim.calc(s);
+      if(!s.ctrl.field||s.ctrl.pol<=0||!Number.isFinite(q.qRecovered)||q.vr<=0)return{error:'شغّل المجال بالقطبية التي ترفع القطرة واضبط V بحيث تكون سرعة الصعود موجبة.'};
+      const n=Math.max(1,Math.round(q.qRecovered/CONST.e));
+      return{drop:['A','B','C','D'][Math.round(s.ctrl.drop)]||String(s.ctrl.drop),V:q.V,tFall:q.tFall,tRise:q.tRise,radius:q.rRecovered*1e6,q19:q.qRecovered*1e19,qOverE:q.qRecovered/CONST.e,n};
+    },
+    graph:{x:'n',y:'q19',fit:'linear',xLabel:'n (عدد الشحنات الأولية)',yLabel:'|q| (×10⁻¹⁹ C)'},
+    analysis(rows,fit){
+      if(!fit)return'تحتاج إلى ثلاث قطرات مختلفة على الأقل لتوضيح تكميم الشحنة.';
+      const eFit=fit.m*1e-19,err=100*(eFit-CONST.e)/CONST.e;
+      return'من ميل |q| مقابل n: e ≈ '+eFit.toExponential(5)+' C، والخطأ = '+err.toFixed(2)+'%، R² = '+fit.r2.toFixed(5)+'. يجب أن يكون الجزء المقطوع قريبًا من الصفر.';
+    }
+  }
+});
+
+Object.assign(SIMS.stage3_photoelectric_effect,{
+  measurementSpec:{
+    title:'📍 قراءات التأثير الكهروضوئي — جهد الإيقاف',
+    instruction:'لكل خط زئبق زد جهد الإعاقة حتى يصبح التيار قريبًا من الصفر ثم سجّل Vstop. أبقِ دالة الشغل ثابتة. ارسم Vstop مقابل f.',
+    studentNote:'لا تسجّل القيمة النظرية مباشرة؛ اضبط Vret فعليًا حتى نقطة الإيقاف. غيّر الشدة إن أردت، ولاحظ أن Vstop لا ينبغي أن يتغير معها في النموذج المثالي.',
+    minPoints:3,
+    columns:[
+      {key:'lambda',label:'λ',unit:'nm'},{key:'f14',label:'f',unit:'×10¹⁴ Hz'},{key:'intensity',label:'الشدة',unit:'%'},
+      {key:'Vstop',label:'Vstop',unit:'V'},{key:'phi',label:'φ',unit:'eV'}
+    ],
+    record(s,sim){
+      const q=sim.calc(s);
+      if(!q.emits)return{error:'هذا التردد أقل من عتبة الانبعاث لدالة الشغل الحالية.'};
+      if(Math.abs(s.ctrl.Vret-q.Vs)>.04)return{error:'اضبط جهد الإعاقة حتى يكون ضمن ±0.04 V من جهد الإيقاف، ثم سجّل القراءة.'};
+      return{lambda:q.lam,f14:q.f/1e14,intensity:s.ctrl.intensity,Vstop:s.ctrl.Vret,phi:s.ctrl.phi};
+    },
+    graph:{x:'f14',y:'Vstop',fit:'linear',xLabel:'f (×10¹⁴ Hz)',yLabel:'Vstop (V)'},
+    analysis(rows,fit){
+      if(!fit)return'تحتاج إلى ثلاثة ترددات مختلفة على الأقل.';
+      const phis=[...new Set(rows.map(r=>Number(r.phi).toFixed(4)))];
+      if(phis.length>1)return'غيّرت دالة الشغل بين القراءات؛ أعد السلسلة مع φ ثابتة لأنها خاصية للسطح نفسه.';
+      const h=CONST.e*fit.m/1e14,phiFit=-fit.b,err=100*(h-CONST.h)/CONST.h;
+      return'من الميل: h = '+h.toExponential(6)+' J·s، والخطأ = '+err.toFixed(3)+'%. ومن الجزء المقطوع: φ ≈ '+phiFit.toFixed(3)+' eV. R² = '+fit.r2.toFixed(5)+'.';
+    }
+  }
+});
+
+Object.assign(SIMS.stage3_electron_beam_fields,{
+  measurementSpec:{
+    title:'📍 قراءات الحزمة الإلكترونية — الانحراف المغناطيسي',
+    instruction:'لإجراء سلسلة رسم واضحة: أطفئ E، شغّل B، ثبّت Va، وغيّر تيار هلمهولتز. سجّل نصف قطر المسار r وارسم r مقابل 1/B.',
+    studentNote:'العلاقة r∝1/B صحيحة عند ثبات سرعة الإلكترون، أي عند ثبات Va. لا تخلط قراءات بجهود تسريع مختلفة في الرسم نفسه.',
+    minPoints:4,
+    columns:[
+      {key:'Va',label:'Va',unit:'V'},{key:'I',label:'I',unit:'A'},{key:'B',label:'B',unit:'mT'},
+      {key:'invB',label:'1/B',unit:'mT⁻¹'},{key:'r',label:'r',unit:'cm'}
+    ],
+    record(s,sim){
+      const q=sim._trajectory(s),B=Math.abs(q.fields.B);
+      if(s.ctrl.Eon||!s.ctrl.Bon||B<1e-8)return{error:'لهذه السلسلة أطفئ المجال الكهربائي E، شغّل B، واجعل تيار هلمهولتز غير صفري.'};
+      return{Va:s.ctrl.Va,I:s.ctrl.I,B:B*1e3,invB:1/(B*1e3),r:q.r*100};
+    },
+    graph:{x:'invB',y:'r',fit:'linear',xLabel:'1/B (mT⁻¹)',yLabel:'r (cm)'},
+    analysis(rows,fit){
+      if(!fit)return'تحتاج إلى أربع قراءات على الأقل.';
+      const vals=[...new Set(rows.map(r=>Number(r.Va).toFixed(3)))];
+      if(vals.length>1)return'غيّرت Va بين القراءات؛ أعد الرسم مع جهد تسريع ثابت حتى تكون r∝1/B.';
+      const Va=Number(rows[0].Va),em=2*Va*Math.pow(1e5/fit.m,2),err=100*(em-S3LAB.em)/S3LAB.em;
+      return'من ميل r مقابل 1/B عند Va ثابت: e/m ≈ '+em.toExponential(5)+' C/kg، والخطأ = '+err.toFixed(2)+'%، R² = '+fit.r2.toFixed(5)+'.';
+    }
+  }
+});
+
+Object.assign(SIMS.stage3_franck_hertz_mercury,{
+  measurementSpec:{
+    title:'📍 قراءات فرانك–هيرتز — Ia مقابل Va',
+    instruction:'ثبّت جهد الإعاقة والسخان، ثم امسح Va بخطوات صغيرة (يفضل 0.5–1 V) وسجّل Ia. ارسم Ia مقابل Va وحدد القيعان المتتالية؛ متوسط المسافات بينها يعطي طاقة الإثارة بالـeV.',
+    studentNote:'لا تستخدم ملاءمة خطية لهذه التجربة. المطلوب منحنى I–V وتحديد المسافة بين القيعان/القمم المتتابعة؛ جهد التماس قد يزيح المواضع المطلقة لكنه لا يغير المسافات تقريبًا.',
+    verifyLabel:'📈 اعرض منحنى I–V',
+    minPoints:12,
+    columns:[
+      {key:'Va',label:'Va',unit:'V'},{key:'Ia',label:'Ia',unit:'µA'},{key:'Vr',label:'Vr',unit:'V'},{key:'heater',label:'السخان',unit:'%'}
+    ],
+    record(s,sim){const q=sim.calc(s);return{Va:s.ctrl.Va,Ia:q.I,Vr:s.ctrl.Vr,heater:s.ctrl.heater};},
+    graph:{x:'Va',y:'Ia',connect:true,xLabel:'Va (V)',yLabel:'Ia (µA)'},
+    analysis(rows){
+      const ordered=rows.slice().sort((a,b)=>a.Va-b.Va);
+      const mins=[];
+      for(let i=1;i<ordered.length-1;i++){
+        if(ordered[i].Ia<ordered[i-1].Ia&&ordered[i].Ia<ordered[i+1].Ia)mins.push(ordered[i].Va);
+      }
+      const diffs=[];for(let i=1;i<mins.length;i++)if(mins[i]-mins[i-1]>1)diffs.push(mins[i]-mins[i-1]);
+      if(diffs.length<1)return'لم تُلتقط قيعان متتالية كافية. زد كثافة القراءات حول المنحنى (خطوة Va أصغر) ثم أعد التحقق.';
+      const avg=diffs.reduce((a,b)=>a+b,0)/diffs.length,err=100*(avg-4.9)/4.9;
+      return'القيعان المكتشفة عند Va≈ '+mins.map(v=>v.toFixed(2)).join('، ')+' V. متوسط ΔV = '+avg.toFixed(3)+' V ⇒ Eexc≈'+avg.toFixed(3)+' eV، والخطأ عن 4.9 eV = '+err.toFixed(2)+'%.';
+    }
+  }
+});
+
+Object.assign(SIMS.stage3_zeeman_cadmium,{
+  measurementSpec:{
+    title:'📍 قراءات زيمان — الانقسام مقابل B',
+    instruction:'استخدم خط الكادميوم الأحمر الثابت 643.8 nm، غيّر B وسجّل الانقسام Δν أو Δλ. ارسم Δν مقابل B؛ الميل يساوي μB/h في تأثير زيمان العادي.',
+    studentNote:'λ₀ وg ليستا متغيرين تجريبيين هنا: الانتقال المختار هو Cd 643.8 nm وتأثير زيمان العادي g=1.',
+    minPoints:4,
+    columns:[
+      {key:'B',label:'B',unit:'T'},{key:'dnu',label:'Δν',unit:'GHz'},{key:'dl',label:'|Δλ|',unit:'pm'},{key:'lambda0',label:'λ₀',unit:'nm'}
+    ],
+    record(s,sim){const q=sim.calc(s);return{B:s.ctrl.B,dnu:q.dnu/1e9,dl:q.dl*1e12,lambda0:sim.lambda0_nm};},
+    graph:{x:'B',y:'dnu',fit:'linear',xLabel:'B (T)',yLabel:'Δν (GHz)'},
+    analysis(rows,fit){
+      if(!fit)return'تحتاج إلى أربع قيم مختلفة للمجال على الأقل.';
+      const muB=CONST.h*fit.m*1e9,em=2*muB/CONST.hbar,err=100*(muB-(CONST.e*CONST.hbar/(2*CONST.me)))/(CONST.e*CONST.hbar/(2*CONST.me));
+      return'من الميل: μB = '+muB.toExponential(5)+' J/T، ومنه e/m = '+em.toExponential(5)+' C/kg. خطأ μB = '+err.toFixed(2)+'%، R² = '+fit.r2.toFixed(5)+'.';
+    }
+  }
+});
+
+Object.assign(SIMS.stage3_electron_diffraction_graphite,{
+  measurementSpec:{
+    title:'📍 قراءات حيود الإلكترونات — أقطار الحلقات',
+    instruction:'غيّر جهد التسريع V وسجّل قطري الحلقتين. ارسم D مقابل 1/√V لكل حلقة على حدة. في النموذج: d_inner=0.213 nm وd_outer=0.123 nm وL=135 mm.',
+    studentNote:'الحلقة الداخلية مرتبطة بالمسافة البلورية الأكبر 0.213 nm، والخارجية بالمسافة الأصغر 0.123 nm. الرسم اليدوي يستخدم تقريب الزاوية الصغيرة؛ المحاكاة نفسها تستخدم براج والهندسة بصورة أدق.',
+    minPoints:4,
+    columns:[
+      {key:'V',label:'V',unit:'kV'},{key:'invSqrtV',label:'1/√V',unit:'kV⁻½'},{key:'DInner',label:'D الداخلية',unit:'cm'},
+      {key:'DOuter',label:'D الخارجية',unit:'cm'},{key:'lambda',label:'λ',unit:'pm'}
+    ],
+    record(s,sim){const q=sim.calc(s);return{V:s.ctrl.V,invSqrtV:1/Math.sqrt(s.ctrl.V),DInner:q.a.D*100,DOuter:q.b.D*100,lambda:q.lam*1e12};},
+    graph:{x:'invSqrtV',y:'DInner',fit:'linear',xLabel:'1/√V (kV⁻½)',yLabel:'D الداخلية (cm)'},
+    analysis(rows,fit,st,sim){
+      if(!fit)return'تحتاج إلى أربع جهود مختلفة على الأقل.';
+      const outer=S3LAB.fit(rows.map(r=>({x:r.invSqrtV,y:r.DOuter})));
+      const factor=2*sim.L*CONST.h*100/Math.sqrt(2*CONST.me*CONST.e*1000);
+      const dIn=factor/fit.m,dOut=outer?factor/outer.slope:NaN;
+      return'من ميل D مقابل 1/√V (تقريب الزاوية الصغيرة): d_inner≈'+(dIn*1e9).toFixed(4)+' nm، d_outer≈'+(dOut*1e9).toFixed(4)+' nm. القيم المرجعية للنموذج 0.213 و0.123 nm. R² الداخلية='+fit.r2.toFixed(5)+(outer?' والخارجية='+outer.r2.toFixed(5):'')+'.';
+    }
+  }
+});
+
+Object.assign(SIMS.stage3_planck_led,{
+  measurementSpec:{
+    title:'📍 قراءات ثابت بلانك باستخدام LEDs',
+    instruction:'اختر LED وارفع الجهد ببطء حتى بداية الإضاءة/التوصيل، ثم سجّل Vth. كرر لأربعة LEDs أو أكثر، واحسب f=c/λ وارسم Vth مقابل f.',
+    studentNote:'950 nm تحت الحمراء؛ في المختبر الحقيقي تحتاج كاميرا/كاشف بدل العين. لا تسجّل بعد تجاوز العتبة بكثير.',
+    minPoints:4,
+    columns:[
+      {key:'lambda',label:'λ',unit:'nm'},{key:'f14',label:'f',unit:'×10¹⁴ Hz'},{key:'Vth',label:'Vth',unit:'V'},{key:'Vs',label:'جهد المصدر',unit:'V'}
+    ],
+    record(s,sim){
+      const q=sim.calc(s);
+      if(s.ctrl.Vs<q.Vth)return{error:'لم تصل بعد إلى جهد بدء LED.'};
+      if(s.ctrl.Vs>q.Vth+.15)return{error:'تجاوزت العتبة بأكثر من 0.15 V. خفّض الجهد وحدد بداية الإضاءة بدقة.'};
+      return{lambda:q.nm,f14:q.f/1e14,Vth:q.junction,Vs:s.ctrl.Vs};
+    },
+    graph:{x:'f14',y:'Vth',fit:'linear',xLabel:'f (×10¹⁴ Hz)',yLabel:'Vth (V)'},
+    analysis(rows,fit){
+      if(!fit)return'تحتاج إلى أربع LEDs مختلفة على الأقل.';
+      const h=CONST.e*fit.m/1e14,err=100*(h-CONST.h)/CONST.h;
+      return'من ميل Vth مقابل f: h ≈ '+h.toExponential(6)+' J·s، والخطأ = '+err.toFixed(3)+'%، R² = '+fit.r2.toFixed(5)+'. في التجربة الحقيقية طريقة LED تقريبية أكثر من هذا النموذج المثالي.';
+    }
+  }
+});
+
+
 const RESOURCE_CATALOG = {
   "ohm": [
     {
