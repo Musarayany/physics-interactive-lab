@@ -7131,9 +7131,9 @@ stage3_electron_diffraction_graphite: {
   apparatus:['مدفع إلكتروني','مصدر تسريع 1–5 kV','غرافيت متعدد البلورات','شاشة فلورية','مسطرة قياس أقطار الحلقات'],
   welcome:{title:'🟢 حيود الإلكترونات في الغرافيت',steps:['غيّر جهد التسريع V.','راقب تناقص λ عند زيادة V.','راقب تقلص الحلقتين على الشاشة.','غيّر L أو المسافات البلورية وقارن الأقطار المحسوبة.']},
   controls:[
-    {id:'V',label:'جهد التسريع',min:1,max:5,step:.05,value:5,unit:'kV'}
+    {id:'V',label:'جهد التسريع',min:2.5,max:5,step:.05,value:5,unit:'kV'}
   ],
-  L:.135,dInner_nm:.213,dOuter_nm:.123,
+  L:.140,dInner_nm:.213,dOuter_nm:.123,
   reset(s){s.t=0;},update(s,dt){s.t+=dt;},
   calc(s){
     const V=s.ctrl.V*1000,lam=CONST.h/Math.sqrt(2*CONST.me*CONST.e*V*(1+CONST.e*V/(2*CONST.me*CONST.c*CONST.c)));
@@ -7155,7 +7155,7 @@ stage3_electron_diffraction_graphite: {
     'زاوية براج θ ليست زاوية التشتت الكلية؛ هندسة الحلقة تستخدم 2θ.'
   ];},
   equations:['\\lambda=\\frac{h}{\\sqrt{2m_e eV\\left(1+\\frac{eV}{2m_ec^2}\\right)}}','2d\\sin\\theta=n\\lambda','R=L\\tan(2\\theta)','D=2R'],
-  theory:'<b>المشاهدة المتوقعة:</b> تظهر حلقتان رئيسيتان للغرافيت، وتتناقص أقطارهما مع زيادة جهد التسريع. الحلقة الداخلية مرتبطة بـ d=0.213 nm والخارجية بـ d=0.123 nm، وبعد الهدف عن الشاشة في النموذج L=135 mm. <br><b>تفسير النتائج:</b> يعكس النمط الطبيعة الموجية للإلكترون؛ λ من دي برولي، وشرط براج يحدد θ، ثم تحول هندسة الشاشة زاوية التشتت 2θ إلى نصف قطر الحلقة.',
+  theory:'<b>المشاهدة المتوقعة:</b> تظهر حلقتان رئيسيتان للغرافيت، وتتناقص أقطارهما مع زيادة جهد التسريع. الحلقة الداخلية مرتبطة بـ d=0.213 nm والخارجية بـ d=0.123 nm، وبعد الهدف عن الشاشة في النموذج L=140 mm. <br><b>تفسير النتائج:</b> يعكس النمط الطبيعة الموجية للإلكترون؛ λ من دي برولي، وشرط براج يحدد θ، ثم تحول هندسة الشاشة زاوية التشتت 2θ إلى نصف قطر الحلقة.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),gunX=W*.06,targetX=W*.36,screenX=W*.76,cy=H*.50;
     ctx.fillStyle='#334155';ctx.fillRect(gunX,cy-34,W*.14,68);ctx.strokeStyle='#64748b';ctx.strokeRect(gunX,cy-34,W*.14,68);label(ctx,'مدفع e⁻',gunX+W*.07,cy,'#e2e8f0','center',9,true);
