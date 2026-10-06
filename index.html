@@ -6811,88 +6811,95 @@ stage3_magnetron_specific_charge: {
   desc:'مسارات إلكترونية داخل مصعد أسطواني مع مجال مغناطيسي وقطع تيار المصعد عند المجال الحرج.',
   objective:'تحديد المجال المغناطيسي الحرج الذي يمنع الإلكترونات من بلوغ المصعد، ثم استخراج e/m من هندسة الماغنترون.',
   apparatus:['ماغنترون/أنبوب ثنائي أسطواني','كاثود محوري','مصعد أسطواني','ملفات مجال مغناطيسي','مقياس تيار المصعد','مصدر جهد مستمر'],
-  welcome:{title:'🧲 الماغنترون و e/m',steps:['اضبط جهد المصعد Va.','زد تيار الملفات تدريجيًا.','راقب ازدياد تقوس المسارات وانخفاض تيار المصعد قرب Bc.','استخدم العلاقة الأسطوانية الكاملة لحساب e/m.']},
+  welcome:{title:'🧲 الماغنترون و e/m',steps:['ثبّت جهد المصعد Va.','زد تيار المجال تدريجيًا وسجّل Ia مقابل I.','حدد التيار الحرج Ic عند الهبوط الحاد لتيار المصعد.','كرر لعدة Va ثم ارسم Va مقابل Bc² لاستخراج e/m.']},
   controls:[
-    {id:'Va',label:'جهد المصعد Va',min:50,max:300,step:5,value:150,unit:'V'},
-    {id:'I',label:'تيار ملفات المجال',min:0,max:2,step:.01,value:1.05,unit:'A'},
+    {id:'Va',label:'جهد المصعد Va',min:2,max:6,step:.1,value:4,unit:'V'},
+    {id:'I',label:'تيار الملف/الملف اللولبي I',min:0,max:4,step:.02,value:2.25,unit:'A'},
     {id:'kB',label:'ثابت معايرة المجال kB',min:1,max:3,step:.05,value:2,unit:'mT/A'},
-    {id:'ra',label:'نصف قطر المصعد ra',min:2.5,max:5,step:.1,value:4,unit:'cm'},
-    {id:'rc',label:'نصف قطر الكاثود rc',min:.2,max:.8,step:.05,value:.5,unit:'cm'}
+    {id:'ra',label:'نصف قطر المصعد Ra',min:.25,max:.40,step:.01,value:.30,unit:'cm'}
   ],
   reset(s){s.t=0;},update(s,dt){s.t+=dt;},
   calc(s){
-    const Va=s.ctrl.Va,ra=s.ctrl.ra/100,rc=s.ctrl.rc/100,B=s.ctrl.kB*1e-3*s.ctrl.I;
-    const Bc=Math.sqrt(8*Va*ra*ra/(S3LAB.em*Math.pow(ra*ra-rc*rc,2)));
-    const width=Math.max(2e-5,.045*Bc),cut=1/(1+Math.exp((B-Bc)/width)),Ia=4*cut;
+    const Va=s.ctrl.Va,ra=s.ctrl.ra/100,B=s.ctrl.kB*1e-3*s.ctrl.I;
+    // Teaching-lab magnetron approximation: cathode is a thin axial wire (rc << Ra).
+    const Bc=Math.sqrt(8*Va/(S3LAB.em*ra*ra));
+    const width=Math.max(2e-5,.045*Bc),cut=1/(1+Math.exp((B-Bc)/width)),Ia=60*cut;
     const v=Math.sqrt(2*CONST.e*Va/CONST.me),rOrbit=B>1e-8?CONST.me*v/(CONST.e*B):Infinity;
-    const emFromB=B>1e-8?8*Va*ra*ra/(B*B*Math.pow(ra*ra-rc*rc,2)):NaN;
-    return{Va,ra,rc,B,Bc,Ia,v,rOrbit,emFromB,cut};
+    const emFromB=B>1e-8?8*Va/(B*B*ra*ra):NaN;
+    return{Va,ra,B,Bc,Ia,v,rOrbit,emFromB,cut};
   },
   readouts(s){const q=this.calc(s),diff=Number.isFinite(q.emFromB)?100*(q.emFromB-S3LAB.em)/S3LAB.em:NaN;return[
     {l:'B الحالي',v:(q.B*1e3).toFixed(3),u:'mT',c:'cyan'},
     {l:'B_c النموذجي',v:(q.Bc*1e3).toFixed(3),u:'mT',c:'gold'},
-    {l:'تيار المصعد Ia',v:q.Ia.toFixed(3),u:'mA'},
+    {l:'تيار المصعد Ia',v:q.Ia.toFixed(2),u:'µA'},
     {l:'نصف قطر التقوس',v:Number.isFinite(q.rOrbit)?(q.rOrbit*100).toFixed(2):'∞',u:Number.isFinite(q.rOrbit)?'cm':''},
     {l:'e/m إذا اعتُبر B حرجًا',v:Number.isFinite(q.emFromB)?(q.emFromB/1e11).toFixed(4):'—',u:Number.isFinite(q.emFromB)?'×10¹¹ C/kg':''},
     {l:'الفرق عن المرجع',v:Number.isFinite(diff)?diff.toFixed(2):'—',u:Number.isFinite(diff)?'%':''}
   ];},
   hints(s){const q=this.calc(s);return[
     q.B<q.Bc?'الإلكترونات ما زالت تصل إلى المصعد؛ زد B نحو '+(q.Bc*1e3).toFixed(2)+' mT.':'عند هذا المجال ينحني معظم الإلكترونات قبل بلوغ المصعد، لذلك يهبط Ia.',
-    'استُخدمت العلاقة الأسطوانية الكاملة لأن rc ليس مفترضًا صفراً.',
-    'B=kB I هنا معايرة صريحة للجهاز، وليست علاقة ملفات مخمّنة.'
+    'يستخدم هذا النموذج تقريب الكاثود السلكي الرفيع المستخدم في دليل تجربة الماغنترون التعليمي: e/m=8Va/(Ra²Bc²).',
+    'B=kB I هنا ثابت معايرة صريح للملف؛ يجب تحديده من الجهاز الحقيقي عند إجراء التجربة فعليًا.'
   ];},
-  equations:['\\frac{e}{m}=\\frac{8V_a r_a^2}{B_c^2(r_a^2-r_c^2)^2}','B=k_B I','r=\\frac{m_ev}{eB}'],
-  theory:'<b>المشاهدة المتوقعة:</b> كلما زاد B صغرت أنصاف أقطار المسارات حتى لا تعود الإلكترونات قادرة على ملامسة المصعد، فينخفض Ia بقوة قرب Bc. <br><b>تفسير النتائج:</b> المجال الحرج مع Va وهندسة الأسطوانة يحدد e/m. يستخدم النموذج منحنى قطع أملسًا تعليميًا حول الحد الحرج بدل ادعاء ضوضاء قياس حقيقية.',
+  equations:['\\frac{e}{m}=\\frac{8V_a}{R_a^2B_c^2}','B=k_B I','V_a=\\frac{R_a^2}{8}\\frac{e}{m}B_c^2'],
+  theory:'<b>المشاهدة المتوقعة:</b> عند ثبات Va يبقى تيار المصعد مرتفعًا ثم يهبط بشدة قرب المجال الحرج Bc، لأن مسار الإلكترون يصبح منحنياً بحيث لا يصل إلى المصعد. <br><b>تفسير النتائج:</b> في تقريب الكاثود السلكي الرفيع المستخدم في المختبرات التعليمية، e/m=8Va/(Ra²Bc²)، ولذلك يكون رسم Va مقابل Bc² خطيًا. منحنى القطع هنا حتمي وتعليمي وليس ضوضاء قياس حقيقية.',
   draw(ctx,W,H,s){
-    drawGrid(ctx,W,H);const q=this.calc(s),cx=W*.40,cy=H*.48,scale=Math.min(W,H)*.28/q.ra,raP=q.ra*scale,rcP=Math.max(8,q.rc*scale);
+    drawGrid(ctx,W,H);const q=this.calc(s),cx=W*.40,cy=H*.48,scale=Math.min(W,H)*.28/q.ra,raP=q.ra*scale,rcP=Math.max(4,raP*.045);
     ctx.strokeStyle='#64748b';ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy,raP,0,Math.PI*2);ctx.stroke();label(ctx,'المصعد',cx,cy-raP-18,'#94a3b8','center',10,true);
     ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(cx,cy,rcP,0,Math.PI*2);ctx.fill();label(ctx,'كاثود',cx,cy,'#0a0e1a','center',8,true);
     const bnorm=clamp(q.B/(q.Bc*1.4),0,1.4);for(let i=0;i<6;i++){const ang=i*Math.PI/3;const startR=rcP+5,sx=cx+startR*Math.cos(ang),sy=cy+startR*Math.sin(ang);ctx.strokeStyle='#22d3ee';ctx.globalAlpha=.45+.08*i;ctx.lineWidth=1.7;ctx.beginPath();ctx.moveTo(sx,sy);for(let k=1;k<=45;k++){const u=k/45,turn=bnorm*2.6*u,rr=startR+(raP-startR)*u*(1-clamp((bnorm-1)*.7,0,.45));ctx.lineTo(cx+rr*Math.cos(ang+turn),cy+rr*Math.sin(ang+turn));}ctx.stroke();}ctx.globalAlpha=1;
     const coilX=W*.72,coilR=Math.min(72,H*.18);ctx.strokeStyle='#f472b6';ctx.lineWidth=3;for(let k=-2;k<=2;k++){ctx.beginPath();ctx.ellipse(coilX+k*5,cy,coilR*.55,coilR,0,0,Math.PI*2);ctx.stroke();}label(ctx,'ملفات المجال',coilX,cy+coilR+18,'#f472b6','center',9,true);
-    const gx=W*.63,gy=H*.73,gw=W*.31,gh=H*.18;ctx.strokeStyle='#334155';ctx.strokeRect(gx,gy,gw,gh);ctx.beginPath();for(let i=0;i<=100;i++){const B=q.Bc*1.6*i/100,wid=Math.max(2e-5,.045*q.Bc),I=4/(1+Math.exp((B-q.Bc)/wid)),x=gx+gw*i/100,y=gy+gh-gh*I/4;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.stroke();label(ctx,'Ia مقابل B',gx+gw/2,gy-12,'#cbd5e1','center',9,true);
+    const gx=W*.63,gy=H*.73,gw=W*.31,gh=H*.18;ctx.strokeStyle='#334155';ctx.strokeRect(gx,gy,gw,gh);ctx.beginPath();for(let i=0;i<=100;i++){const B=q.Bc*1.6*i/100,wid=Math.max(2e-5,.045*q.Bc),Ia=60/(1+Math.exp((B-q.Bc)/wid)),x=gx+gw*i/100,y=gy+gh-gh*Ia/60;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.strokeStyle='#fbbf24';ctx.lineWidth=2;ctx.stroke();label(ctx,'Ia مقابل B',gx+gw/2,gy-12,'#cbd5e1','center',9,true);
   }
 },
 
 stage3_millikan_oil_drop: {
   title:'تحكم الشحنة وقياس شحنة الإلكترون — تجربة ميليكان', icon:'💧', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
-  desc:'قطرات زيت مشحونة بين لوحين مع سقوط حر، مجال قابل للعكس، واستخراج r وq مع احتساب الطفو.',
+  desc:'قطرات زيت مشحونة بين لوحين مع سقوط/صعود حدّي، وتصحيح كننغهام لقانون ستوكس للقطرات الميكرونية.',
   objective:'قياس السرعة الحدية في السقوط والصعود، استخراج نصف قطر القطرة وشحنتها، والتحقق من q=ne.',
-  apparatus:['مرذاذ زيت','لوحان متوازيان','مصدر جهد','منطقة رصد/مجهر','قطرات زيت مشحونة'],
+  apparatus:['مرذاذ زيت معدني ρ≈886 kg/m³','لوحان متوازيان d≈7.67 mm','مصدر جهد حتى 500 V','مجهر بشبكة قياس','مؤقت لقياس الصعود والهبوط'],
   welcome:{title:'💧 ميليكان — تكميم الشحنة',steps:['اختر قطرة من القطرات الأربع.','أطفئ المجال ولاحظ سرعة السقوط الحدية vf.','شغّل المجال بالقطبية الرافعة واضبط V ولاحظ vr.','اعكس القطبية لترى انعكاس اتجاه القوة الكهربائية.']},
   controls:[
     {id:'drop',type:'buttons',label:'القطرة المختارة',value:0,options:[{value:0,label:'قطرة A'},{value:1,label:'قطرة B'},{value:2,label:'قطرة C'},{value:3,label:'قطرة D'}]},
-    {id:'V',label:'فرق الجهد',min:0,max:800,step:5,value:420,unit:'V'},
-    {id:'d',label:'المسافة بين اللوحين',min:4,max:10,step:.1,value:6,unit:'mm'},
+    {id:'V',label:'فرق الجهد بين اللوحين',min:0,max:500,step:2,value:386,unit:'V'},
     {id:'field',type:'buttons',label:'المجال',value:1,options:[{value:0,label:'OFF'},{value:1,label:'ON'}]},
     {id:'pol',type:'buttons',label:'القطبية',value:1,options:[{value:1,label:'رفع الشحنة السالبة'},{value:-1,label:'عكس القطبية'}]}
   ],
-  _drops:[{r:.72e-6,n:3},{r:.88e-6,n:5},{r:1.02e-6,n:8},{r:1.18e-6,n:11}],
+  _drops:[{r:.49e-6,n:3},{r:.65e-6,n:5},{r:.80e-6,n:8},{r:1.00e-6,n:11}],
+  _constants:{rhoOil:886,rhoAir:1.225,eta:1.867e-5,p:1.01e5,b:8.20e-3,d:.00767},
   reset(s){s.t=0;s.y=0;},
   update(s,dt){const q=this.calc(s);s.t+=dt;s.y+=(q.vTerm||0)*dt;if(Math.abs(s.y)>q.d*.38)s.y=-Math.sign(s.y)*q.d*.34;},
   calc(s){
-    const dr=this._drops[clamp(Math.round(s.ctrl.drop),0,this._drops.length-1)],r=dr.r,n=dr.n,q=-n*CONST.e,d=s.ctrl.d/1000,V=s.ctrl.V;
-    const vol=4*Math.PI*r*r*r/3,weight=(S3LAB.rhoOil-S3LAB.rhoAir)*vol*S3LAB.g,drag=6*Math.PI*S3LAB.etaAir*r;
-    const vf=weight/drag,Ey=s.ctrl.field?(-s.ctrl.pol*V/Math.max(d,1e-6)):0,Fe=q*Ey;
+    const dr=this._drops[clamp(Math.round(s.ctrl.drop),0,this._drops.length-1)],r=dr.r,n=dr.n,q=-n*CONST.e,V=s.ctrl.V;
+    const K=this._constants,d=K.d,rhoEff=K.rhoOil-K.rhoAir,vol=4*Math.PI*r*r*r/3,weight=rhoEff*vol*S3LAB.g;
+    // Cunningham/Millikan slip correction: eta_eff = eta/(1+b/(p r)).
+    const slip=1+K.b/(K.p*r),drag=6*Math.PI*K.eta*r/slip;
+    const vf=weight/drag,Ey=s.ctrl.field?(-s.ctrl.pol*V/d):0,Fe=q*Ey;
     const vTerm=(Fe-weight)/drag,vr=Math.max(0,vTerm);
-    const rRecovered=Math.sqrt(9*S3LAB.etaAir*vf/(2*S3LAB.g*(S3LAB.rhoOil-S3LAB.rhoAir)));
-    const qRecovered=(s.ctrl.field&&V>0&&vr>0)?6*Math.PI*S3LAB.etaAir*rRecovered*(vf+vr)*d/V:NaN;
-    return{r,n,q,d,V,vol,weight,drag,vf,Ey,Fe,vTerm,vr,rRecovered,qRecovered};
+    // Corrected radius from PASCO Eq. 12, with a small buoyancy refinement rho -> rhoOil-rhoAir.
+    const half=K.b/(2*K.p);
+    const rRecovered=Math.sqrt(half*half+9*K.eta*vf/(2*rhoEff*S3LAB.g))-half;
+    const volR=4*Math.PI*rRecovered*rRecovered*rRecovered/3,weightR=rhoEff*volR*S3LAB.g;
+    const qRecovered=(s.ctrl.field&&s.ctrl.pol>0&&V>0&&vr>0)?weightR*d*(vf+vr)/(V*vf):NaN;
+    const tFall=vf>0?.0005/vf:NaN,tRise=vr>0?.0005/vr:NaN;
+    return{r,n,q,d,V,vol,weight,drag,slip,vf,Ey,Fe,vTerm,vr,rRecovered,qRecovered,tFall,tRise,eta:K.eta,p:K.p,rhoOil:K.rhoOil};
   },
   readouts(s){const q=this.calc(s);return[
     {l:'v_f سقوط',v:(q.vf*1000).toFixed(3),u:'mm/s'},
     {l:'v_r صعود',v:(q.vr*1000).toFixed(3),u:'mm/s',c:'cyan'},
-    {l:'نصف القطر من Stokes',v:(q.rRecovered*1e6).toFixed(3),u:'µm'},
+    {l:'نصف القطر المصحح',v:(q.rRecovered*1e6).toFixed(3),u:'µm'},
     {l:'|q|',v:Number.isFinite(q.qRecovered)?q.qRecovered.toExponential(3):(Math.abs(q.q)).toExponential(3),u:'C',c:'gold'},
     {l:'q/e',v:Number.isFinite(q.qRecovered)?(q.qRecovered/CONST.e).toFixed(3):q.n.toFixed(0),u:''},
-    {l:'أقرب n',v:q.n.toFixed(0),u:'e'}
+    {l:'زمن سقوط 0.5 mm',v:Number.isFinite(q.tFall)?q.tFall.toFixed(2):'—',u:Number.isFinite(q.tFall)?'s':''},
+    {l:'زمن صعود 0.5 mm',v:Number.isFinite(q.tRise)?q.tRise.toFixed(2):'—',u:Number.isFinite(q.tRise)?'s':''}
   ];},
   hints(s){const q=this.calc(s);return[
     !s.ctrl.field?'المجال مطفأ: القطرة تهبط عند السرعة الحدية vf.':(q.vTerm>0?'القوة الكهربائية تتغلب على الوزن الفعّال؛ القطرة تصعد.':'القوة الصافية إلى الأسفل؛ القطرة تهبط.'),
-    'استُخدم (ρoil−ρair)g، أي أن قوة الطفو لم تُهمَل.',
-    'شحنة كل قطرة في النموذج عدد صحيح n من الشحنة الأولية؛ لا توجد قيم عشوائية.'
+    'الحساب يستخدم ρoil=886 kg/m³ وd=7.67 mm وp=1.01×10⁵ Pa وη=1.867×10⁻⁵ Pa·s، وهي قيم نموذجية موثقة في دليل PASCO؛ كما أُبقي تصحيح الطفو.',
+    'أُدخل تصحيح كننغهام/ميليكان لأن أبعاد القطرات تقارن بالمسار الحر المتوسط للهواء؛ شحنة كل قطرة في المحاكاة مضاعف صحيح من e بلا ضوضاء عشوائية.'
   ];},
-  equations:['E=\\frac{V}{d}','\\frac{4}{3}\\pi r^3(\\rho_{oil}-\\rho_{air})g=6\\pi\\eta r v_f','r=\\sqrt{\\frac{9\\eta v_f}{2g(\\rho_{oil}-\\rho_{air})}}','q=\\frac{6\\pi\\eta r(v_f+v_r)d}{V}','q=ne'],
-  theory:'<b>المشاهدة المتوقعة:</b> عند إطفاء المجال تهبط القطرة بسرعة حدية ثابتة. عند تشغيل القطبية المناسبة يمكن أن تتباطأ أو تتوقف أو تصعد؛ وعكس القطبية يعكس اتجاه القوة الكهربائية. <br><b>تفسير النتائج:</b> يستخرج r من قانون ستوكس مع تصحيح الطفو، ثم q من سرعتي السقوط والصعود. القطرات الأربع تحمل مضاعفات صحيحة من e.',
+  equations:['E=\\frac{V}{d}','\\eta_{eff}=\\frac{\\eta}{1+b/(pr)}','r=\\sqrt{\\left(\\frac{b}{2p}\\right)^2+\\frac{9\\eta v_f}{2(\\rho_{oil}-\\rho_{air})g}}-\\frac{b}{2p}','q=\\frac{W_{eff}d(v_f+v_r)}{Vv_f}','q=ne'],
+  theory:'<b>المشاهدة المتوقعة:</b> عند إطفاء المجال تهبط القطرة بسرعة حدية؛ وعند تشغيل القطبية المناسبة تصعد بسرعة حدية أخرى، بينما يعكس تبديل القطبية اتجاه القوة الكهربائية. <br><b>تفسير النتائج:</b> في القطرات الميكرونية لا تكفي صيغة ستوكس غير المصححة؛ لذلك يستخدم النموذج تصحيح الانزلاق b/(pr) الوارد في دليل جهاز ميليكان، ثم يستخرج r وq من سرعتي السقوط والصعود. يمكن للطالب مقارنة q/e بين قطرات مختلفة لاختبار تكميم الشحنة.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),left=W*.16,right=W*.84,top=H*.24,bottom=H*.76;
     ctx.fillStyle='#475569';ctx.fillRect(left,top,right-left,10);ctx.fillRect(left,bottom,right-left,10);
