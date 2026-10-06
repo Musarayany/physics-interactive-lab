@@ -8433,6 +8433,26 @@ RESOURCE_CATALOG.stage3_planck_led = [
   {type:'مرجع',title:'Photon energy and quantum physics',source:'OpenStax University Physics Volume 3',url:'https://openstax.org/books/university-physics-volume-3/pages/6-2-photoelectric-effect',note:'العلاقة E=hf كأساس فيزيائي لاستخراج h من العلاقة بين طاقة الفوتون والتردد.'}
 ];
 
+
+/* STAGE3_MANUAL_SOURCES_V1 — laboratory manuals used to audit procedure and analysis */
+(function(){
+  const manuals={
+    stage3_rydberg_constant:{type:'مختبر',title:'The Optical Spectrum of Hydrogen',source:'University of Richmond',url:'https://facultystaff.richmond.edu/~ggilfoyl/qm/homework/HydrogenLab/HydrogenLab.html',note:'يعرض Hα وHβ وHγ وHδ، قياس زوايا الحيود، حساب λ وثابت ريدبرج.'},
+    stage3_magnetron_specific_charge:{type:'مختبر',title:'Teaching Laboratories — Magnetron e/m experiment',source:'IIT Roorkee · Department of Physics',url:'https://iitr.ac.in/Departments/Physics%20Department/Academics/Teaching%20Laboratories.html',note:'دليل التجربة الرسمية: Ia مقابل تيار الملف، تحديد Ic، ثم Va مقابل Bc² واستخراج e/m.'},
+    stage3_millikan_oil_drop:{type:'PDF',title:'Millikan Oil Drop Apparatus AP-8210A — Instruction Manual',source:'PASCO / UCSB Physics',url:'https://web.physics.ucsb.edu/~phys128/experiments/electron/Millikan-Oil-Drop-Manual-AP-8210A.pdf',note:'إجراء قياس أزمنة الصعود والهبوط وتصحيح ستوكس للقطرات الميكرونية وثوابت الجهاز.'},
+    stage3_photoelectric_effect:{type:'مختبر',title:'Experiment 6 — The Photoelectric Effect',source:'UCLA Physics & Astronomy',url:'https://demoweb.physics.ucla.edu/node/118',note:'قياس جهد الإيقاف لألوان الزئبق ورسم Vstop مقابل f لاستخراج h ودالة الشغل.'},
+    stage3_electron_beam_fields:{type:'PDF',title:'Physics 4BL — Electron gun, deflection plates and Helmholtz coils',source:'UCLA Physics & Astronomy',url:'https://demoweb.physics.ucla.edu/sites/default/files/Manual4BL-2.pdf',note:'صفائح الانحراف الكهربائي وصيغة مجال هلمهولتز وقياس حركة الحزمة/e/m.'},
+    stage3_franck_hertz_mercury:{type:'PDF',title:'The Franck-Hertz Experiment Lab Guide',source:'MIT OpenCourseWare · Department of Physics',url:'https://ocw.mit.edu/courses/8-13-14-experimental-physics-i-ii-junior-lab-fall-2016-spring-2017/afdfff9f8bbe067239af19c8b178a764_MIT8_13-14F16-S17exp7.pdf',note:'أنبوب زئبق، جهد تسريع وإعاقة، ومنحنى Ia–V؛ طاقة الإثارة المميزة قرب 4.9 eV.'},
+    stage3_zeeman_cadmium:{type:'مختبر',title:'Zeeman Effect — Cd red line 643.8 nm',source:'York University Physics Wiki',url:'https://physwiki.apps01.yorku.ca/index.php?title=Main_Page%2FPHYS_4210%2FZeeman_Effect',note:'الانتقال الأحمر للكادميوم 643.8 nm وتأثير زيمان العادي والرصد الطولي والعرضي.'},
+    stage3_electron_diffraction_graphite:{type:'PDF',title:'Electron Diffraction Lab — graphite',source:'Embry-Riddle Aeronautical University · Physics',url:'https://physicsx.erau.edu/Courses/CoursesS2026/PS315/Electron%20Diffraction/ElectronDiffraction.pdf',note:'حلقتا الغرافيت، d=0.213 و0.123 nm، وقياس D مع V ورسم D مقابل 1/√V.'},
+    stage3_planck_led:{type:'PDF',title:"Planck's Constant — LED experiment",source:'Mississippi State University Physics',url:"https://labs.physics.msstate.edu/labmanual/PH2233/PH2233%20Planck%27s%20Constant.pdf",note:'تحديد جهد بداية إضاءة LEDs ثم رسم V مقابل f؛ يذكر استخدام كاشف/كاميرا للـIR.'}
+  };
+  Object.entries(manuals).forEach(([key,item])=>{
+    RESOURCE_CATALOG[key]=RESOURCE_CATALOG[key]||[];
+    if(!RESOURCE_CATALOG[key].some(r=>r.url===item.url))RESOURCE_CATALOG[key].unshift(item);
+  });
+})();
+
 function renderResources(){
   const box=document.getElementById('resources-box');
   if(!box)return;
