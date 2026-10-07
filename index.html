@@ -6814,19 +6814,21 @@ stage3_magnetron_specific_charge: {
   welcome:{title:'🧲 الماغنترون و e/m',steps:['ثبّت جهد المصعد Va.','زد تيار المجال تدريجيًا وسجّل Ia مقابل I.','حدد التيار الحرج Ic عند الهبوط الحاد لتيار المصعد.','كرر لعدة Va ثم ارسم Va مقابل Bc² لاستخراج e/m.']},
   controls:[
     {id:'Va',label:'جهد المصعد Va',min:2,max:6,step:.1,value:4,unit:'V'},
-    {id:'I',label:'تيار الملف/الملف اللولبي I',min:0,max:4,step:.02,value:2.25,unit:'A'},
-    {id:'kB',label:'ثابت معايرة المجال kB',min:1,max:3,step:.05,value:2,unit:'mT/A'},
+    {id:'I',label:'تيار الملف اللولبي Is',min:0,max:4,step:.02,value:1.85,unit:'A'},
+    {id:'N',label:'كثافة لفات الملف N',min:500,max:4000,step:50,value:2000,unit:'لفة/m'},
     {id:'ra',label:'نصف قطر المصعد Ra',min:.25,max:.40,step:.01,value:.30,unit:'cm'}
   ],
   reset(s){s.t=0;},update(s,dt){s.t+=dt;},
   calc(s){
-    const Va=s.ctrl.Va,ra=s.ctrl.ra/100,B=s.ctrl.kB*1e-3*s.ctrl.I;
+    const Va=s.ctrl.Va,ra=s.ctrl.ra/100,L=.30,Rs=.065/2;
+    const cosTheta=(L/2)/Math.sqrt((L/2)*(L/2)+Rs*Rs);
+    const B=CONST.mu0*s.ctrl.N*s.ctrl.I*cosTheta;
     // Teaching-lab magnetron approximation: cathode is a thin axial wire (rc << Ra).
     const Bc=Math.sqrt(8*Va/(S3LAB.em*ra*ra));
     const width=Math.max(2e-5,.045*Bc),cut=1/(1+Math.exp((B-Bc)/width)),Ia=60*cut;
     const v=Math.sqrt(2*CONST.e*Va/CONST.me),rOrbit=B>1e-8?CONST.me*v/(CONST.e*B):Infinity;
     const emFromB=B>1e-8?8*Va/(B*B*ra*ra):NaN;
-    return{Va,ra,B,Bc,Ia,v,rOrbit,emFromB,cut};
+    return{Va,ra,B,Bc,Ia,v,rOrbit,emFromB,cut,L,Rs,cosTheta};
   },
   readouts(s){const q=this.calc(s),diff=Number.isFinite(q.emFromB)?100*(q.emFromB-S3LAB.em)/S3LAB.em:NaN;return[
     {l:'B الحالي',v:(q.B*1e3).toFixed(3),u:'mT',c:'cyan'},
@@ -6839,9 +6841,9 @@ stage3_magnetron_specific_charge: {
   hints(s){const q=this.calc(s);return[
     q.B<q.Bc?'الإلكترونات ما زالت تصل إلى المصعد؛ زد B نحو '+(q.Bc*1e3).toFixed(2)+' mT.':'عند هذا المجال ينحني معظم الإلكترونات قبل بلوغ المصعد، لذلك يهبط Ia.',
     'يستخدم هذا النموذج تقريب الكاثود السلكي الرفيع المستخدم في دليل تجربة الماغنترون التعليمي: e/m=8Va/(Ra²Bc²).',
-    'B=kB I هنا ثابت معايرة صريح للملف؛ يجب تحديده من الجهاز الحقيقي عند إجراء التجربة فعليًا.'
+    'المجال يُحسب من هندسة الملف الواردة في دليل IIT Roorkee: B=μ₀ N Is cosθ، مع L=0.30 m وقطر الملف 0.065 m. قيمة N تُدخل من الملف المستخدم فعليًا.'
   ];},
-  equations:['\\frac{e}{m}=\\frac{8V_a}{R_a^2B_c^2}','B=k_B I','V_a=\\frac{R_a^2}{8}\\frac{e}{m}B_c^2'],
+  equations:['\\frac{e}{m}=\\frac{8V_a}{R_a^2B_c^2}','B=\\mu_0 N I_s\\cos\\theta','\\cos\\theta=\\frac{L/2}{\\sqrt{(L/2)^2+R_s^2}}','V_a=\\frac{R_a^2}{8}\\frac{e}{m}B_c^2'],
   theory:'<b>المشاهدة المتوقعة:</b> عند ثبات Va يبقى تيار المصعد مرتفعًا ثم يهبط بشدة قرب المجال الحرج Bc، لأن مسار الإلكترون يصبح منحنياً بحيث لا يصل إلى المصعد. <br><b>تفسير النتائج:</b> في تقريب الكاثود السلكي الرفيع المستخدم في المختبرات التعليمية، e/m=8Va/(Ra²Bc²)، ولذلك يكون رسم Va مقابل Bc² خطيًا. منحنى القطع هنا حتمي وتعليمي وليس ضوضاء قياس حقيقية.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),cx=W*.40,cy=H*.48,scale=Math.min(W,H)*.28/q.ra,raP=q.ra*scale,rcP=Math.max(4,raP*.045);
@@ -6857,7 +6859,7 @@ stage3_millikan_oil_drop: {
   title:'تحكم الشحنة وقياس شحنة الإلكترون — تجربة ميليكان', icon:'💧', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
   desc:'قطرات زيت مشحونة بين لوحين مع سقوط/صعود حدّي، وتصحيح كننغهام لقانون ستوكس للقطرات الميكرونية.',
   objective:'قياس السرعة الحدية في السقوط والصعود، استخراج نصف قطر القطرة وشحنتها، والتحقق من q=ne.',
-  apparatus:['مرذاذ زيت معدني ρ≈886 kg/m³','لوحان متوازيان d≈7.67 mm','مصدر جهد حتى 500 V','مجهر بشبكة قياس','مؤقت لقياس الصعود والهبوط'],
+  apparatus:['مرذاذ زيت معدني ρ≈855 kg/m³','لوحان متوازيان d≈7.62 mm','مصدر جهد حتى 500 V','مجهر بشبكة 0.1/0.5 mm','مؤقت لقياس الصعود والهبوط'],
   welcome:{title:'💧 ميليكان — تكميم الشحنة',steps:['اختر قطرة من القطرات الأربع.','أطفئ المجال ولاحظ سرعة السقوط الحدية vf.','شغّل المجال بالقطبية الرافعة واضبط V ولاحظ vr.','اعكس القطبية لترى انعكاس اتجاه القوة الكهربائية.']},
   controls:[
     {id:'drop',type:'buttons',label:'القطرة المختارة',value:0,options:[{value:0,label:'قطرة A'},{value:1,label:'قطرة B'},{value:2,label:'قطرة C'},{value:3,label:'قطرة D'}]},
@@ -6866,7 +6868,7 @@ stage3_millikan_oil_drop: {
     {id:'pol',type:'buttons',label:'القطبية',value:1,options:[{value:1,label:'رفع الشحنة السالبة'},{value:-1,label:'عكس القطبية'}]}
   ],
   _drops:[{r:.49e-6,n:3},{r:.65e-6,n:5},{r:.80e-6,n:8},{r:1.00e-6,n:11}],
-  _constants:{rhoOil:886,rhoAir:1.225,eta:1.867e-5,p:1.01e5,b:8.20e-3,d:.00767},
+  _constants:{rhoOil:855,rhoAir:1.225,eta:1.867e-5,p:1.01e5,b:8.20e-3,d:.00762},
   reset(s){s.t=0;s.y=0;},
   update(s,dt){const q=this.calc(s);s.t+=dt;s.y+=(q.vTerm||0)*dt;if(Math.abs(s.y)>q.d*.38)s.y=-Math.sign(s.y)*q.d*.34;},
   calc(s){
@@ -6895,7 +6897,7 @@ stage3_millikan_oil_drop: {
   ];},
   hints(s){const q=this.calc(s);return[
     !s.ctrl.field?'المجال مطفأ: القطرة تهبط عند السرعة الحدية vf.':(q.vTerm>0?'القوة الكهربائية تتغلب على الوزن الفعّال؛ القطرة تصعد.':'القوة الصافية إلى الأسفل؛ القطرة تهبط.'),
-    'الحساب يستخدم ρoil=886 kg/m³ وd=7.67 mm وp=1.01×10⁵ Pa وη=1.867×10⁻⁵ Pa·s، وهي قيم نموذجية موثقة في دليل PASCO؛ كما أُبقي تصحيح الطفو.',
+    'النموذج يطابق مواصفات PASCO AP-8210 الحالية: ρoil≈855 kg/m³ وd≈7.62 mm وجهد حتى 500 V، مع p=1.01×10⁵ Pa وη=1.867×10⁻⁵ Pa·s وتصحيح الطفو.',
     'أُدخل تصحيح كننغهام/ميليكان لأن أبعاد القطرات تقارن بالمسار الحر المتوسط للهواء؛ شحنة كل قطرة في المحاكاة مضاعف صحيح من e بلا ضوضاء عشوائية.'
   ];},
   equations:['E=\\frac{V}{d}','\\eta_{eff}=\\frac{\\eta}{1+b/(pr)}','r=\\sqrt{\\left(\\frac{b}{2p}\\right)^2+\\frac{9\\eta v_f}{2(\\rho_{oil}-\\rho_{air})g}}-\\frac{b}{2p}','q=\\frac{W_{eff}d(v_f+v_r)}{Vv_f}','q=ne'],
@@ -6983,16 +6985,16 @@ stage3_electron_beam_fields: {
   apparatus:['مدفع إلكتروني','مصعد تسريع','صفائح انحراف','شاشة فلورية','زوج ملفات هلمهولتز'],
   welcome:{title:'🟢 الحزمة الإلكترونية في E وB',steps:['اضبط جهد التسريع Va.','فعّل المجال الكهربائي وغيّر Vp أو إشارته.','فعّل المجال المغناطيسي وغيّر التيار أو اتجاه B.','قارن شرط انعدام الانحراف مع v=E/B.']},
   controls:[
-    {id:'Va',label:'جهد التسريع Va',min:200,max:3000,step:20,value:1200,unit:'V'},
+    {id:'Va',label:'جهد التسريع Va',min:100,max:200,step:2,value:150,unit:'V'},
     {id:'Vp',label:'جهد صفائح الانحراف Vp',min:-300,max:300,step:5,value:100,unit:'V'},
     {id:'d',label:'تباعد الصفائح d',min:1,max:5,step:.1,value:3,unit:'cm'},
-    {id:'I',label:'تيار هلمهولتز I',min:0,max:2,step:.02,value:.7,unit:'A'},
+    {id:'I',label:'تيار هلمهولتز I',min:0,max:2,step:.02,value:1.20,unit:'A'},
     {id:'Bdir',type:'buttons',label:'اتجاه B',value:1,options:[{value:1,label:'B ⊙ +z'},{value:-1,label:'B ⊗ −z'}]},
     {id:'Eon',type:'buttons',label:'المجال الكهربائي',value:1,options:[{value:1,label:'E ON'},{value:0,label:'E OFF'}]},
     {id:'Bon',type:'buttons',label:'المجال المغناطيسي',value:1,options:[{value:1,label:'B ON'},{value:0,label:'B OFF'}]}
   ],
   reset(s){s.t=0;s._trajKey='';s._traj=null;},update(s,dt){s.t+=dt;},
-  _fields(s){const v0=Math.sqrt(2*CONST.e*s.ctrl.Va/CONST.me),E=s.ctrl.Eon?s.ctrl.Vp/(s.ctrl.d/100):0,N=130,R=.15,B0=Math.pow(4/5,1.5)*CONST.mu0*N*s.ctrl.I/R,B=s.ctrl.Bon*s.ctrl.Bdir*B0;return{v0,E,B,N,R};},
+  _fields(s){const v0=Math.sqrt(2*CONST.e*s.ctrl.Va/CONST.me),E=s.ctrl.Eon?s.ctrl.Vp/(s.ctrl.d/100):0,N=150,R=.140,B0=Math.pow(4/5,1.5)*CONST.mu0*N*s.ctrl.I/R,B=s.ctrl.Bon*s.ctrl.Bdir*B0;return{v0,E,B,N,R};},
   _trajectory(s){
     const k=[s.ctrl.Va,s.ctrl.Vp,s.ctrl.d,s.ctrl.I,s.ctrl.Bdir,s.ctrl.Eon,s.ctrl.Bon].join('|');if(s._traj&&s._trajKey===k)return s._traj;
     const f=this._fields(s),q=-CONST.e,m=CONST.me,L=.28,dt=L/(f.v0*720);let x=0,y=0,vx=f.v0,vy=0;const pts=[];
@@ -7013,7 +7015,7 @@ stage3_electron_beam_fields: {
     'عكس إشارة Vp أو اتجاه B يعكس مساهمة القوة المقابلة فورًا.'
   ];},
   equations:['v_0=\\sqrt{\\frac{2eV_a}{m_e}}','E=\\frac{V_p}{d}','B=\\left(\\frac45\\right)^{3/2}\\frac{\\mu_0NI}{R}','m_e\\frac{d\\vec v}{dt}=-e(\\vec E+\\vec v\\times\\vec B)','r=\\frac{m_ev}{eB}'],
-  theory:'<b>المشاهدة المتوقعة:</b> E وحده يعطي انحرافًا شبه قطع مكافئ، وB وحده يسبب تقوسًا دائريًا؛ وعكس أي مجال يعكس انحرافه. <br><b>تفسير النتائج:</b> المسار هنا ناتج من تكامل عددي لقوة لورنتز داخل منطقة الصفائح/الملفات. استخدم النموذج زوج هلمهولتز محددًا N=130 وR=0.15 m، لذلك علاقة المجال ليست قيمة مفترضة مجهولة.',
+  theory:'<b>المشاهدة المتوقعة:</b> E وحده يعطي انحرافًا شبه قطع مكافئ، وB وحده يسبب تقوسًا دائريًا؛ وعكس أي مجال يعكس انحرافه. <br><b>تفسير النتائج:</b> المسار هنا ناتج من تكامل عددي لقوة لورنتز داخل منطقة الصفائح/الملفات. استخدم النموذج قيم دليل UCLA: N=150 لفة لكل ملف وR=0.140 m، لذلك علاقة المجال ليست قيمة مفترضة مجهولة.',
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this._trajectory(s),pts=q.pts,x0=W*.08,y0=H*.52,xScale=W*.82/.28,yScale=H*.38/.075;
     ctx.strokeStyle='#64748b';ctx.lineWidth=3;ctx.strokeRect(x0,H*.20,W*.82,H*.58);label(ctx,'أنبوب مفرغ',W*.49,H*.16,'#94a3b8','center',9,true);
@@ -7279,23 +7281,24 @@ Object.assign(SIMS.stage3_rydberg_constant,{
 Object.assign(SIMS.stage3_magnetron_specific_charge,{
   measurementSpec:{
     title:'📍 قراءات الماغنترون — المجال الحرج',
-    instruction:'لكل Va زد تيار الملف حتى الهبوط الحاد في Ia وسجّل القراءة قرب Bc. أبقِ Ra وثابت معايرة المجال kB ثابتين، ثم ارسم Va مقابل Bc².',
+    instruction:'لكل Va زد تيار الملف حتى الهبوط الحاد في Ia وسجّل القراءة قرب Bc. أبقِ Ra وكثافة اللفات N ثابتين، ثم ارسم Va مقابل Bc².',
     studentNote:'في المختبر الحقيقي يُحدد Ic من منحنى Ia مقابل تيار الملف عند كل Va. هنا يسمح زر التسجيل فقط قرب المجال الحرج المحسوب.',
     minPoints:3,
     columns:[
       {key:'Va',label:'Va',unit:'V'},{key:'I',label:'Ic',unit:'A'},{key:'B',label:'Bc',unit:'mT'},
-      {key:'B2',label:'Bc²',unit:'mT²'},{key:'Ia',label:'Ia',unit:'µA'},{key:'Ra',label:'Ra',unit:'cm'}
+      {key:'B2',label:'Bc²',unit:'mT²'},{key:'Ia',label:'Ia',unit:'µA'},{key:'Ra',label:'Ra',unit:'cm'},{key:'N',label:'N',unit:'لفة/m'}
     ],
     record(s,sim){
       const q=sim.calc(s),rel=Math.abs(q.B-q.Bc)/q.Bc;
       if(rel>.05)return{error:'لم تصل بعد إلى المجال الحرج. اضبط تيار الملف حتى يكون B ضمن ±5% من Bc.'};
-      return{Va:q.Va,I:s.ctrl.I,B:q.B*1e3,B2:Math.pow(q.B*1e3,2),Ia:q.Ia,Ra:s.ctrl.ra};
+      return{Va:q.Va,I:s.ctrl.I,B:q.B*1e3,B2:Math.pow(q.B*1e3,2),Ia:q.Ia,Ra:s.ctrl.ra,N:s.ctrl.N};
     },
     graph:{x:'B2',y:'Va',fit:'linear',xLabel:'Bc² (mT²)',yLabel:'Va (V)'},
     analysis(rows,fit){
       if(!fit)return'تحتاج إلى ثلاث قيم مختلفة لجهد المصعد على الأقل.';
-      const radii=[...new Set(rows.map(r=>Number(r.Ra).toFixed(4)))];
+      const radii=[...new Set(rows.map(r=>Number(r.Ra).toFixed(4)))],turns=[...new Set(rows.map(r=>Number(r.N).toFixed(1)))];
       if(radii.length>1)return'غيّرت نصف قطر المصعد بين القراءات؛ أعد القياس مع Ra ثابت لأنه ثابت هندسي للجهاز.';
+      if(turns.length>1)return'غيّرت كثافة لفات الملف N بين القراءات؛ أعد السلسلة مع نفس الملف.';
       const ra=Number(rows[0].Ra)/100,em=8*(fit.m*1e6)/(ra*ra),err=100*(em-S3LAB.em)/S3LAB.em;
       return'من ميل Va مقابل Bc²: e/m = '+em.toExponential(5)+' C/kg، والخطأ = '+err.toFixed(2)+'%، R² = '+fit.r2.toFixed(5)+'.';
     }
