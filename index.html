@@ -6725,7 +6725,7 @@ stage3_rydberg_constant: {
   desc:'مختبر طيف الهيدروجين ومحزوز الحيود لاستخراج ثابت ريدبرج من خطوط بالمر المرئية.',
   objective:'قياس أطوال موجات خطوط بالمر n=3–6 بواسطة محزوز حيود، ثم حساب R_H ومتوسطه ومقارنته بالقيمة المرجعية.',
   apparatus:['مصباح طيف هيدروجين','مطياف/كوليميتر','محزوز حيود','تلسكوب دوّار','تدريج زاوي'],
-  welcome:{title:'🌈 ثابت ريدبرج من طيف الهيدروجين',steps:['اختر خط بالمر n.','اختر رتبة الحيود وكثافة خطوط المحزوز.','حرّك التلسكوب حتى يطابق الشعاع الملون.','اضغط زر تسجيل القياس داخل المشهد، ثم كرر لبقية الخطوط.']},
+  welcome:{title:'🌈 ثابت ريدبرج من طيف الهيدروجين',steps:['اختر خطًا من Hα وHβ وHγ وHδ.','ثبّت رتبة الحيود وكثافة خطوط المحزوز.','طابق التلسكوب مع الخط يمينًا وسجّل القراءة، ثم كرر في الجهة اليسرى.','كرر للخطوط الأربعة ثم ارسم 1/λ مقابل (1/4−1/n²).']},
   controls:[
     {id:'n',type:'buttons',label:'خط بالمر n→2',value:3,options:[{value:3,label:'Hα · n=3'},{value:4,label:'Hβ · n=4'},{value:5,label:'Hγ · n=5'},{value:6,label:'Hδ · n=6'}]},
     {id:'m',type:'buttons',label:'رتبة الحيود m',value:1,options:[{value:1,label:'m=1'},{value:2,label:'m=2'}]},
@@ -6811,7 +6811,7 @@ stage3_magnetron_specific_charge: {
   title:'إيجاد الشحنة النوعية للإلكترون e/m بطريقة الماغنترون', icon:'🧲', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
   desc:'مسارات إلكترونية داخل مصعد أسطواني مع مجال مغناطيسي وقطع تيار المصعد عند المجال الحرج.',
   objective:'تحديد المجال المغناطيسي الحرج الذي يمنع الإلكترونات من بلوغ المصعد، ثم استخراج e/m من هندسة الماغنترون.',
-  apparatus:['ماغنترون/أنبوب ثنائي أسطواني','كاثود محوري','مصعد أسطواني','ملفات مجال مغناطيسي','مقياس تيار المصعد','مصدر جهد مستمر'],
+  apparatus:['ماغنترون بكاثود سلكي محوري','مصعد أسطواني Ra≈0.30 cm','ملف لولبي L≈0.30 m وقطره≈0.065 m','أميتر تيار المصعد µA','أميتر تيار الملف','مصدر جهد المصعد'],
   welcome:{title:'🧲 الماغنترون و e/m',steps:['ثبّت جهد المصعد Va.','زد تيار المجال تدريجيًا وسجّل Ia مقابل I.','حدد التيار الحرج Ic عند الهبوط الحاد لتيار المصعد.','كرر لعدة Va ثم ارسم Va مقابل Bc² لاستخراج e/m.']},
   controls:[
     {id:'Va',label:'جهد المصعد Va',min:2,max:6,step:.1,value:4,unit:'V'},
@@ -6983,7 +6983,7 @@ stage3_electron_beam_fields: {
   title:'سلوك الحزمة الإلكترونية في المجال الكهربائي والمجال المغناطيسي', icon:'🟢', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
   desc:'أنبوب حزمة إلكترونية مع صفائح انحراف وملفات هلمهولتز وحل عددي لقوة لورنتز.',
   objective:'دراسة انحراف الإلكترونات في E وB منفردين ومجتمعين، والتحقق من اتجاه القوة وشرط منتقي السرعة v=E/B.',
-  apparatus:['مدفع إلكتروني','مصعد تسريع','صفائح انحراف','شاشة فلورية','زوج ملفات هلمهولتز'],
+  apparatus:['مدفع إلكتروني','صفائح انحراف كهربائي','شاشة/مسار فلوري','زوج ملفات هلمهولتز R=0.140 m','150 لفة لكل ملف','مصدر تسريع 100–200 V'],
   welcome:{title:'🟢 الحزمة الإلكترونية في E وB',steps:['اضبط جهد التسريع Va.','فعّل المجال الكهربائي وغيّر Vp أو إشارته.','فعّل المجال المغناطيسي وغيّر التيار أو اتجاه B.','قارن شرط انعدام الانحراف مع v=E/B.']},
   controls:[
     {id:'Va',label:'جهد التسريع Va',min:100,max:200,step:2,value:150,unit:'V'},
@@ -7037,8 +7037,8 @@ stage3_franck_hertz_mercury: {
   welcome:{title:'📈 فرانك–هيرتز — إثارة ذرية متقطعة',steps:['امسح جهد التسريع Va.','راقب هبوط تيار المجمع بعد كل تصادم إثارة غير مرن.','اضبط جهد الإعاقة لتوضيح القيعان.','سجّل مواضع عدة قيعان واحسب متوسط ΔV.']},
   controls:[
     {id:'Va',label:'جهد التسريع Va',min:0,max:60,step:.1,value:14.7,unit:'V'},
-    {id:'Vr',label:'جهد الإعاقة',min:.5,max:3,step:.1,value:1.5,unit:'V'},
-    {id:'heater',label:'شدة الانبعاث/السخان',min:50,max:150,step:5,value:100,unit:'%'}
+    {id:'Vr',label:'جهد الإعاقة',min:.1,max:2,step:.1,value:1.0,unit:'V'},
+    {id:'heater',label:'انبعاث الكاثود النسبي',min:50,max:150,step:5,value:100,unit:'%'}
   ],
   Eexc:4.9,
   reset(s){s.t=0;s.records=[];},update(s,dt){s.t+=dt;},
@@ -7131,8 +7131,8 @@ stage3_electron_diffraction_graphite: {
   title:'إثبات الطبيعة الموجية للإلكترون باستخدام حيود الإلكترونات', icon:'🟢', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
   desc:'مدفع إلكتروني وهدف غرافيت وشاشة فلورية تعرض حلقتي حيود تتقلصان بزيادة جهد التسريع.',
   objective:'التحقق من علاقة دي برولي واستنتاج سلوك حلقات حيود الإلكترونات وفق قانون براج وهندسة الشاشة.',
-  apparatus:['مدفع إلكتروني','مصدر تسريع 1–5 kV','غرافيت متعدد البلورات','شاشة فلورية','مسطرة قياس أقطار الحلقات'],
-  welcome:{title:'🟢 حيود الإلكترونات في الغرافيت',steps:['غيّر جهد التسريع V.','راقب تناقص λ عند زيادة V.','راقب تقلص الحلقتين على الشاشة.','غيّر L أو المسافات البلورية وقارن الأقطار المحسوبة.']},
+  apparatus:['مدفع إلكتروني','مصدر تسريع 2.5–5.0 kV','غرافيت متعدد البلورات','شاشة فلورية','بعد هدف–شاشة L=0.140 m','مسطرة/فرجار لقياس أقطار الحلقات'],
+  welcome:{title:'🟢 حيود الإلكترونات في الغرافيت',steps:['ابدأ عند 2.5 kV وسجّل قطري الحلقتين.','زد الجهد على خطوات 0.5 kV حتى 5.0 kV.','راقب تناقص λ وتقلص الحلقتين مع زيادة V.','ارسم D مقابل 1/√V لكل حلقة واستخرج المسافات البلورية.']},
   controls:[
     {id:'V',label:'جهد التسريع',min:2.5,max:5,step:.05,value:5,unit:'kV'}
   ],
@@ -7191,14 +7191,14 @@ stage3_planck_led: {
   title:'تعيين ثابت بلانك باستخدام الثنائيات الباعثة للضوء LEDs', icon:'💡', category:'الفيزياء الذرية', subsection:S3LAB.subsection,
   desc:'لوحة LEDs متعددة الأطوال الموجية مع مصدر DC ومقاومة 100 Ω وملاءمة خطية حقيقية لاستخراج h.',
   objective:'قياس جهد التشغيل التقريبي لعدة LEDs، رسم Vth مقابل f، ثم استخراج h من ميل الملاءمة الخطية دون إجبار الخط على المرور بنقطة الأصل.',
-  apparatus:['LEDs: 465، 560، 585، 635، 660، 950 nm','مصدر جهد DC','مقاومة 100 Ω','فولتميتر','قياس تيار'],
+  apparatus:['LEDs موثقة: 470، 505، 570، 605، 655، 880، 940 nm','مصدر جهد DC','مقاومة تحديد تيار','فولتميتر','كاميرا/كاشف للـIR'],
   welcome:{title:'💡 ثابت بلانك بواسطة LEDs',steps:['اختر LED.','ارفع جهد المصدر ببطء حتى بدء التوصيل/الإضاءة.','اضغط تسجيل عند العتبة التشغيلية.','كرر لعدة ألوان ثم راقب ملاءمة Vth مقابل f وقيمة h.']},
   controls:[
-    {id:'led',type:'buttons',label:'LED المختار',value:0,options:[{value:0,label:'465 nm'},{value:1,label:'560 nm'},{value:2,label:'585 nm'},{value:3,label:'635 nm'},{value:4,label:'660 nm'},{value:5,label:'950 nm · IR'}]},
+    {id:'led',type:'buttons',label:'LED المختار',value:0,options:[{value:0,label:'470 nm · أزرق'},{value:1,label:'505 nm · تركوازي'},{value:2,label:'570 nm · أخضر'},{value:3,label:'605 nm · برتقالي'},{value:4,label:'655 nm · أحمر'},{value:5,label:'880 nm · IR'},{value:6,label:'940 nm · IR'}]},
     {id:'Vs',label:'جهد المصدر',min:0,max:5,step:.01,value:0,unit:'V'}
   ],
-  leds:[465,560,585,635,660,950],
-  _color(nm){return nm===950?'#64748b':S3LAB.wl(nm);},
+  leds:[470,505,570,605,655,880,940],
+  _color(nm){return nm>780?'#64748b':S3LAB.wl(nm);},
   _threshold(nm){const f=CONST.c/(nm*1e-9);return CONST.h*f/CONST.e;},
   reset(s){s.t=0;s.records={};},update(s,dt){s.t+=dt;},
   calc(s){
@@ -7207,7 +7207,7 @@ stage3_planck_led: {
     return{nm,f,Vth,R,I,junction,fit,hFit,err,pts};
   },
   readouts(s){const q=this.calc(s);return[
-    {l:'λ',v:q.nm.toFixed(0),u:'nm',c:q.nm===950?undefined:'cyan'},
+    {l:'λ',v:q.nm.toFixed(0),u:'nm',c:q.nm>780?undefined:'cyan'},
     {l:'f',v:(q.f/1e14).toFixed(3),u:'×10¹⁴ Hz'},
     {l:'Vth النموذجي',v:q.Vth.toFixed(3),u:'V',c:'gold'},
     {l:'تيار LED',v:(q.I*1000).toFixed(2),u:'mA'},
@@ -7215,19 +7215,19 @@ stage3_planck_led: {
     {l:'R² / الخطأ',v:q.fit?q.fit.r2.toFixed(5)+' / '+q.err.toFixed(2):'—',u:q.fit?'%':''}
   ];},
   hints(s){const q=this.calc(s);return[
-    q.nm===950?'950 nm تحت الحمراء؛ التوهج على الرسم رمزي فقط ولا يعني أن العين تراها.':'لون LED على اللوحة يتبع طول موجته المختار.',
+    q.nm>780?'880 و940 nm تحت الحمراء؛ التوهج على الرسم رمزي فقط ولا يعني أن العين تراها.':'لون LED على اللوحة يتبع طول موجته المختار.',
     s.ctrl.Vs<q.Vth?'ارفع الجهد تدريجيًا نحو '+q.Vth.toFixed(2)+' V حتى تبدأ الاستجابة.':'بدأ التوصيل في نموذج الدايود؛ المقاومة 100 Ω تحد التيار.',
     'المحاكاة تستخدم النموذج التعليمي المثالي eVth≈hf دون إزاحة عشوائية. في LED حقيقي يتأثر جهد البدء بمادة الوصلة ودرجة الحرارة ومعيار رؤية الضوء.'
   ];},
   equations:['f=\\frac{c}{\\lambda}','eV_{th}\\approx hf','V_{th}\\approx\\frac{h}{e}f','h=e a'],
-  theory:'<b>المشاهدة المتوقعة:</b> LEDs الأقصر طولًا موجيًا تحتاج جهد عتبة أعلى، وتنتظم نقاط Vth مقابل f تقريبًا على خط مستقيم. <br><b>تفسير النتائج:</b> ملاءمة أقل المربعات تستخدم ميلًا وجزءًا مقطوعًا حرين لكشف أي إزاحة؛ النموذج البرمجي نفسه مثالي، أما تجربة LED الحقيقية فهي تقريبية. 950 nm موسوم تحت الحمراء ولا يُعرض كلون مرئي حقيقي. النموذج حتمي بلا ضوضاء عشوائية.',
+  theory:'<b>المشاهدة المتوقعة:</b> LEDs الأقصر طولًا موجيًا تحتاج جهد عتبة أعلى، وتنتظم نقاط Vth مقابل f تقريبًا على خط مستقيم. <br><b>تفسير النتائج:</b> ملاءمة أقل المربعات تستخدم ميلًا وجزءًا مقطوعًا حرين لكشف أي إزاحة؛ النموذج البرمجي نفسه مثالي، أما تجربة LED الحقيقية فهي تقريبية. 880 و940 nm تحت الحمراء ولا يُعرضان كلون مرئي حقيقي؛ في المختبر يستخدم دليل Mississippi State كاميرا هاتف أو فوتوميتر لرصدهما. النموذج حتمي بلا ضوضاء عشوائية.',
   pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(s.ctrl.Vs>=q.Vth)s.records[String(q.nm)]={nm:q.nm,f:q.f,Vth:q.junction};return true;},
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),panel={x:W*.07,y:H*.14,w:W*.42,h:H*.66};
     ctx.fillStyle='#dbe2ea';ctx.strokeStyle='#94a3b8';ctx.fillRect(panel.x,panel.y,panel.w,panel.h);ctx.strokeRect(panel.x,panel.y,panel.w,panel.h);
     this.leds.forEach((nm,i)=>{const y=panel.y+42+i*(panel.h-70)/5,col=this._color(nm),sel=i===Number(s.ctrl.led);ctx.strokeStyle=sel?'#fbbf24':'#64748b';ctx.lineWidth=sel?3:1;ctx.strokeRect(panel.x+18,y-13,panel.w-36,26);ctx.fillStyle=col;ctx.globalAlpha=nm===950?.35:1;ctx.beginPath();ctx.arc(panel.x+46,y,9,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;label(ctx,nm+' nm'+(nm===950?' · IR':''),panel.x+78,y,'#0f172a','left',9,true);});
     const supply={x:W*.58,y:H*.18,w:W*.30,h:H*.22};ctx.fillStyle='#1e293b';ctx.strokeStyle='#475569';ctx.fillRect(supply.x,supply.y,supply.w,supply.h);ctx.strokeRect(supply.x,supply.y,supply.w,supply.h);label(ctx,'DC '+s.ctrl.Vs.toFixed(2)+' V',supply.x+supply.w/2,supply.y+supply.h*.36,'#fbbf24','center',13,true);label(ctx,'I='+(q.I*1000).toFixed(2)+' mA · R=100 Ω',supply.x+supply.w/2,supply.y+supply.h*.67,'#22d3ee','center',9,true);
-    const glow=clamp((s.ctrl.Vs-q.Vth)/.35,0,1);ctx.fillStyle=this._color(q.nm);ctx.globalAlpha=q.nm===950?.12*glow:.25+.75*glow;ctx.shadowColor=this._color(q.nm);ctx.shadowBlur=22*glow;ctx.beginPath();ctx.arc(W*.73,H*.50,22,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;label(ctx,q.nm===950?'IR — تمثيل رمزي':'LED المختار',W*.73,H*.56,q.nm===950?'#94a3b8':this._color(q.nm),'center',9,true);
+    const glow=clamp((s.ctrl.Vs-q.Vth)/.35,0,1);ctx.fillStyle=this._color(q.nm);ctx.globalAlpha=q.nm>780?.12*glow:.25+.75*glow;ctx.shadowColor=this._color(q.nm);ctx.shadowBlur=22*glow;ctx.beginPath();ctx.arc(W*.73,H*.50,22,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;label(ctx,q.nm>780?'IR — تمثيل رمزي':'LED المختار',W*.73,H*.56,q.nm>780?'#94a3b8':this._color(q.nm),'center',9,true);
     const rb={x:W*.58,y:H*.56,w:W*.30,h:28};s._recordBtn=rb;S3LAB.button(ctx,rb,'📍 سجّل العتبة',s.ctrl.Vs>=q.Vth);
     const pts=Object.values(s.records||{});
     label(ctx,'النقاط المسجلة: '+pts.length+'/6',W*.73,H*.64,'#cbd5e1','center',8,true);
@@ -7468,7 +7468,7 @@ Object.assign(SIMS.stage3_planck_led,{
   measurementSpec:{
     title:'📍 قراءات ثابت بلانك باستخدام LEDs',
     instruction:'اختر LED وارفع الجهد ببطء حتى بداية الإضاءة/التوصيل، ثم سجّل Vth. كرر لأربعة LEDs أو أكثر، واحسب f=c/λ وارسم Vth مقابل f.',
-    studentNote:'950 nm تحت الحمراء؛ في المختبر الحقيقي تحتاج كاميرا/كاشف بدل العين. لا تسجّل بعد تجاوز العتبة بكثير.',
+    studentNote:'880 و940 nm تحت الحمراء؛ دليل Mississippi State يوصي بكاميرا الهاتف أو فوتوميتر للـIR. لا تسجّل بعد تجاوز العتبة بكثير.',
     minPoints:4,
     columns:[
       {key:'lambda',label:'λ',unit:'nm'},{key:'f14',label:'f',unit:'×10¹⁴ Hz'},{key:'Vth',label:'Vth',unit:'V'},{key:'Vs',label:'جهد المصدر',unit:'V'}
@@ -8454,10 +8454,10 @@ RESOURCE_CATALOG.stage3_planck_led = [
 (function(){
   const manuals={
     stage3_rydberg_constant:{type:'مختبر',title:'The Optical Spectrum of Hydrogen',source:'University of Richmond',url:'https://facultystaff.richmond.edu/~ggilfoyl/qm/homework/HydrogenLab/HydrogenLab.html',note:'يعرض Hα وHβ وHγ وHδ، قياس زوايا الحيود، حساب λ وثابت ريدبرج.'},
-    stage3_magnetron_specific_charge:{type:'مختبر',title:'Teaching Laboratories — Magnetron e/m experiment',source:'IIT Roorkee · Department of Physics',url:'https://iitr.ac.in/Departments/Physics%20Department/Academics/Teaching%20Laboratories.html',note:'دليل التجربة الرسمية: Ia مقابل تيار الملف، تحديد Ic، ثم Va مقابل Bc² واستخراج e/m.'},
-    stage3_millikan_oil_drop:{type:'PDF',title:'Millikan Oil Drop Apparatus AP-8210A — Instruction Manual',source:'PASCO / UCSB Physics',url:'https://web.physics.ucsb.edu/~phys128/experiments/electron/Millikan-Oil-Drop-Manual-AP-8210A.pdf',note:'إجراء قياس أزمنة الصعود والهبوط وتصحيح ستوكس للقطرات الميكرونية وثوابت الجهاز.'},
+    stage3_magnetron_specific_charge:{type:'PDF',title:'e/m Experiment (Magnetron Method)',source:'IIT Roorkee · Department of Physics',url:'https://iitr.ac.in/Academics/static/Department/Physics/PHC%20212PHC206/12._ebym_magnetron_method.pdf',note:'دليل التجربة الرسمية: Ia مقابل تيار الملف، تحديد Ic، ثم Va مقابل Bc² واستخراج e/m.'},
+    stage3_millikan_oil_drop:{type:'مختبر',title:'Millikan Oil Drop Apparatus AP-8210 — current specifications',source:'PASCO Scientific',url:'https://www.pasco.com/products/lab-apparatus/fundamental-constants/ap-8210',note:'إجراء قياس أزمنة الصعود والهبوط وتصحيح ستوكس للقطرات الميكرونية وثوابت الجهاز.'},
     stage3_photoelectric_effect:{type:'مختبر',title:'Experiment 6 — The Photoelectric Effect',source:'UCLA Physics & Astronomy',url:'https://demoweb.physics.ucla.edu/node/118',note:'قياس جهد الإيقاف لألوان الزئبق ورسم Vstop مقابل f لاستخراج h ودالة الشغل.'},
-    stage3_electron_beam_fields:{type:'PDF',title:'Physics 4BL — Electron gun, deflection plates and Helmholtz coils',source:'UCLA Physics & Astronomy',url:'https://demoweb.physics.ucla.edu/sites/default/files/Manual4BL-2.pdf',note:'صفائح الانحراف الكهربائي وصيغة مجال هلمهولتز وقياس حركة الحزمة/e/m.'},
+    stage3_electron_beam_fields:{type:'PDF',title:'Physics 4BL — Electron gun and Helmholtz coils',source:'UCLA Physics & Astronomy',url:'https://demoweb.physics.ucla.edu/sites/default/files/Manual4BL_3.pdf',note:'صفائح الانحراف الكهربائي وصيغة مجال هلمهولتز وقياس حركة الحزمة/e/m.'},
     stage3_franck_hertz_mercury:{type:'PDF',title:'The Franck-Hertz Experiment Lab Guide',source:'MIT OpenCourseWare · Department of Physics',url:'https://ocw.mit.edu/courses/8-13-14-experimental-physics-i-ii-junior-lab-fall-2016-spring-2017/afdfff9f8bbe067239af19c8b178a764_MIT8_13-14F16-S17exp7.pdf',note:'أنبوب زئبق، جهد تسريع وإعاقة، ومنحنى Ia–V؛ طاقة الإثارة المميزة قرب 4.9 eV.'},
     stage3_zeeman_cadmium:{type:'مختبر',title:'Zeeman Effect — Cd red line 643.8 nm',source:'York University Physics Wiki',url:'https://physwiki.apps01.yorku.ca/index.php?title=Main_Page%2FPHYS_4210%2FZeeman_Effect',note:'الانتقال الأحمر للكادميوم 643.8 nm وتأثير زيمان العادي والرصد الطولي والعرضي.'},
     stage3_electron_diffraction_graphite:{type:'PDF',title:'Electron Diffraction Lab — graphite',source:'Embry-Riddle Aeronautical University · Physics',url:'https://physicsx.erau.edu/Courses/CoursesS2026/PS315/Electron%20Diffraction/ElectronDiffraction.pdf',note:'حلقتا الغرافيت، d=0.213 و0.123 nm، وقياس D مع V ورسم D مقابل 1/√V.'},
