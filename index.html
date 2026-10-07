@@ -7225,16 +7225,16 @@ stage3_planck_led: {
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),panel={x:W*.07,y:H*.14,w:W*.42,h:H*.66};
     ctx.fillStyle='#dbe2ea';ctx.strokeStyle='#94a3b8';ctx.fillRect(panel.x,panel.y,panel.w,panel.h);ctx.strokeRect(panel.x,panel.y,panel.w,panel.h);
-    this.leds.forEach((nm,i)=>{const y=panel.y+42+i*(panel.h-70)/5,col=this._color(nm),sel=i===Number(s.ctrl.led);ctx.strokeStyle=sel?'#fbbf24':'#64748b';ctx.lineWidth=sel?3:1;ctx.strokeRect(panel.x+18,y-13,panel.w-36,26);ctx.fillStyle=col;ctx.globalAlpha=nm===950?.35:1;ctx.beginPath();ctx.arc(panel.x+46,y,9,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;label(ctx,nm+' nm'+(nm===950?' · IR':''),panel.x+78,y,'#0f172a','left',9,true);});
+    this.leds.forEach((nm,i)=>{const y=panel.y+42+i*(panel.h-70)/Math.max(1,this.leds.length-1),col=this._color(nm),sel=i===Number(s.ctrl.led);ctx.strokeStyle=sel?'#fbbf24':'#64748b';ctx.lineWidth=sel?3:1;ctx.strokeRect(panel.x+18,y-13,panel.w-36,26);ctx.fillStyle=col;ctx.globalAlpha=nm>780?.35:1;ctx.beginPath();ctx.arc(panel.x+46,y,9,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;label(ctx,nm+' nm'+(nm>780?' · IR':''),panel.x+78,y,'#0f172a','left',9,true);});
     const supply={x:W*.58,y:H*.18,w:W*.30,h:H*.22};ctx.fillStyle='#1e293b';ctx.strokeStyle='#475569';ctx.fillRect(supply.x,supply.y,supply.w,supply.h);ctx.strokeRect(supply.x,supply.y,supply.w,supply.h);label(ctx,'DC '+s.ctrl.Vs.toFixed(2)+' V',supply.x+supply.w/2,supply.y+supply.h*.36,'#fbbf24','center',13,true);label(ctx,'I='+(q.I*1000).toFixed(2)+' mA · R=100 Ω',supply.x+supply.w/2,supply.y+supply.h*.67,'#22d3ee','center',9,true);
     const glow=clamp((s.ctrl.Vs-q.Vth)/.35,0,1);ctx.fillStyle=this._color(q.nm);ctx.globalAlpha=q.nm>780?.12*glow:.25+.75*glow;ctx.shadowColor=this._color(q.nm);ctx.shadowBlur=22*glow;ctx.beginPath();ctx.arc(W*.73,H*.50,22,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;label(ctx,q.nm>780?'IR — تمثيل رمزي':'LED المختار',W*.73,H*.56,q.nm>780?'#94a3b8':this._color(q.nm),'center',9,true);
     const rb={x:W*.58,y:H*.56,w:W*.30,h:28};s._recordBtn=rb;S3LAB.button(ctx,rb,'📍 سجّل العتبة',s.ctrl.Vs>=q.Vth);
     const pts=Object.values(s.records||{});
-    label(ctx,'النقاط المسجلة: '+pts.length+'/6',W*.73,H*.64,'#cbd5e1','center',8,true);
+    label(ctx,'النقاط المسجلة: '+pts.length+'/'+this.leds.length,W*.73,H*.64,'#cbd5e1','center',8,true);
     // Vth-f experimental graph and unconstrained least-squares fit.
     const gx=W*.55,gy=H*.70,gw=W*.39,gh=H*.20;
     ctx.strokeStyle='#475569';ctx.strokeRect(gx,gy,gw,gh);label(ctx,'Vth مقابل f',gx+gw/2,gy-9,'#cbd5e1','center',8,true);
-    const freqs=this.leds.map(n=>CONST.c/(n*1e-9)),fmin=Math.min(...freqs),fmax=Math.max(...freqs),ymin=1.4,ymax=3.3;
+    const freqs=this.leds.map(n=>CONST.c/(n*1e-9)),fmin=Math.min(...freqs),fmax=Math.max(...freqs),ymin=1.15,ymax=2.85;
     const mapX=f=>gx+8+(gw-16)*(f-fmin)/(fmax-fmin),mapY=v=>gy+gh-8-(gh-16)*clamp((v-ymin)/(ymax-ymin),0,1);
     pts.forEach(r=>{ctx.fillStyle=this._color(r.nm);ctx.beginPath();ctx.arc(mapX(r.f),mapY(r.Vth),3.5,0,Math.PI*2);ctx.fill();});
     if(q.fit){
