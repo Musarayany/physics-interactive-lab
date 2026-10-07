@@ -6730,19 +6730,20 @@ stage3_rydberg_constant: {
     {id:'n',type:'buttons',label:'خط بالمر n→2',value:3,options:[{value:3,label:'Hα · n=3'},{value:4,label:'Hβ · n=4'},{value:5,label:'Hγ · n=5'},{value:6,label:'Hδ · n=6'}]},
     {id:'m',type:'buttons',label:'رتبة الحيود m',value:1,options:[{value:1,label:'m=1'},{value:2,label:'m=2'}]},
     {id:'lines',label:'كثافة المحزوز',min:300,max:600,step:10,value:500,unit:'خط/mm'},
-    {id:'thetaM',label:'زاوية التلسكوب المقاسة',min:1,max:55,step:.01,value:19.15,unit:'°'}
+    {id:'side',type:'buttons',label:'جهة الرصد',value:1,options:[{value:1,label:'يمين'},{value:-1,label:'يسار'}]},
+    {id:'thetaM',label:'قراءة التلسكوب θ',min:-55,max:55,step:.01,value:19.15,unit:'°'}
   ],
   _lambdaVac(n){return 1/(S3LAB.RH*(1/4-1/(n*n)));},
   _lambdaAir(n){return this._lambdaVac(n)/1.000277;},
   _theta(n,m,lines){const d=1/(lines*1e3),r=m*this._lambdaAir(n)/d;return Math.asin(clamp(r,-1,1));},
-  _align(s){const th=rad2deg(this._theta(Number(s.ctrl.n),Number(s.ctrl.m),Number(s.ctrl.lines)));s.ctrl.thetaM=Number(th.toFixed(2));S3LAB.sync('thetaM',s.ctrl.thetaM,'°');},
-  reset(s){s.t=0;s.records={};this._align(s);},
-  onControlChange(s,id){if(id==='n'||id==='m'||id==='lines')this._align(s);},
+  _align(s){const th=rad2deg(this._theta(Number(s.ctrl.n),Number(s.ctrl.m),Number(s.ctrl.lines))),sgn=Number(s.ctrl.side)||1;s.ctrl.thetaM=Number((sgn*th).toFixed(2));S3LAB.sync('thetaM',s.ctrl.thetaM,'°');},
+  reset(s){s.t=0;s.records={};s._rydbergSides={};this._align(s);},
+  onControlChange(s,id){if(id==='n'||id==='m'||id==='lines'||id==='side')this._align(s);},
   update(s,dt){s.t+=dt;},
   calc(s){
     const n=Number(s.ctrl.n),m=Number(s.ctrl.m),lines=Number(s.ctrl.lines),d=1/(lines*1e3);
     const lambdaVac=this._lambdaVac(n),lambdaAir=this._lambdaAir(n),thetaTheo=this._theta(n,m,lines),thetaM=deg2rad(Number(s.ctrl.thetaM));
-    const lambdaAirM=d*Math.sin(thetaM)/m,lambdaVacM=lambdaAirM*1.000277;
+    const lambdaAirM=d*Math.abs(Math.sin(thetaM))/m,lambdaVacM=lambdaAirM*1.000277;
     const denom=(1/4-1/(n*n));
     const RHcalc=lambdaVacM>0?1/(lambdaVacM*denom):NaN;
     const rec=Object.values(s.records||{});
@@ -6759,14 +6760,14 @@ stage3_rydberg_constant: {
     {l:'متوسط R_H المسجل',v:Number.isFinite(q.mean)?(q.mean/1e7).toFixed(5):'—',u:Number.isFinite(q.mean)?'×10⁷ m⁻¹':''},
     {l:'الخطأ النسبي',v:Number.isFinite(q.err)?q.err.toFixed(3):'—',u:Number.isFinite(q.err)?'%':''}
   ];},
-  hints(s){const q=this.calc(s),mis=Math.abs(rad2deg(q.thetaM-q.thetaTheo));return[
-    'معادلة المحزوز: d sinθ = mλ. اللون المختار يتحرك فعليًا مع زاوية الحيود.',
-    mis<.15?'✅ التلسكوب قريب من مركز الخط؛ سجّل القياس.':'حرّك زاوية التلسكوب نحو '+rad2deg(q.thetaTheo).toFixed(2)+'°.',
+  hints(s){const q=this.calc(s),target=(Number(s.ctrl.side)||1)*q.thetaTheo,mis=Math.abs(rad2deg(q.thetaM-target));return[
+    'معادلة المحزوز: d sinθ = mλ. قِس الخط نفسه يمينًا ويسارًا لتقليل خطأ الصفر في المطياف.',
+    mis<.15?'✅ التلسكوب قريب من مركز الخط في جهة '+(s.ctrl.side>0?'اليمين':'اليسار')+'؛ سجّل القراءة.':'حرّك زاوية التلسكوب نحو '+rad2deg(target).toFixed(2)+'°.',
     'المحزوز يعمل في الهواء؛ نحول λ_air إلى λ_vac بمعامل n_air≈1.000277 قبل تطبيق صيغة ريدبرج. R∞ يخص نواة لا نهائية الكتلة، بينما R_H أصغر قليلًا بسبب الكتلة المختزلة.'
   ];},
   equations:['\\frac{1}{\\lambda}=R_H\\left(\\frac{1}{2^2}-\\frac{1}{n^2}\\right)','m\\lambda=d\\sin\\theta','\\theta=\\frac{|\\theta_R-\\theta_L|}{2}'],
   theory:'<b>القيمة المرجعية:</b> R∞ = 1.0973731568×10⁷ m⁻¹، بينما يعطي تصحيح الكتلة المختزلة للهيدروجين R_H≈1.09678×10⁷ m⁻¹. في الهواء تظهر خطوط بالمر تقريبًا عند 656.28، 486.13، 434.05، 410.17 nm؛ يحول النموذج هذه القيم إلى طول موجي فراغي قبل حساب R_H. <br><b>المشاهدة المتوقعة:</b> Hα الأحمر عند أطول طول موجي وأكبر زاوية حيود، ثم Hβ وHγ وHδ. <br><b>تفسير النتائج:</b> ثبات R_H المستخرج من عدة خطوط يؤكد صيغة بالمر/ريدبرج.',
-  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(!Number.isFinite(q.RHcalc))return true;s.records[q.n]={n:q.n,theta:q.thetaM,lambdaAir:q.lambdaAirM,lambdaVac:q.lambdaVacM,RH:q.RHcalc};return true;},
+  pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s),target=(Number(s.ctrl.side)||1)*q.thetaTheo;if(Math.abs(rad2deg(q.thetaM-target))>.25||!Number.isFinite(q.RHcalc))return true;s.records[q.n]={n:q.n,theta:q.thetaM,lambdaAir:q.lambdaAirM,lambdaVac:q.lambdaVacM,RH:q.RHcalc};return true;},
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),cy=H*.47,gx=W*.46;
     ctx.fillStyle='#334155';ctx.fillRect(28,cy-42,70,84);label(ctx,'H₂',63,cy,'#e2e8f0','center',15,true);
@@ -6927,16 +6928,16 @@ stage3_photoelectric_effect: {
   controls:[
     {id:'lam',type:'buttons',label:'خط الزئبق',value:404.7,options:[{value:365,label:'365.0 nm'},{value:404.7,label:'404.7 nm'},{value:435.8,label:'435.8 nm'},{value:546.1,label:'546.1 nm'},{value:578.05,label:'577/579 nm'}]},
     {id:'intensity',label:'شدة الضوء',min:10,max:100,step:5,value:60,unit:'%'},
-    {id:'Vret',label:'جهد الإعاقة',min:0,max:4,step:.02,value:.5,unit:'V'},
-    {id:'phi',label:'دالة الشغل φ للنموذج',min:1.6,max:3.2,step:.05,value:2,unit:'eV'}
+    {id:'Vret',label:'جهد الإعاقة',min:0,max:4,step:.02,value:.5,unit:'V'}
   ],
+  phi_eV:2.0,
   reset(s){s.t=0;s.records={};},update(s,dt){s.t+=dt;},
   calcFor(lam,phi,intensity,Vret){
     const f=CONST.c/(lam*1e-9),E=CONST.h*f/CONST.e,K=Math.max(0,E-phi),Vs=K,emits=E>phi;
     const I0=20*(intensity/100),I=(emits&&Vs>0&&Vret<Vs)?I0*Math.sqrt(Math.max(0,1-Vret/Vs)):0;
     return{lam,f,E,K,Vs,emits,I,I0};
   },
-  calc(s){const q=this.calcFor(Number(s.ctrl.lam),s.ctrl.phi,s.ctrl.intensity,s.ctrl.Vret),pts=Object.values(s.records||{}).map(r=>({x:r.f,y:r.Vs})),fit=S3LAB.fit(pts);return Object.assign(q,{fit,pts});},
+  calc(s){const q=this.calcFor(Number(s.ctrl.lam),this.phi_eV,s.ctrl.intensity,s.ctrl.Vret),pts=Object.values(s.records||{}).map(r=>({x:r.f,y:r.Vs})),fit=S3LAB.fit(pts);return Object.assign(q,{fit,pts});},
   readouts(s){const q=this.calc(s),hFit=q.fit?CONST.e*q.fit.slope:NaN;return[
     {l:'التردد f',v:(q.f/1e14).toFixed(3),u:'×10¹⁴ Hz'},
     {l:'طاقة الفوتون',v:q.E.toFixed(3),u:'eV'},
@@ -6951,7 +6952,7 @@ stage3_photoelectric_effect: {
     'ميل Vs مقابل f يساوي h/e، والجزء المقطوع يساوي −φ/e في النموذج المثالي.'
   ];},
   equations:['hf=\\phi+K_{max}','K_{max}=eV_s','f=\\frac{c}{\\lambda}','V_s=\\frac{h}{e}f-\\frac{\\phi}{e}'],
-  theory:'<b>المشاهدة المتوقعة:</b> الشدة تغيّر التيار المشبع لا جهد الإيقاف؛ التردد الأعلى يرفع Vs إذا كان hf>φ؛ وتحت تردد العتبة لا يحدث انبعاث. <br><b>تفسير النتائج:</b> الخطية بين Vs وf تعطي h/e من الميل. دالة الشغل هنا معامل صريح للنموذج وليست منسوبة إلى معدن محدد.',
+  theory:'<b>المشاهدة المتوقعة:</b> الشدة تغيّر التيار المشبع لا جهد الإيقاف؛ التردد الأعلى يرفع Vs إذا كان hf>φ؛ وتحت تردد العتبة لا يحدث انبعاث. <br><b>تفسير النتائج:</b> الخطية بين Vs وf تعطي h/e من الميل والجزء المقطوع يعطي −φ/e. في هذه الخلية الافتراضية ثُبتت φ=2.00 eV حتى يستنتجها الطالب من الرسم بدل تغييرها يدويًا.',
   pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s);if(q.emits&&Math.abs(s.ctrl.Vret-q.Vs)<=.04)s.records[String(q.lam)]={f:q.f,Vs:s.ctrl.Vret,lam:q.lam};return true;},
   draw(ctx,W,H,s){
     drawGrid(ctx,W,H);const q=this.calc(s),col=S3LAB.wl(q.lam),cell={x:W*.42,y:H*.22,w:W*.22,h:H*.28};
@@ -7254,26 +7255,34 @@ stage3_planck_led: {
    ============================================================ */
 Object.assign(SIMS.stage3_rydberg_constant,{
   measurementSpec:{
-    title:'📍 قراءات ثابت ريدبرج — خطوط بالمر',
-    instruction:'سجّل Hα وHβ وHγ وHδ مع بقاء المحزوز والرتبة ثابتين. ارسم يدويًا 1/λ مقابل (1/4−1/n²)؛ ميل الخط يساوي R_H.',
-    studentNote:'اجمع الخطوط الأربعة أولًا. استخدم λ الفراغية في رسم ريدبرج، لا λ في الهواء. بعد إنجاز الرسم اضغط «تحقق من الرسم».',
+    title:'📍 قراءات ثابت ريدبرج — يمين/يسار المطياف',
+    instruction:'لكل خط Hα وHβ وHγ وHδ قِس موضعه في الجهتين. سجّل قراءة اليمين ثم بدّل «جهة الرصد» إلى اليسار وسجّلها. يحسب الجدول θ=|θR−θL|/2. ارسم 1/λ مقابل (1/4−1/n²).',
+    studentNote:'هذه الطريقة تطابق ورقة مختبر طيف الهيدروجين: θ_left وθ_right ثم الزاوية المتوسطة. أبقِ رتبة الحيود وكثافة المحزوز ثابتتين لكل السلسلة.',
     minPoints:3,
     columns:[
-      {key:'line',label:'الخط',unit:''},{key:'n',label:'n',unit:''},{key:'theta',label:'θ',unit:'°'},
+      {key:'line',label:'الخط',unit:''},{key:'n',label:'n',unit:''},
+      {key:'thetaL',label:'θL',unit:'°'},{key:'thetaR',label:'θR',unit:'°'},{key:'theta',label:'θ=|R−L|/2',unit:'°'},
       {key:'lambdaAir',label:'λ_air',unit:'nm'},{key:'lambdaVac',label:'λ_vac',unit:'nm'},
       {key:'xBalmer',label:'1/4−1/n²',unit:''},{key:'invLambda6',label:'1/λ',unit:'×10⁶ m⁻¹'}
     ],
     record(s,sim){
-      const q=sim.calc(s),mis=Math.abs(rad2deg(q.thetaM-q.thetaTheo));
-      if(mis>.25)return{error:'وجّه التلسكوب إلى مركز الخط أولًا؛ فرق الزاوية الحالي أكبر من 0.25°.'};
-      const names={3:'Hα',4:'Hβ',5:'Hγ',6:'Hδ'},x=.25-1/(q.n*q.n);
-      return{line:names[q.n],n:q.n,theta:rad2deg(q.thetaM),lambdaAir:q.lambdaAirM*1e9,lambdaVac:q.lambdaVacM*1e9,xBalmer:x,invLambda6:(1/q.lambdaVacM)/1e6};
+      const q=sim.calc(s),side=Number(s.ctrl.side)||1,target=side*q.thetaTheo,mis=Math.abs(rad2deg(q.thetaM-target));
+      if(mis>.25)return{error:'وجّه التلسكوب إلى مركز الخط في الجهة المختارة أولًا؛ يجب أن يكون الفرق ≤0.25°.'};
+      s._rydbergSides=s._rydbergSides||{};
+      const n=q.n,pair=s._rydbergSides[n]||(s._rydbergSides[n]={});
+      if(side>0)pair.right=rad2deg(q.thetaM);else pair.left=rad2deg(q.thetaM);
+      if(!Number.isFinite(pair.left)||!Number.isFinite(pair.right)){
+        return{pending:'تم حفظ قراءة '+(side>0?'اليمين':'اليسار')+' للخط '+({3:'Hα',4:'Hβ',5:'Hγ',6:'Hδ'}[n])+'. الآن بدّل إلى الجهة الأخرى وسجّلها.'};
+      }
+      const theta=Math.abs(pair.right-pair.left)/2,d=1/(q.lines*1e3),lambdaAir=d*Math.sin(deg2rad(theta))/q.m,lambdaVac=lambdaAir*1.000277;
+      const x=.25-1/(n*n);
+      return{line:{3:'Hα',4:'Hβ',5:'Hγ',6:'Hδ'}[n],n,thetaL:pair.left,thetaR:pair.right,theta,lambdaAir:lambdaAir*1e9,lambdaVac:lambdaVac*1e9,xBalmer:x,invLambda6:(1/lambdaVac)/1e6};
     },
     graph:{x:'xBalmer',y:'invLambda6',fit:'linear',xLabel:'1/4 − 1/n²',yLabel:'1/λ (×10⁶ m⁻¹)'},
     analysis(rows,fit){
-      if(!fit)return'تحتاج إلى ثلاثة خطوط مختلفة على الأقل لإجراء ملاءمة خطية.';
+      if(!fit)return'تحتاج إلى ثلاثة خطوط مختلفة على الأقل لإجراء الملاءمة؛ الأفضل تسجيل الخطوط الأربعة.';
       const R=fit.m*1e6,err=100*(R-S3LAB.RH)/S3LAB.RH;
-      return'من الميل: R_H = '+R.toExponential(7)+' m⁻¹، والخطأ بالنسبة إلى R_H المرجعي = '+err.toFixed(3)+'%، R² = '+fit.r2.toFixed(5)+'. الجزء المقطوع المثالي قريب من الصفر.';
+      return'من ميل الرسم: R_H = '+R.toExponential(7)+' m⁻¹، والخطأ عن القيمة المرجعية = '+err.toFixed(3)+'%، R² = '+fit.r2.toFixed(5)+'.';
     }
   }
 });
@@ -7339,19 +7348,17 @@ Object.assign(SIMS.stage3_photoelectric_effect,{
     minPoints:3,
     columns:[
       {key:'lambda',label:'λ',unit:'nm'},{key:'f14',label:'f',unit:'×10¹⁴ Hz'},{key:'intensity',label:'الشدة',unit:'%'},
-      {key:'Vstop',label:'Vstop',unit:'V'},{key:'phi',label:'φ',unit:'eV'}
+      {key:'Vstop',label:'Vstop',unit:'V'}
     ],
     record(s,sim){
       const q=sim.calc(s);
       if(!q.emits)return{error:'هذا التردد أقل من عتبة الانبعاث لدالة الشغل الحالية.'};
       if(Math.abs(s.ctrl.Vret-q.Vs)>.04)return{error:'اضبط جهد الإعاقة حتى يكون ضمن ±0.04 V من جهد الإيقاف، ثم سجّل القراءة.'};
-      return{lambda:q.lam,f14:q.f/1e14,intensity:s.ctrl.intensity,Vstop:s.ctrl.Vret,phi:s.ctrl.phi};
+      return{lambda:q.lam,f14:q.f/1e14,intensity:s.ctrl.intensity,Vstop:s.ctrl.Vret};
     },
     graph:{x:'f14',y:'Vstop',fit:'linear',xLabel:'f (×10¹⁴ Hz)',yLabel:'Vstop (V)'},
     analysis(rows,fit){
       if(!fit)return'تحتاج إلى ثلاثة ترددات مختلفة على الأقل.';
-      const phis=[...new Set(rows.map(r=>Number(r.phi).toFixed(4)))];
-      if(phis.length>1)return'غيّرت دالة الشغل بين القراءات؛ أعد السلسلة مع φ ثابتة لأنها خاصية للسطح نفسه.';
       const h=CONST.e*fit.m/1e14,phiFit=-fit.b,err=100*(h-CONST.h)/CONST.h;
       return'من الميل: h = '+h.toExponential(6)+' J·s، والخطأ = '+err.toFixed(3)+'%. ومن الجزء المقطوع: φ ≈ '+phiFit.toFixed(3)+' eV. R² = '+fit.r2.toFixed(5)+'.';
     }
@@ -8787,6 +8794,7 @@ const MeasurementLab={
       try{row=this.spec.record(currentState,currentSim);}catch(e){return toast('تعذر أخذ القراءة: '+String(e.message||e),'err',3000);}
       if(!row)return;
       if(row.error)return toast(row.error,'err',3200);
+      if(row.pending)return toast(row.pending,'learn',2600);
       row._seq=this.records.length+1;
       this.records.push(row);
       if(this.records.length>(this.spec.maxRecords||60))this.records.shift();
