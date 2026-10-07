@@ -7258,7 +7258,7 @@ Object.assign(SIMS.stage3_rydberg_constant,{
     title:'📍 قراءات ثابت ريدبرج — يمين/يسار المطياف',
     instruction:'لكل خط Hα وHβ وHγ وHδ قِس موضعه في الجهتين. سجّل قراءة اليمين ثم بدّل «جهة الرصد» إلى اليسار وسجّلها. يحسب الجدول θ=|θR−θL|/2. ارسم 1/λ مقابل (1/4−1/n²).',
     studentNote:'هذه الطريقة تطابق ورقة مختبر طيف الهيدروجين: θ_left وθ_right ثم الزاوية المتوسطة. أبقِ رتبة الحيود وكثافة المحزوز ثابتتين لكل السلسلة.',
-    minPoints:3,
+    minPoints:4,
     columns:[
       {key:'line',label:'الخط',unit:''},{key:'n',label:'n',unit:''},
       {key:'thetaL',label:'θL',unit:'°'},{key:'thetaR',label:'θR',unit:'°'},{key:'theta',label:'θ=|R−L|/2',unit:'°'},
@@ -7280,7 +7280,7 @@ Object.assign(SIMS.stage3_rydberg_constant,{
     },
     graph:{x:'xBalmer',y:'invLambda6',fit:'linear',xLabel:'1/4 − 1/n²',yLabel:'1/λ (×10⁶ m⁻¹)'},
     analysis(rows,fit){
-      if(!fit)return'تحتاج إلى ثلاثة خطوط مختلفة على الأقل لإجراء الملاءمة؛ الأفضل تسجيل الخطوط الأربعة.';
+      if(!fit)return'سجّل خطوط بالمر الأربعة Hα وHβ وHγ وHδ قبل التحقق من الرسم.';
       const R=fit.m*1e6,err=100*(R-S3LAB.RH)/S3LAB.RH;
       return'من ميل الرسم: R_H = '+R.toExponential(7)+' m⁻¹، والخطأ عن القيمة المرجعية = '+err.toFixed(3)+'%، R² = '+fit.r2.toFixed(5)+'.';
     }
