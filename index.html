@@ -64,16 +64,6 @@ canvas{display:block;width:100%;height:100%;border-radius:14px;touch-action:none
 .cat-icon{width:52px;height:52px;border-radius:14px;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
 .category-section{animation:fade .35s ease}
 #search-box::placeholder{color:#475569}
-/* Live Notes System */
-#live-notes{display:flex;flex-direction:column;gap:8px}
-#live-notes .note{background:rgba(14,20,36,.92);backdrop-filter:blur(10px);border:1px solid #1c2540;border-radius:12px;padding:8px 12px;font-size:12px;line-height:1.5;box-shadow:0 10px 30px -10px rgba(0,0,0,.6);animation:noteIn .35s cubic-bezier(.2,.9,.3,1.2);pointer-events:auto}
-#live-notes .note.out{opacity:0;transform:translateX(-30px);transition:all .45s ease}
-@keyframes noteIn{from{opacity:0;transform:translateX(-40px) scale(.9)}to{opacity:1;transform:translateX(0) scale(1)}}
-#live-notes .note .t{font-weight:700;display:flex;align-items:center;gap:6px}
-#live-notes .note .d{color:#cbd5e1;font-family:monospace;font-size:11px;margin-top:3px}
-.value-flash{animation:valueFlash 0.6s ease}
-@keyframes valueFlash{0%{background:rgba(251,191,36,.35)}100%{background:transparent}}
-
 /* Minimal fallbacks used by the app even if the Tailwind CDN is blocked. */
 .hidden{display:none!important}
 @supports (height:100dvh){body{min-height:100dvh}}
@@ -122,7 +112,6 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
   .category-section > .grid{grid-template-columns:minmax(0,1fr)!important;width:100%}
   .category-section a{width:100%;max-width:100%;min-width:0}
   .category-section h2,.category-section h3,.category-section p{overflow-wrap:anywhere}
-  #live-notes{width:calc(100vw - 24px)!important;left:12px!important;right:12px!important;max-width:none!important}
   #toast{width:calc(100vw - 24px);max-width:none}
   #toast > *{max-width:100%!important}
   #view-sim .flex-wrap{max-width:100%}
@@ -140,8 +129,7 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
 .mobile-summary-chip .m-l{display:block;color:#94a3b8;font-size:9px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mobile-summary-chip .m-v{display:block;color:#fbbf24;font-family:monospace;font-weight:800;font-size:11px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #mobile-note-summary{margin-top:6px;border-radius:9px;padding:6px 9px;border:1px solid rgba(34,211,238,.22);background:rgba(34,211,238,.06);font-size:10px;line-height:1.45;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#mobile-note-summary.flash{animation:mobileNoteFlash .45s ease}
-@keyframes mobileNoteFlash{0%{background:rgba(251,191,36,.22);border-color:rgba(251,191,36,.55)}100%{background:rgba(34,211,238,.06);border-color:rgba(34,211,238,.22)}}
+}
 .mobile-panel-btn{min-width:0;padding:7px 3px;border-radius:9px;border:1px solid #25304a;background:#0b1220;color:#94a3b8;font-family:Cairo,sans-serif;font-weight:800;font-size:10px;line-height:1.25;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .mobile-panel-btn.active{background:rgba(251,191,36,.14);border-color:#fbbf24;color:#fbbf24;box-shadow:0 0 0 1px rgba(251,191,36,.12) inset}
 
@@ -182,9 +170,6 @@ main,header,section,#view-home,#view-sim,#sim-grid,.category-section{max-width:1
   #explain-grid > [data-mobile-panel]+[data-mobile-panel]{margin-top:8px}
   #theory{font-size:11px!important;line-height:1.8!important}
   #equations .katex{font-size:.92em!important}
-
-  /* The old floating event stream is useful on desktop but obscures phones. */
-  #live-notes{display:none!important}
 
   /* Keep social/credits out of the active lab workspace until the student scrolls past it. */
   #view-sim .social-follow-card{margin-top:12px!important}
@@ -968,7 +953,7 @@ body.lab-cinematic-active #view-sim.professor-mode #sim-canvas-wrap{height:min(8
           <div id="readouts" class="space-y-2 text-sm"></div>
           <div id="measurement-lab">
             <div class="measurement-head">
-              <div class="measurement-title">📍 مختبر القياس — ابنِ علاقتك بنفسك</div>
+              <div class="measurement-title">📝 سجل القراءات — اجمع البيانات ثم ارسمها</div>
               <div id="measurement-count" class="text-[9px] text-slate-500">0 نقطة</div>
             </div>
             <div id="measurement-task"></div>
@@ -978,14 +963,14 @@ body.lab-cinematic-active #view-sim.professor-mode #sim-canvas-wrap{height:min(8
             </div>
             <div class="measurement-actions">
               <button id="measurement-record" type="button">📍 سجّل قراءة</button>
-              <button id="measurement-fit" type="button">✅ تحقق من الرسم</button>
+              <button id="measurement-fit" type="button">📈 اعرض الرسم للتحقق</button>
               <button id="measurement-copy" type="button">📋 نسخ الجدول</button>
               <button id="measurement-csv" type="button">⬇ CSV</button>
               <button id="measurement-clear" type="button">🗑 مسح</button>
             </div>
             <div id="measurement-chart-wrap"><canvas id="measurement-chart" width="320" height="145"></canvas></div>
             <div id="measurement-table"></div>
-            <div id="measurement-note" class="measurement-note">غيّر متغيرًا واحدًا، سجّل نقطة، ثم كرر. الهدف أن تستنتج العلاقة من بياناتك لا من المعادلة الجاهزة.</div>
+            <div id="measurement-note" class="measurement-note">سجّل القراءات أولًا في الجدول، ثم ارسم العلاقة بنفسك. لا يظهر الرسم تلقائيًا؛ استخدم «اعرض الرسم للتحقق» بعد إنهاء رسمك.</div>
           </div>
         </div>
       </div>
@@ -1053,7 +1038,6 @@ body.lab-cinematic-active #view-sim.professor-mode #sim-canvas-wrap{height:min(8
 <div id="toast"></div>
 <div id="tip" class="tip-box"></div>
 <div id="overlay"></div>
-<div id="live-notes" class="fixed bottom-4 left-4 z-50 w-80 max-h-[70vh] overflow-hidden pointer-events-none"></div>
 
 <script>
 const deg2rad = d => d * Math.PI / 180;
@@ -8769,12 +8753,12 @@ const MeasurementLab={
     const task=document.getElementById('measurement-task');
     const title=document.querySelector('#measurement-lab .measurement-title');
     const fitBtn=document.getElementById('measurement-fit');
-    if(title)title.textContent=this.spec?(this.spec.title||'📍 سجل القياسات — وضع الطالب'):'📍 مختبر القياس — ابنِ علاقتك بنفسك';
+    if(title)title.textContent=this.spec?(this.spec.title||'📝 سجل القراءات — وضع الطالب'):'📝 سجل القراءات — اجمع البيانات ثم ارسمها';
     if(task){
       task.style.display=this.spec?'block':'none';
       task.innerHTML=this.spec?pedagogyEsc(this.spec.instruction||'اجمع القراءات أولًا، ثم ارسمها يدويًا قبل فتح التحقق.'):'';
     }
-    if(fitBtn)fitBtn.textContent=this.spec?(this.spec.verifyLabel||'✅ تحقق من الرسم'):'📈 استخرج الاتجاه';
+    if(fitBtn)fitBtn.textContent=this.spec?(this.spec.verifyLabel||'📈 اعرض الرسم للتحقق'):'📈 اعرض الرسم للتحقق';
     if(this.spec){
       if(grid)grid.style.display='none';
       this.render();return;
@@ -8889,16 +8873,16 @@ const MeasurementLab={
         note.textContent=this.fitShown?this._analysisText():(this.spec.studentNote||'اجمع القراءات ثم ارسم العلاقة المطلوبة بنفسك على ورق بياني أو Excel. بعد ذلك اضغط «تحقق من الرسم».');
       }else{
         const fit=this._linear();
-        note.textContent=this.fitShown&&fit?('أفضل اتجاه خطي: Y ≈ '+fit.m.toPrecision(5)+' X '+(fit.b>=0?'+ ':'− ')+Math.abs(fit.b).toPrecision(4)+' ، R² ≈ '+fit.r2.toFixed(4)+'. لا تعتبر الخطية قانونًا إلا إذا كان لها معنى فيزيائي في هذه التجربة.'):'غيّر متغيرًا واحدًا، سجّل نقطة، ثم كرر. اختر X وY بما يناسب السؤال الذي تريد اختباره.';
+        note.textContent=this.fitShown&&fit?('للتحقق فقط: Y ≈ '+fit.m.toPrecision(5)+' X '+(fit.b>=0?'+ ':'− ')+Math.abs(fit.b).toPrecision(4)+' ، R² ≈ '+fit.r2.toFixed(4)+'. قارن هذا برسمك اليدوي ولا تعتبر الخطية قانونًا إلا إذا كان لها معنى فيزيائي.'):'اختر X وY، غيّر متغيرًا واحدًا، وسجّل القراءات في الجدول. ارسمها بنفسك على الورق أو Excel قبل فتح التحقق.';
       }
     }
     if(!canvas)return;
     const cc=canvas.getContext('2d'),Wc=canvas.width,Hc=canvas.height;cc.clearRect(0,0,Wc,Hc);cc.fillStyle='#070b14';cc.fillRect(0,0,Wc,Hc);
     const g=this.spec?(this.spec.graph||{}):{x:'x',y:'y',fit:'linear'};
-    if(this.spec&&!this.fitShown){
+    if(!this.fitShown){
       cc.fillStyle='#64748b';cc.font='11px Cairo, sans-serif';cc.textAlign='center';
       cc.fillText('الرسم مخفي في وضع الطالب',Wc/2,Hc/2-8);
-      cc.font='9px Cairo, sans-serif';cc.fillText('ارسم بياناتك أولًا ثم اضغط «تحقق من الرسم»',Wc/2,Hc/2+12);
+      cc.font='9px Cairo, sans-serif';cc.fillText('سجّل القراءات وارسمها بنفسك أولًا، ثم اعرض الرسم للتحقق',Wc/2,Hc/2+12);
       return;
     }
     const points=this.records.map(r=>({x:Number(r[g.x]),y:Number(r[g.y])})).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
@@ -10085,139 +10069,6 @@ document.getElementById('search-box').addEventListener('input',(e)=>{
   renderHome();
 });
 
-/* ============================================================
-   LIVE NOTES SYSTEM — نظام التعليقات الحية
-   ============================================================ */
-(function(){
-  let panel=null;
-  let lastSnapshot={};
-  const throttle={};
-
-  function init(){
-    panel=document.getElementById('live-notes');
-    if(!panel)return;
-
-    const origOpen=window.openSim;
-    window.openSim=function(key){
-      origOpen(key);
-      panel.innerHTML='';
-      lastSnapshot={};
-      attachSimListeners();
-      push('🚀','بدء التجربة: '+currentSim.title,'حرّك السلايدرات وراقب التغيّرات','#22d3ee',6000);
-    };
-
-    const origClose=window.closeSim;
-    window.closeSim=function(){
-      if(panel)panel.innerHTML='';
-      origClose();
-    };
-
-    setInterval(watchReadouts,400);
-  }
-
-  function attachSimListeners(){
-    if(!currentSim)return;
-
-    currentSim.controls.forEach(c=>{
-      const input=document.getElementById('ctrl-'+c.id);
-      if(!input||input.dataset.liveNote)return;
-      input.dataset.liveNote='1';
-
-      input.addEventListener('focus',()=>{
-        const desc=(c.help||c.label).replace(/<[^>]+>/g,' ').trim();
-        push('🎛️',c.label,desc,'#a78bfa',4000);
-      });
-
-      input.addEventListener('input',(e)=>{
-        const val=parseFloat(e.target.value);
-        const tid='sl-'+c.id;
-        if(throttle[tid])return;
-        throttle[tid]=true;
-        setTimeout(()=>throttle[tid]=false,250);
-        push('✏️',c.label,`= ${val} ${c.unit||''}`,'#fbbf24',3000);
-      });
-    });
-
-    const btns=[
-      ['btn-play',()=>push(running?'▶️':'⏸️',running?'استئناف الحركة':'إيقاف مؤقت',running?'الأشياء تتحرك الآن':'افحص الرسم','#22d3ee')],
-      ['btn-reset',()=>push('🔄','إعادة تعيين','كل القيم عادت إلى نقطة البداية','#fbbf24')],
-      ['btn-guide',()=>push('📘','فتح الدليل','عرض خطوات التجربة','#22d3ee')]
-    ];
-    btns.forEach(([id,fn])=>{
-      const b=document.getElementById(id);
-      if(!b||b.dataset.liveNote)return;
-      b.dataset.liveNote='1';
-      b.addEventListener('click',fn);
-    });
-  }
-
-  function watchReadouts(){
-    if(!currentSim||!currentSim.readouts)return;
-    let items;
-    try{items=currentSim.readouts(currentState);}catch(e){return;}
-
-    items.forEach(r=>{
-      const key=r.l;
-      const now=String(r.v);
-      const prev=lastSnapshot[key];
-      if(prev!==undefined&&prev!==now){
-        flashReadout(key);
-        const tid='ro-'+key;
-        if(throttle[tid])return;
-        throttle[tid]=true;
-        setTimeout(()=>throttle[tid]=false,1200);
-
-        const dir=parseFloat(now)>parseFloat(prev)?'📈':parseFloat(now)<parseFloat(prev)?'📉':'→';
-        const unit=r.u||'';
-        push(dir,key,`${prev} → ${now} ${unit}`.trim(),'#22d3ee',2500);
-      }
-      lastSnapshot[key]=now;
-    });
-  }
-
-  function flashReadout(labelText){
-    const rows=document.querySelectorAll('#readouts > div');
-    rows.forEach(row=>{
-      const span=row.querySelector('span');
-      if(span&&span.textContent.trim()===labelText){
-        row.classList.remove('value-flash');
-        void row.offsetWidth;
-        row.classList.add('value-flash');
-      }
-    });
-  }
-
-  function push(icon,title,detail,color,ttl){
-    /* The event stream remains a desktop feature. On phones the compact
-       summary is driven by the first physics hint, which is less distracting. */
-    if(!panel)return;
-    const el=document.createElement('div');
-    el.className='note';
-    el.style.borderLeft=`4px solid ${color}`;
-    el.innerHTML=`
-      <div class="t" style="color:${color}">
-        <span>${icon}</span><span>${title}</span>
-      </div>
-      ${detail?`<div class="d">${detail}</div>`:''}
-    `;
-    panel.appendChild(el);
-
-    while(panel.children.length>5)panel.removeChild(panel.firstChild);
-
-    setTimeout(()=>{
-      el.classList.add('out');
-      setTimeout(()=>el.remove(),500);
-    },ttl||4000);
-  }
-
-  window.LiveNotesPush=push;
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',()=>{init();initMobilePanelTabs();});
-  }else{
-    setTimeout(()=>{init();initMobilePanelTabs();},100);
-  }
-})();
 
 window.addEventListener('load',()=>{
   const overlay=document.getElementById('overlay');
