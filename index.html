@@ -6753,41 +6753,83 @@ stage3_rydberg_constant: {
   theory:'<b>القيمة المرجعية:</b> R∞ = 1.0973731568×10⁷ m⁻¹، بينما يعطي تصحيح الكتلة المختزلة للهيدروجين R_H≈1.09678×10⁷ m⁻¹. في الهواء تظهر خطوط بالمر تقريبًا عند 656.28، 486.13، 434.05، 410.17 nm؛ يحول النموذج هذه القيم إلى طول موجي فراغي قبل حساب R_H. <br><b>المشاهدة المتوقعة:</b> Hα الأحمر عند أطول طول موجي وأكبر زاوية حيود، ثم Hβ وHγ وHδ. <br><b>تفسير النتائج:</b> ثبات R_H المستخرج من عدة خطوط يؤكد صيغة بالمر/ريدبرج.',
   pointerDown(s,p){const b=s._recordBtn;if(!b||p.x<b.x||p.x>b.x+b.w||p.y<b.y||p.y>b.y+b.h)return false;const q=this.calc(s),target=(Number(s.ctrl.side)||1)*q.thetaTheo;if(Math.abs(rad2deg(q.thetaM-target))>.25||!Number.isFinite(q.RHcalc))return true;s.records[q.n]={n:q.n,theta:q.thetaM,lambdaAir:q.lambdaAirM,lambdaVac:q.lambdaVacM,RH:q.RHcalc};return true;},
   draw(ctx,W,H,s){
-    drawGrid(ctx,W,H);const q=this.calc(s),cy=H*.47,gx=W*.46;
-    ctx.fillStyle='#334155';ctx.fillRect(28,cy-42,70,84);label(ctx,'H₂',63,cy,'#e2e8f0','center',15,true);
-    ctx.fillStyle='#fbbf24';ctx.fillRect(98,cy-10,gx-118,20);label(ctx,'كوليميتر',W*.28,cy-26,'#94a3b8','center',9,true);
-    ctx.strokeStyle='#94a3b8';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(gx,54);ctx.lineTo(gx,H-54);ctx.stroke();
-    for(let k=-18;k<=18;k++){ctx.strokeStyle='rgba(244,114,182,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(gx-8,cy+k*6);ctx.lineTo(gx+8,cy+k*6);ctx.stroke();}
-    const L=Math.min(W*.42,H*.42);
-    const balmerNames={3:'Hα',4:'Hβ',5:'Hγ',6:'Hδ'};
-    [3,4,5,6].forEach((n,idx)=>{
+    const q=this.calc(s),cy=H*.48,gx=W*.47,compact=W<560;
+    // Optical bench and spectrometer base.
+    ctx.fillStyle='#0b1728';ctx.strokeStyle='#405873';ctx.lineWidth=2;
+    ctx.fillRect(W*.04,H*.70,W*.88,H*.055);ctx.strokeRect(W*.04,H*.70,W*.88,H*.055);
+    for(let i=0;i<=20;i++){const x=W*.06+i*W*.84/20;ctx.strokeStyle='rgba(148,163,184,.45)';ctx.beginPath();ctx.moveTo(x,H*.70);ctx.lineTo(x,H*.70+(i%5===0?13:8));ctx.stroke();}
+    label(ctx,'المقعد البصري / تدريج المطياف',W*.48,H*.785,'#94a3b8','center',8,true);
+
+    // Hydrogen discharge lamp housing.
+    const lamp={x:W*.055,y:cy-48,w:W*.13,h:96};
+    ctx.fillStyle='#27384e';ctx.strokeStyle='#7890a8';ctx.lineWidth=2;ctx.fillRect(lamp.x,lamp.y,lamp.w,lamp.h);ctx.strokeRect(lamp.x,lamp.y,lamp.w,lamp.h);
+    ctx.fillStyle='#121b27';ctx.fillRect(lamp.x+lamp.w*.22,lamp.y+14,lamp.w*.56,lamp.h-28);
+    const glow=ctx.createRadialGradient(lamp.x+lamp.w*.5,cy,2,lamp.x+lamp.w*.5,cy,28);
+    glow.addColorStop(0,'rgba(255,120,160,.95)');glow.addColorStop(.45,'rgba(168,85,247,.55)');glow.addColorStop(1,'rgba(168,85,247,0)');
+    ctx.fillStyle=glow;ctx.beginPath();ctx.arc(lamp.x+lamp.w*.5,cy,28,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#e879f9';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(lamp.x+lamp.w*.38,cy-22);ctx.lineTo(lamp.x+lamp.w*.62,cy+22);ctx.stroke();
+    label(ctx,'مصباح H₂',lamp.x+lamp.w/2,lamp.y-12,'#e2e8f0','center',9,true);
+
+    // Collimator: tube, entrance slit and lens.
+    const colX=lamp.x+lamp.w+8,colW=gx-colX-18;
+    ctx.fillStyle='#35465b';ctx.strokeStyle='#7c8ea5';ctx.lineWidth=2;ctx.fillRect(colX,cy-16,colW,32);ctx.strokeRect(colX,cy-16,colW,32);
+    ctx.fillStyle='#0f172a';ctx.fillRect(colX+8,cy-22,7,44);
+    ctx.strokeStyle='#67e8f9';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(gx-28,cy,7,22,0,0,Math.PI*2);ctx.stroke();
+    label(ctx,'كوليميتر',colX+colW/2,cy-30,'#cbd5e1','center',8,true);
+
+    // Spectrometer turntable/protractor.
+    const baseR=Math.min(W,H)*.20;
+    ctx.strokeStyle='rgba(148,163,184,.60)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(gx,cy,baseR,Math.PI,0);ctx.stroke();
+    ctx.fillStyle='#1a2b40';ctx.strokeStyle='#64748b';ctx.beginPath();ctx.arc(gx,cy,24,0,Math.PI*2);ctx.fill();ctx.stroke();
+    for(let d=-50;d<=50;d+=5){
+      const a=deg2rad(d),r1=baseR-(d%10===0?10:6),r2=baseR;
+      ctx.strokeStyle='rgba(203,213,225,.55)';ctx.lineWidth=d%10===0?1.4:.8;
+      ctx.beginPath();ctx.moveTo(gx+r1*Math.cos(a),cy-r1*Math.sin(a));ctx.lineTo(gx+r2*Math.cos(a),cy-r2*Math.sin(a));ctx.stroke();
+      if(d%10===0)label(ctx,String(Math.abs(d)),gx+(baseR+13)*Math.cos(a),cy-(baseR+13)*Math.sin(a),'#94a3b8','center',6.8,false);
+    }
+
+    // Diffraction grating in a physical holder.
+    ctx.fillStyle='#334155';ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;ctx.fillRect(gx-10,cy-58,20,116);ctx.strokeRect(gx-10,cy-58,20,116);
+    for(let k=-18;k<=18;k++){ctx.strokeStyle='rgba(244,114,182,.55)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(gx-6,cy+k*3);ctx.lineTo(gx+6,cy+k*3);ctx.stroke();}
+    label(ctx,q.lines+' خط/mm',gx,cy+73,'#e879f9','center',7.5,true);
+
+    const L=Math.min(W*.40,H*.39),names={3:'Hα',4:'Hβ',5:'Hγ',6:'Hδ'};
+    [3,4,5,6].forEach(n=>{
       const lam=this._lambdaAir(n),th=this._theta(n,q.m,q.lines),col=S3LAB.wl(lam*1e9),sel=n===q.n;
-      const ex=gx+L*Math.cos(th),ey=cy-L*Math.sin(th);
-      ctx.save();
-      ctx.strokeStyle=col;ctx.globalAlpha=sel?1:.82;ctx.lineWidth=sel?5:2.8;
-      if(sel){ctx.shadowColor=col;ctx.shadowBlur=10;}
-      ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(ex,ey);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(ex,cy+(cy-ey));ctx.stroke();
-      ctx.restore();
-      label(ctx,balmerNames[n]+' '+(lam*1e9).toFixed(1)+' nm',ex-6,ey-12,col,'right',8.5,sel);
+      [-1,1].forEach(side=>{
+        const a=side*th,ex=gx+L*Math.cos(a),ey=cy-L*Math.sin(a);
+        ctx.save();ctx.strokeStyle=col;ctx.globalAlpha=sel?1:.72;ctx.lineWidth=sel?4.5:2.2;if(sel){ctx.shadowColor=col;ctx.shadowBlur=10;}
+        ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(ex,ey);ctx.stroke();ctx.restore();
+      });
+      const a=(Number(s.ctrl.side)||1)*th,ex=gx+L*Math.cos(a),ey=cy-L*Math.sin(a);
+      label(ctx,names[n]+' '+(lam*1e9).toFixed(1)+' nm',ex+(s.ctrl.side>0?4:-4),ey-10,col,s.ctrl.side>0?'left':'right',7.5,sel);
     });
-    // Hydrogen spectrum strip: all four principal visible Balmer lines stay visible simultaneously.
-    const sp={x:W*.68,y:H*.08,w:W*.27,h:H*.17};
-    ctx.fillStyle='rgba(4,8,17,.92)';ctx.strokeStyle='#334155';ctx.fillRect(sp.x,sp.y,sp.w,sp.h);ctx.strokeRect(sp.x,sp.y,sp.w,sp.h);
-    label(ctx,'طيف الهيدروجين المرئي',sp.x+sp.w/2,sp.y+12,'#cbd5e1','center',8,true);
+
+    // Rotating telescope barrel.
+    const th=q.thetaM,tx=gx+L*.83*Math.cos(th),ty=cy-L*.83*Math.sin(th);
+    ctx.save();ctx.translate(tx,ty);ctx.rotate(-th);
+    ctx.fillStyle='#2e4055';ctx.strokeStyle='#8fa4ba';ctx.lineWidth=2;ctx.fillRect(-50,-15,92,30);ctx.strokeRect(-50,-15,92,30);
+    ctx.fillStyle='#101827';ctx.fillRect(34,-20,18,40);ctx.strokeStyle='#22d3ee';ctx.strokeRect(34,-20,18,40);
+    ctx.fillStyle='#cbd5e1';ctx.fillRect(-58,-9,10,18);
+    ctx.restore();
+    ctx.strokeStyle='#22d3ee';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(tx,ty);ctx.stroke();ctx.setLineDash([]);
+    label(ctx,'تلسكوب دوّار',tx,ty-28,'#22d3ee','center',8,true);
+
+    // Four-line hydrogen spectrum window, always visible.
+    const sp={x:W*(compact?.67:.69),y:H*.075,w:W*(compact?.28:.25),h:H*.16};
+    ctx.fillStyle='#030811';ctx.strokeStyle='#475569';ctx.lineWidth=1.5;ctx.fillRect(sp.x,sp.y,sp.w,sp.h);ctx.strokeRect(sp.x,sp.y,sp.w,sp.h);
+    label(ctx,'طيف الهيدروجين',sp.x+sp.w/2,sp.y+12,'#cbd5e1','center',7.5,true);
     [3,4,5,6].forEach((n,idx)=>{
-      const lam=this._lambdaAir(n),col=S3LAB.wl(lam*1e9),sel=n===q.n;
-      const xx=sp.x+sp.w*(.16+.22*idx);
-      ctx.save();ctx.strokeStyle=col;ctx.lineWidth=sel?5:3;ctx.globalAlpha=sel?1:.9;if(sel){ctx.shadowColor=col;ctx.shadowBlur=9;}
-      ctx.beginPath();ctx.moveTo(xx,sp.y+25);ctx.lineTo(xx,sp.y+sp.h-12);ctx.stroke();ctx.restore();
-      label(ctx,balmerNames[n],xx,sp.y+sp.h-5,col,'center',7.5,sel);
+      const lam=this._lambdaAir(n),col=S3LAB.wl(lam*1e9),sel=n===q.n,xx=sp.x+sp.w*(.15+.235*idx);
+      ctx.save();ctx.strokeStyle=col;ctx.lineWidth=sel?5:3;ctx.globalAlpha=sel?1:.92;if(sel){ctx.shadowColor=col;ctx.shadowBlur=9;}
+      ctx.beginPath();ctx.moveTo(xx,sp.y+23);ctx.lineTo(xx,sp.y+sp.h-14);ctx.stroke();ctx.restore();
+      label(ctx,names[n],xx,sp.y+sp.h-5,col,'center',6.8,sel);
     });
-    const th=q.thetaM,tx=gx+L*.88*Math.cos(th),ty=cy-L*.88*Math.sin(th);
-    ctx.save();ctx.translate(tx,ty);ctx.rotate(-th);ctx.fillStyle='#1e293b';ctx.strokeStyle='#22d3ee';ctx.fillRect(-42,-13,84,26);ctx.strokeRect(-42,-13,84,26);ctx.restore();
-    ctx.strokeStyle='#22d3ee';ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(tx,ty);ctx.stroke();ctx.setLineDash([]);
-    label(ctx,'تلسكوب',tx,ty-24,'#22d3ee','center',9,true);
-    const rb={x:22,y:H-47,w:154,h:30};s._recordBtn=rb;S3LAB.button(ctx,rb,'📍 سجّل الخط الحالي',true);
-    const rec=q.rec.sort((a,b)=>a.n-b.n);if(rec.length){label(ctx,'الخطوط المسجلة: '+rec.map(r=>'n='+r.n+' · '+(r.lambdaAir*1e9).toFixed(1)+' nm').join(' | '),W/2,H-18,'#cbd5e1','center',8,false);}
+
+    const target=(Number(s.ctrl.side)||1)*q.thetaTheo,mis=Math.abs(rad2deg(q.thetaM-target));
+    const rb={x:18,y:H-92,w:compact?128:154,h:28};s._recordBtn=rb;S3LAB.button(ctx,rb,mis<=.25?'📍 سجّل القراءة':'◎ طابق الخط أولًا',mis<=.25);
+    const rec=q.rec.slice().sort((a,b)=>a.n-b.n);
+    if(rec.length)label(ctx,'المسجل: '+rec.map(r=>names[r.n]).join(' · '),W*.50,H-73,'#cbd5e1','center',7.5,true);
   }
 },
 
