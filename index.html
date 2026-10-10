@@ -9288,6 +9288,127 @@ function makeMobileCompactCanvasContext(base,w,h){
   });
 }
 
+
+/* ============================================================
+   STAGE3_PHYSICAL_LAB_STYLE_V1
+   Visual language inspired by real interactive lab benches:
+   large apparatus, blueprint background, real-looking instruments,
+   and one directly draggable physical control inside the scene.
+   ============================================================ */
+const STAGE3_PHYSICAL_KEYS=new Set([
+  'stage3_rydberg_constant','stage3_magnetron_specific_charge','stage3_millikan_oil_drop',
+  'stage3_photoelectric_effect','stage3_electron_beam_fields','stage3_franck_hertz_mercury',
+  'stage3_zeeman_cadmium','stage3_electron_diffraction_graphite','stage3_planck_led'
+]);
+const S3PHYS={
+  primary:{
+    stage3_rydberg_constant:{id:'thetaM',label:'زاوية التلسكوب',min:1,max:55,unit:'°'},
+    stage3_magnetron_specific_charge:{id:'I',label:'تيار المجال',min:0,max:4,unit:'A'},
+    stage3_millikan_oil_drop:{id:'V',label:'فرق الجهد',min:0,max:500,unit:'V'},
+    stage3_photoelectric_effect:{id:'Vret',label:'جهد الإعاقة',min:0,max:4,unit:'V'},
+    stage3_electron_beam_fields:{id:'I',label:'تيار هلمهولتز',min:0,max:2,unit:'A'},
+    stage3_franck_hertz_mercury:{id:'Va',label:'جهد التسريع',min:0,max:60,unit:'V'},
+    stage3_zeeman_cadmium:{id:'B',label:'المجال المغناطيسي',min:0,max:2.5,unit:'T'},
+    stage3_electron_diffraction_graphite:{id:'V',label:'جهد التسريع',min:2.5,max:5,unit:'kV'},
+    stage3_planck_led:{id:'Vs',label:'جهد المصدر',min:0,max:5,unit:'V'}
+  },
+  is(key){return STAGE3_PHYSICAL_KEYS.has(key);},
+  background(c,w,h,sim){
+    c.save();
+    const g=c.createLinearGradient(0,0,w,h);
+    g.addColorStop(0,'#071424');g.addColorStop(.55,'#0a1a2f');g.addColorStop(1,'#06101f');
+    c.fillStyle=g;c.fillRect(0,0,w,h);
+    c.strokeStyle='rgba(86,147,199,.09)';c.lineWidth=1;
+    const step=Math.max(24,Math.min(38,w/18));
+    for(let x=0;x<w;x+=step){c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke();}
+    for(let y=0;y<h;y+=step){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}
+    c.fillStyle='rgba(7,13,24,.60)';c.fillRect(0,h-55,w,55);
+    c.strokeStyle='rgba(148,163,184,.18)';c.beginPath();c.moveTo(0,h-55);c.lineTo(w,h-55);c.stroke();
+    c.fillStyle='#94a3b8';c.font='700 8px Cairo, sans-serif';c.textAlign='left';c.fillText('INTERACTIVE ATOMIC LAB',12,16);
+    c.restore();
+  },
+  controlDef(key,sim){
+    const base=this.primary[key];if(!base)return null;
+    const src=(sim.controls||[]).find(x=>x.id===base.id);
+    return Object.assign({},base,src?{min:Number(src.min),max:Number(src.max),step:Number(src.step)||.01,unit:src.unit||base.unit,label:src.label||base.label}:{step:.01});
+  },
+  drawSlider(c,w,h,key,sim,state){
+    const d=this.controlDef(key,sim);if(!d||!state||!state.ctrl)return;
+    const val=Number(state.ctrl[d.id]);if(!Number.isFinite(val))return;
+    const compact=w<520,x=w*.15,y=h-31,ww=w*.70,lo=Number(d.min),hi=Number(d.max);
+    const p=clamp((val-lo)/(hi-lo),0,1),hx=x+p*ww;
+    state._s3phys=state._s3phys||{};state._s3phys.slider={x,y:y-18,w:ww,h:38,def:d};
+    c.save();
+    c.strokeStyle='#9fb7c9';c.lineWidth=2;c.beginPath();c.moveTo(x,y);c.lineTo(x+ww,y);c.stroke();
+    c.strokeStyle='rgba(159,183,201,.55)';c.lineWidth=1;
+    for(let i=0;i<=10;i++){const xx=x+ww*i/10,hh=i%5===0?10:6;c.beginPath();c.moveTo(xx,y-hh/2);c.lineTo(xx,y+hh/2);c.stroke();}
+    c.fillStyle='#e2e8f0';c.strokeStyle='#38bdf8';c.lineWidth=2;c.beginPath();c.arc(hx,y,compact?7:8,0,Math.PI*2);c.fill();c.stroke();
+    c.shadowColor='#38bdf8';c.shadowBlur=10;c.beginPath();c.arc(hx,y,2.5,0,Math.PI*2);c.fillStyle='#38bdf8';c.fill();c.shadowBlur=0;
+    c.fillStyle='#cbd5e1';c.font='700 '+(compact?7.5:8.5)+'px Cairo, sans-serif';c.textAlign='center';c.fillText(d.label+'  '+(Math.round(val*1000)/1000)+' '+(d.unit||''),w/2,y-12);
+    c.fillStyle='#64748b';c.font='7px monospace';c.textAlign='left';c.fillText(String(lo),x,y+16);c.textAlign='right';c.fillText(String(hi),x+ww,y+16);
+    c.restore();
+  },
+  drawAnalog(c,x,y,w,h,label,value,min,max,unit){
+    const p=clamp((value-min)/(max-min),0,1);
+    c.save();
+    c.fillStyle='#eef2f7';c.strokeStyle='#64748b';c.lineWidth=2;c.fillRect(x,y,w,h);c.strokeRect(x,y,w,h);
+    const cx=x+w/2,cy=y+h*.72,r=Math.min(w*.40,h*.56),a0=Math.PI*.84,a1=Math.PI*.16,ang=a0+(a1-a0)*p;
+    c.strokeStyle='#94a3b8';c.lineWidth=1;
+    for(let i=0;i<=10;i++){const a=a0+(a1-a0)*i/10;const x1=cx+Math.cos(a)*r*.82,y1=cy-Math.sin(a)*r*.82,x2=cx+Math.cos(a)*r,y2=cy-Math.sin(a)*r;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();}
+    c.strokeStyle='#dc2626';c.lineWidth=2;c.beginPath();c.moveTo(cx,cy);c.lineTo(cx+Math.cos(ang)*r*.78,cy-Math.sin(ang)*r*.78);c.stroke();
+    c.fillStyle='#111827';c.beginPath();c.arc(cx,cy,4,0,Math.PI*2);c.fill();
+    c.fillStyle='#111827';c.font='700 7.5px Cairo, sans-serif';c.textAlign='center';c.fillText(label,cx,y+12);c.font='700 9px monospace';c.fillText((Math.round(value*1000)/1000)+' '+unit,cx,y+h-7);
+    c.restore();
+  },
+  instrumentValue(key,sim,state){
+    try{
+      const q=typeof sim.calc==='function'?sim.calc(state):null;
+      if(key==='stage3_magnetron_specific_charge')return{label:'ANODE CURRENT',v:q.Ia,min:0,max:60,u:'µA'};
+      if(key==='stage3_millikan_oil_drop')return{label:'HIGH VOLTAGE',v:Number(state.ctrl.V),min:0,max:500,u:'V'};
+      if(key==='stage3_photoelectric_effect')return{label:'PHOTO CURRENT',v:q.I,min:0,max:20,u:'µA'};
+      if(key==='stage3_electron_beam_fields')return{label:'MAGNETIC FIELD',v:Math.abs(q.fields.B)*1e3,min:0,max:2,u:'mT'};
+      if(key==='stage3_franck_hertz_mercury')return{label:'COLLECTOR CURRENT',v:q.I,min:0,max:14,u:'µA'};
+      if(key==='stage3_zeeman_cadmium')return{label:'MAGNET FIELD',v:Number(state.ctrl.B),min:0,max:2.5,u:'T'};
+      if(key==='stage3_electron_diffraction_graphite')return{label:'ACCEL. VOLTAGE',v:Number(state.ctrl.V),min:2.5,max:5,u:'kV'};
+      if(key==='stage3_planck_led')return{label:'LED CURRENT',v:q.I*1000,min:0,max:25,u:'mA'};
+      if(key==='stage3_rydberg_constant')return{label:'TELESCOPE ANGLE',v:Number(state.ctrl.thetaM),min:0,max:55,u:'°'};
+    }catch(_){}
+    return null;
+  },
+  decorate(c,w,h,key,sim,state){
+    this.drawSlider(c,w,h,key,sim,state);
+    if(w<620)return;
+    const m=this.instrumentValue(key,sim,state);if(!m)return;
+    this.drawAnalog(c,w-152,20,132,82,m.label,m.v,m.min,m.max,m.u);
+  },
+  _apply(key,sim,state,p){
+    const s=state&&state._s3phys&&state._s3phys.slider;if(!s)return false;
+    const hit=p.x>=s.x-10&&p.x<=s.x+s.w+10&&p.y>=s.y&&p.y<=s.y+s.h;if(!hit&&!state._s3phys.drag)return false;
+    const d=s.def,lo=Number(d.min),hi=Number(d.max),step=Number(d.step)||.01;
+    let ratio=clamp((p.x-s.x)/s.w,0,1),raw=lo+ratio*(hi-lo),val=Math.round(raw/step)*step;
+    const dec=(String(step).split('.')[1]||'').length;val=Number(val.toFixed(Math.min(6,dec)));
+    const old=state.ctrl[d.id];state.ctrl[d.id]=val;sim.ctrl[d.id]=val;
+    try{LabWorkbench._sync(d,val);}catch(_){}
+    try{applySimControlChange(sim,state,d.id,old,val);}catch(_){}
+    return true;
+  },
+  pointerDown(key,sim,state,p){
+    if(!this.is(key)||!state)return false;
+    state._s3phys=state._s3phys||{};
+    const s=state._s3phys.slider;if(!s)return false;
+    if(p.x<s.x-10||p.x>s.x+s.w+10||p.y<s.y||p.y>s.y+s.h)return false;
+    state._s3phys.drag=true;return this._apply(key,sim,state,p);
+  },
+  pointerMove(key,sim,state,p){
+    if(!this.is(key)||!state||!state._s3phys||!state._s3phys.drag)return false;
+    return this._apply(key,sim,state,p);
+  },
+  pointerUp(key,sim,state,p){
+    if(!this.is(key)||!state||!state._s3phys||!state._s3phys.drag)return false;
+    this._apply(key,sim,state,p);state._s3phys.drag=false;return true;
+  }
+};
+
 function ensureCinematicSimWrapped(key){
   const sim=SIMS[key];
   if(!sim||sim.__cinematicWrapped||typeof sim.draw!=='function')return;
@@ -9297,19 +9418,27 @@ function ensureCinematicSimWrapped(key){
     const meta=CATEGORIES[sim.category]||{};
     const accent=meta.color||'#22d3ee';
 
-    c.save();
-    const bg=c.createRadialGradient(w*.54,h*.43,20,w*.54,h*.43,Math.max(w,h)*.75);
-    bg.addColorStop(0,cinematicHexAlpha(accent,.075));
-    bg.addColorStop(.56,'rgba(6,12,24,.025)');
-    bg.addColorStop(1,'rgba(2,6,15,.22)');
-    c.fillStyle=bg;c.fillRect(0,0,w,h);
-    c.restore();
-
-    try{drawCategoryVitalityLayer(key,c,w,h,state,sim);}catch(e){}
+    const stage3Physical=S3PHYS.is(key);
+    if(stage3Physical){
+      S3PHYS.background(c,w,h,sim);
+    }else{
+      c.save();
+      const bg=c.createRadialGradient(w*.54,h*.43,20,w*.54,h*.43,Math.max(w,h)*.75);
+      bg.addColorStop(0,cinematicHexAlpha(accent,.075));
+      bg.addColorStop(.56,'rgba(6,12,24,.025)');
+      bg.addColorStop(1,'rgba(2,6,15,.22)');
+      c.fillStyle=bg;c.fillRect(0,0,w,h);
+      c.restore();
+      try{drawCategoryVitalityLayer(key,c,w,h,state,sim);}catch(e){}
+    }
     const sceneCtx=makeMobileCompactCanvasContext(c,w,h);
     originalDraw.call(sim,sceneCtx,w,h,state);
     try{drawSpecialVisualBinding(key,c,w,h,state,sim);}catch(e){}
-    try{drawInteractiveProbeLayer(c,w,h,state,sim);}catch(e){}
+    if(stage3Physical){
+      try{S3PHYS.decorate(c,w,h,key,sim,state);}catch(e){}
+    }else{
+      try{drawInteractiveProbeLayer(c,w,h,state,sim);}catch(e){}
+    }
 
     c.save();
     const vig=c.createRadialGradient(w*.5,h*.47,Math.min(w,h)*.20,w*.5,h*.47,Math.max(w,h)*.70);
@@ -9913,7 +10042,8 @@ function bindCanvasInteractions(){
     cinematicProbe.pulses.push({x:p.x,y:p.y,t:performance.now()/1000});
     if(cinematicProbe.pulses.length>5)cinematicProbe.pulses.shift();
     try{
-      let used=LabWorkbench.pointerDown(currentSim,currentState,p);
+      let used=S3PHYS.pointerDown(currentSimKey,currentSim,currentState,p);
+      if(!used)used=LabWorkbench.pointerDown(currentSim,currentState,p);
       if(!used&&typeof currentSim.pointerDown==='function')used=currentSim.pointerDown(currentState,p);
       if(used){e.preventDefault();try{canvasEl.setPointerCapture(e.pointerId);}catch(_){}}
     }catch(err){console.error(err);}
@@ -9923,7 +10053,8 @@ function bindCanvasInteractions(){
     const p=canvasPointerPayload(e);if(!p)return;
     cinematicProbe.x=p.x;cinematicProbe.y=p.y;cinematicProbe.inside=true;cinematicProbe.lastMove=performance.now();
     try{
-      let used=LabWorkbench.pointerMove(currentSim,currentState,p);
+      let used=S3PHYS.pointerMove(currentSimKey,currentSim,currentState,p);
+      if(!used)used=LabWorkbench.pointerMove(currentSim,currentState,p);
       if(!used&&typeof currentSim.pointerMove==='function')used=currentSim.pointerMove(currentState,p);
       if(used)e.preventDefault();
     }catch(err){console.error(err);}
@@ -9933,7 +10064,8 @@ function bindCanvasInteractions(){
     const p=canvasPointerPayload(e);if(!p)return;
     cinematicProbe.x=p.x;cinematicProbe.y=p.y;cinematicProbe.down=false;
     try{
-      let used=LabWorkbench.pointerUp(currentSim,currentState,p);
+      let used=S3PHYS.pointerUp(currentSimKey,currentSim,currentState,p);
+      if(!used)used=LabWorkbench.pointerUp(currentSim,currentState,p);
       if(!used&&typeof currentSim.pointerUp==='function')used=currentSim.pointerUp(currentState,p);
       if(used)e.preventDefault();
     }catch(err){console.error(err);}
@@ -9975,7 +10107,7 @@ function loop(now){
   if(ctx){
     ctx.clearRect(0,0,W,H);
     guardedLabCall('draw',()=>currentSim.draw(ctx,W,H,currentState));
-    guardedLabCall('workbench',()=>LabWorkbench.draw(ctx,W,H,currentSim,currentState));
+    if(!S3PHYS.is(currentSimKey))guardedLabCall('workbench',()=>LabWorkbench.draw(ctx,W,H,currentSim,currentState));
     updateReadouts();
   }
   if(now-lastHintUpdate>500){
